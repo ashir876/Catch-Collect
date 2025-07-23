@@ -1,0 +1,289 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import a pixelated font */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+/* CatchCollect Pixel Art Design */
+
+@layer base {
+  :root {
+    /* Pixel Art Color Palette from the reference */
+    --primary: 45 100% 50%;        /* Bright yellow */
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 100% 30%;     /* Deep blue */
+    --secondary-foreground: 0 0% 100%;
+    --accent: 0 100% 50%;          /* Red accent */
+    --accent-foreground: 0 0% 100%;
+    
+    /* Base colors */
+    --background: 0 0% 95%;        /* Light gray background */
+    --foreground: 0 0% 10%;        /* Dark text */
+    
+    --card: 0 0% 100%;             /* White cards */
+    --card-foreground: 0 0% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    
+    --muted: 0 0% 85%;             /* Muted gray */
+    --muted-foreground: 0 0% 30%;
+    
+    --border: 0 0% 20%;            /* Dark borders */
+    --input: 0 0% 96%;
+    --ring: 45 100% 50%;
+    
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --radius: 0;                   /* No rounded corners for pixel art */
+    
+    /* Colorful card rarities */
+    --common: 120 40% 85%;         /* Light green */
+    --common-foreground: 120 40% 20%;
+    --rare: 240 60% 85%;           /* Light blue */
+    --rare-foreground: 240 60% 20%;
+    --epic: 280 60% 85%;           /* Light purple */
+    --epic-foreground: 280 60% 20%;
+    --legendary: 30 80% 85%;       /* Light orange/gold */
+    --legendary-foreground: 30 80% 20%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Orbitron', 'Courier New', monospace;
+    font-weight: 700;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+}
+
+@layer components {
+  .pixel-card {
+    @apply bg-card border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-100;
+    image-rendering: pixelated;
+  }
+  
+  .pixel-button {
+    @apply bg-primary text-primary-foreground border-4 border-black px-6 py-3 font-black uppercase text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-100;
+  }
+  
+  .pixel-button-secondary {
+    @apply bg-secondary text-secondary-foreground border-4 border-black px-6 py-3 font-black uppercase text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-100;
+  }
+  
+  .pixel-badge {
+    @apply bg-accent text-accent-foreground border-2 border-black px-3 py-1 text-xs font-black uppercase;
+  }
+  
+  .pixel-nav-item {
+    @apply bg-muted border-2 border-black px-4 py-2 font-black uppercase text-sm hover:bg-primary hover:text-primary-foreground transition-colors duration-100;
+  }
+  
+  .pixel-nav-item-active {
+    @apply bg-primary text-primary-foreground border-2 border-black px-4 py-2 font-black uppercase text-sm;
+  }
+  
+  .pixel-text-large {
+    @apply text-4xl md:text-6xl font-black uppercase tracking-wider;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+  }
+  
+  .pixel-text-header {
+    @apply text-2xl font-black uppercase tracking-wide;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 1);
+  }
+  
+  .pixel-border {
+    border: 4px solid black;
+    border-image: none;
+  }
+
+  /* Yellow animated text for main title */
+  .pixel-text-yellow-animated {
+    @apply text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-wider;
+    color: #FFD700;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+    animation: yellowPulse 3s ease-in-out infinite;
+  }
+  
+  /* Colorful card variants */
+  .card-common {
+    @apply border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+    background: linear-gradient(135deg, hsl(var(--common)) 0%, hsl(var(--common)) 100%);
+  }
+  
+  .card-rare {
+    @apply border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+    background: linear-gradient(135deg, hsl(var(--rare)) 0%, hsl(var(--rare)) 100%);
+  }
+  
+  .card-epic {
+    @apply border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+    background: linear-gradient(135deg, hsl(var(--epic)) 0%, hsl(var(--epic)) 100%);
+  }
+  
+  .card-legendary {
+    @apply border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+    background: linear-gradient(135deg, hsl(var(--legendary)) 0%, hsl(var(--legendary)) 100%);
+  }
+  
+  .badge-common {
+    @apply border-2 border-black px-2 py-1 text-xs font-black uppercase;
+    background-color: hsl(var(--common));
+    color: hsl(var(--common-foreground));
+  }
+  
+  .badge-rare {
+    @apply border-2 border-black px-2 py-1 text-xs font-black uppercase;
+    background-color: hsl(var(--rare));
+    color: hsl(var(--rare-foreground));
+  }
+  
+  .badge-epic {
+    @apply border-2 border-black px-2 py-1 text-xs font-black uppercase;
+    background-color: hsl(var(--epic));
+    color: hsl(var(--epic-foreground));
+  }
+  
+  .badge-legendary {
+    @apply border-2 border-black px-2 py-1 text-xs font-black uppercase;
+    background-color: hsl(var(--legendary));
+    color: hsl(var(--legendary-foreground));
+  }
+
+  /* Animation improvements */
+  .animate-pixel-bounce {
+    animation: pixelBounce 2s infinite;
+  }
+
+  .animate-pixel-glow {
+    animation: pixelGlow 3s ease-in-out infinite alternate;
+  }
+  
+  /* Floating cube animations */
+  .animate-float-1 {
+    animation: float1 6s ease-in-out infinite;
+  }
+  
+  .animate-float-2 {
+    animation: float2 8s ease-in-out infinite;
+  }
+  
+  .animate-float-3 {
+    animation: float3 7s ease-in-out infinite;
+  }
+}
+
+/* Pixel art specific styles */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Trading card specific styles */
+.trading-card-pixel {
+  @apply overflow-hidden;
+  width: 200px;
+  height: 280px;
+}
+
+.trading-card-pixel img {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Custom animations */
+@keyframes pixelBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pixelGlow {
+  from {
+    box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
+  }
+  to {
+    box-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary));
+  }
+}
+
+/* Yellow pulse animation for main title */
+@keyframes yellowPulse {
+  0% {
+    opacity: 0.7;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1), 0 0 10px #FFD700;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1), 0 0 20px #FFD700, 0 0 30px #FFD700;
+  }
+  100% {
+    opacity: 0.7;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1), 0 0 10px #FFD700;
+  }
+}
+
+/* Floating cube animations */
+@keyframes float1 {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-30px) rotate(270deg);
+  }
+}
+
+@keyframes float2 {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(20px) rotate(-90deg);
+  }
+  50% {
+    transform: translateX(-10px) rotate(-180deg);
+  }
+  75% {
+    transform: translateX(30px) rotate(-270deg);
+  }
+}
+
+@keyframes float3 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(15px, -25px) rotate(45deg);
+  }
+  50% {
+    transform: translate(-20px, -15px) rotate(90deg);
+  }
+  75% {
+    transform: translate(25px, -5px) rotate(135deg);
+  }
+}
