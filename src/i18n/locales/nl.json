@@ -1,0 +1,39 @@
+{
+  "navigation": {
+    "home": "Home",
+    "series": "Series",
+    "sets": "Sets",
+    "cards": "Kaarten",
+    "shop": "Winkel",
+    "collection": "Collectie",
+    "wishlist": "Verlanglijst",
+    "cart": "Winkelwagen",
+    "profile": "Profiel",
+    "settings": "Instellingen",
+    "auth": "Inloggen",
+    "signOut": "Uitloggen",
+    "admin": "Beheerder",
+    "proCatches": "Pro Vangsten",
+    "accessories": "Accessoires",
+    "orders": "Bestellingen",
+    "navigation": "Navigatie",
+    "user": "Gebruiker"
+  },
+  "home": {
+    "welcome": "Welkom bij Catch Collect",
+    "subtitle": "Jouw plek voor Pokemon kaarten, accessoires en meer!",
+    "toShop": "Naar winkel",
+    "discoverCards": "Ontdek kaarten",
+    "pokemonSeries": "Pokemon Series",
+    "featuredCards": "Aanbevolen kaarten",
+    "showAllSeries": "Toon alle series",
+    "browseAllCards": "Bekijk alle kaarten",
+    "readyForAdventure": "Klaar voor je volgende avontuur?",
+    "adventureSubtitle": "Ontdek zeldzame kaarten, maak je collectie compleet en word de ultieme Catch Collect Kampioen!",
+    "myCollection": "Mijn collectie",
+    "myWishlist": "Mijn verlanglijst",
+    "mainTitle": "RUILKAARTEN VERZAMELEN!",
+    "mainSubtitle": "ONTDEK ZELDZAME RUILKAARTEN EN BREID JE COLLECTIE UIT",
+    "shopNow": "NU WINKELEN"
+  }
+} 
