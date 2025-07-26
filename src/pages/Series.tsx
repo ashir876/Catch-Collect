@@ -18,17 +18,15 @@ const Series = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch series data with pagination
+  // Fetch series data with pagination (all languages)
   const { data: seriesData, isLoading, error } = useSeriesData({
-    language: 'en',
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
   });
 
-  // Fetch total count for pagination
+  // Fetch total count for pagination (all languages)
   const { data: totalCount = 0 } = useSeriesCount({
-    language: 'en',
     searchTerm: searchTerm || undefined
   });
 

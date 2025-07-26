@@ -11,7 +11,7 @@ export interface SeriesDataOptions {
 
 export const useSeriesData = (options: SeriesDataOptions = {}) => {
   const { 
-    language = 'de', 
+    language, 
     limit, 
     offset = 0, 
     searchTerm 
@@ -25,8 +25,12 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
       let query = supabase
         .from('series')
         .select('*')
-        .eq('language', language)
         .order('series_name');
+
+      // Only filter by language if explicitly provided
+      if (language) {
+        query = query.eq('language', language);
+      }
 
       if (searchTerm) {
         query = query.ilike('series_name', `%${searchTerm}%`);
@@ -51,7 +55,7 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
 
 // Hook to get total count of series for pagination
 export const useSeriesCount = (options: Omit<SeriesDataOptions, 'limit' | 'offset'> = {}) => {
-  const { language = 'de', searchTerm } = options;
+  const { language, searchTerm } = options;
 
   return useQuery({
     queryKey: ['series-count', language, searchTerm],
@@ -60,8 +64,12 @@ export const useSeriesCount = (options: Omit<SeriesDataOptions, 'limit' | 'offse
       
       let query = supabase
         .from('series')
-        .select('*', { count: 'exact', head: true })
-        .eq('language', language);
+        .select('*', { count: 'exact', head: true });
+
+      // Only filter by language if explicitly provided
+      if (language) {
+        query = query.eq('language', language);
+      }
 
       if (searchTerm) {
         query = query.ilike('series_name', `%${searchTerm}%`);

@@ -12,7 +12,7 @@ export interface CardsDataOptions {
 
 export const useCardsData = (options: CardsDataOptions = {}) => {
   const { 
-    language = 'de', 
+    language, 
     setId, 
     limit, 
     offset = 0, 
@@ -27,8 +27,12 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
       let query = supabase
         .from('cards')
         .select('*')
-        .eq('language', language)
         .order('name');
+
+      // Only filter by language if explicitly provided
+      if (language) {
+        query = query.eq('language', language);
+      }
 
       if (setId) {
         query = query.eq('set_id', setId);
@@ -57,7 +61,7 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
 
 // Hook to get total count of cards for pagination
 export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'> = {}) => {
-  const { language = 'de', setId, searchTerm } = options;
+  const { language, setId, searchTerm } = options;
 
   return useQuery({
     queryKey: ['cards-count', language, setId, searchTerm],
@@ -66,8 +70,12 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
       
       let query = supabase
         .from('cards')
-        .select('*', { count: 'exact', head: true })
-        .eq('language', language);
+        .select('*', { count: 'exact', head: true });
+
+      // Only filter by language if explicitly provided
+      if (language) {
+        query = query.eq('language', language);
+      }
 
       if (setId) {
         query = query.eq('set_id', setId);

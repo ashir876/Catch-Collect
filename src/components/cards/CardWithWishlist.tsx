@@ -10,10 +10,11 @@ interface CardWithWishlistProps {
     types?: string[];
     image_url?: string;
     description?: string;
+    language?: string;
   };
   isInWishlist: boolean;
-  onAddToCollection: (cardId: string, cardName: string) => void;
-  onAddToWishlist: (cardId: string, cardName: string) => void;
+  onAddToCollection: (cardId: string, cardName: string, cardLanguage?: string) => void;
+  onAddToWishlist: (cardId: string, cardName: string, cardLanguage?: string) => void;
   mapDatabaseRarityToComponent: (rarity: string) => "common" | "rare" | "epic" | "legendary";
 }
 
@@ -40,9 +41,8 @@ const CardWithWishlist = ({
       inWishlist={isInWishlist}
       description={card.description || ''}
       hidePriceAndBuy={true}
-      onAddToCollection={() => onAddToCollection(card.card_id, card.name || 'Unknown Card')}
-      onAddToWishlist={() => onAddToWishlist(card.card_id, card.name || 'Unknown Card')}
-      onToggleWishlist={() => onAddToWishlist(card.card_id, card.name || 'Unknown Card')}
+      onAddToCollection={() => onAddToCollection(card.card_id, card.name || 'Unknown Card', card.language)}
+      onAddToWishlist={() => onAddToWishlist(card.card_id, card.name || 'Unknown Card', card.language)}
     />
   );
 };

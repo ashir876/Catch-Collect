@@ -225,7 +225,6 @@ const TradingCard = ({
                       className="w-8 h-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleWishlist?.(id);
                         onAddToWishlist?.(id);
                       }}
                     >

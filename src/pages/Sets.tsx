@@ -23,18 +23,16 @@ const Sets = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch sets data with pagination
+  // Fetch sets data with pagination (all languages)
   const { data: setsData, isLoading, error } = useSetsData({
-    language: 'en',
     seriesId: seriesFilter || undefined,
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
   });
 
-  // Fetch total count for pagination
+  // Fetch total count for pagination (all languages)
   const { data: totalCount = 0 } = useSetsCount({
-    language: 'en',
     seriesId: seriesFilter || undefined,
     searchTerm: searchTerm || undefined
   });

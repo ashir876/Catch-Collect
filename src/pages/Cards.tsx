@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { COLLECTION_QUERY_KEY } from "@/hooks/useCollectionData";
 import { useWishlistData } from "@/hooks/useWishlistData";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
+import React from "react"; // Added missing import
 
 // Helper function to map database rarity to component rarity
 const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
@@ -24,10 +25,12 @@ const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare" | "ep
   switch (normalizedRarity) {
     // English terms
     case "common":
+    case "uncommon":
       return "common";
     case "rare":
       return "rare";
     case "ultra rare":
+    case "hyper rare":
       return "epic";
     case "legendary":
     case "secret rare":
@@ -55,6 +58,16 @@ const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare" | "ep
     case "keine":
       return "common";
     
+    // French terms
+    case "commune":
+    case "peu commune":
+    case "incomum":
+      return "common";
+    
+    // Portuguese terms
+    case "comum":
+      return "common";
+    
     default:
       console.warn(`Unknown database rarity: ${dbRarity}, defaulting to common`);
       return "common";
@@ -77,21 +90,16 @@ const Cards = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Get current language from i18n
-  const currentLanguage = i18n.language === 'de' ? 'de' : 'en';
-
-  // Fetch cards data with pagination
+  // Fetch cards data with pagination (all languages)
   const { data: cardsData, isLoading, error } = useCardsData({
-    language: currentLanguage,
     setId: setFilter || undefined,
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
   });
 
-  // Fetch total count for pagination
+  // Fetch total count for pagination (all languages)
   const { data: totalCount = 0 } = useCardsCount({
-    language: currentLanguage,
     setId: setFilter || undefined,
     searchTerm: searchTerm || undefined
   });
@@ -119,7 +127,48 @@ const Cards = () => {
     return matchesRarity;
   }) || [];
 
-  const handleAddToCollection = async (cardId: string, cardName: string) => {
+  // Test function to check database connectivity
+  const testDatabaseConnection = async () => {
+    console.log('Testing database connection...');
+    
+    try {
+      // Test cards table
+      const { data: cardsTest, error: cardsError } = await supabase
+        .from('cards')
+        .select('card_id, name, language')
+        .limit(1);
+      
+      console.log('Cards table test:', { data: cardsTest, error: cardsError });
+      
+      // Test card_wishlist table
+      const { data: wishlistTest, error: wishlistError } = await supabase
+        .from('card_wishlist')
+        .select('*')
+        .limit(1);
+      
+      console.log('Card wishlist table test:', { data: wishlistTest, error: wishlistError });
+      
+      // Test card_collections table
+      const { data: collectionsTest, error: collectionsError } = await supabase
+        .from('card_collections')
+        .select('*')
+        .limit(1);
+      
+      console.log('Card collections table test:', { data: collectionsTest, error: collectionsError });
+      
+    } catch (error) {
+      console.error('Database connection test error:', error);
+    }
+  };
+
+  // Run the test when component mounts
+  React.useEffect(() => {
+    testDatabaseConnection();
+  }, []);
+
+  const handleAddToCollection = async (cardId: string, cardName: string, cardLanguage?: string) => {
+    console.log('handleAddToCollection called with:', { cardId, cardName, cardLanguage, user: user?.id });
+    
     if (!user) {
       toast({
         title: t('auth.loginRequired'),
@@ -151,15 +200,19 @@ const Cards = () => {
         return;
       }
 
-      // Get card data to insert into collection
-      const { data: cardData, error: cardError } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('card_id', cardId)
-        .eq('language', currentLanguage)
-        .single();
+      // Get card data to insert into collection - use language if available to ensure unique card
+      let query = supabase.from('cards').select('*').eq('card_id', cardId);
+      if (cardLanguage) {
+        query = query.eq('language', cardLanguage);
+      }
+      const { data: cardData, error: cardError } = await query.single();
 
-      if (cardError) throw cardError;
+      if (cardError) {
+        console.error('Error fetching card data for collection:', cardError);
+        throw cardError;
+      }
+
+      console.log('Card data for collection:', cardData);
 
       // Add to collection
       const { error } = await supabase
@@ -167,7 +220,7 @@ const Cards = () => {
         .insert({
           user_id: user.id,
           card_id: cardId,
-          language: currentLanguage,
+          language: cardData.language,
           name: cardData.name,
           set_name: cardData.set_name,
           set_id: cardData.set_id,
@@ -183,7 +236,10 @@ const Cards = () => {
           retreat: cardData.retreat
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting collection item:', error);
+        throw error;
+      }
 
       // Optimistically update the collection cache
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), (oldData: any) => {
@@ -194,7 +250,7 @@ const Cards = () => {
           card_id: cardId,
           user_id: user.id,
           created_at: new Date().toISOString(),
-          language: currentLanguage,
+          language: cardData.language,
           cards: cardData
         };
         
@@ -210,15 +266,24 @@ const Cards = () => {
       });
     } catch (error) {
       console.error('Error adding to collection:', error);
+      
+      // Show more specific error message
+      let errorMessage = t('messages.collectionError');
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: t('messages.error'),
-        description: t('messages.collectionError'),
+        description: errorMessage,
         variant: "destructive",
       });
     }
   };
 
-  const handleAddToWishlist = async (cardId: string, cardName: string) => {
+  const handleAddToWishlist = async (cardId: string, cardName: string, cardLanguage?: string) => {
+    console.log('handleAddToWishlist called with:', { cardId, cardName, cardLanguage, user: user?.id });
+    
     if (!user) {
       toast({
         title: t('auth.loginRequired'),
@@ -230,18 +295,18 @@ const Cards = () => {
 
     try {
       // First check if the card is already in the wishlist
-      const { data: existingItem, error: checkError } = await supabase
+      const { data: existingItems, error: checkError } = await supabase
         .from('card_wishlist')
         .select('id')
         .eq('user_id', user.id)
-        .eq('card_id', cardId)
-        .single();
+        .eq('card_id', cardId);
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (checkError) {
+        console.error('Error checking existing wishlist item:', checkError);
         throw checkError;
       }
 
-      if (existingItem) {
+      if (existingItems && existingItems.length > 0) {
         // Card is already in wishlist
         toast({
           title: t('messages.alreadyInWishlist'),
@@ -250,16 +315,37 @@ const Cards = () => {
         return;
       }
 
+      // Get card data to get the language - use language if available to ensure unique card
+      let query = supabase.from('cards').select('language').eq('card_id', cardId);
+      if (cardLanguage) {
+        query = query.eq('language', cardLanguage);
+      }
+      const { data: cardData, error: cardError } = await query.single();
+
+      if (cardError) {
+        console.error('Error fetching card data:', cardError);
+        throw cardError;
+      }
+
+      console.log('Card data for wishlist:', cardData);
+
       // Add to wishlist
+      const insertData = {
+        user_id: user.id,
+        card_id: cardId,
+        language: cardData.language || 'en' // Default to 'en' if language is not available
+      };
+      
+      console.log('Inserting wishlist item:', insertData);
+      
       const { error } = await supabase
         .from('card_wishlist')
-        .insert({
-          user_id: user.id,
-          card_id: cardId,
-          language: currentLanguage
-        });
+        .insert(insertData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting wishlist item:', error);
+        throw error;
+      }
 
       // Optimistically update the wishlist cache
       queryClient.setQueryData(['wishlist', user.id], (oldData: any) => {
@@ -270,7 +356,7 @@ const Cards = () => {
           card_id: cardId,
           user_id: user.id,
           created_at: new Date().toISOString(),
-          language: currentLanguage,
+          language: cardData.language,
           priority: 1, // default medium priority
           card: {
             name: cardName,
@@ -297,9 +383,15 @@ const Cards = () => {
       // Revert optimistic update on error
       queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
       
+      // Show more specific error message
+      let errorMessage = t('messages.wishlistError');
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: t('messages.error'),
-        description: t('messages.wishlistError'),
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -414,7 +506,7 @@ const Cards = () => {
             
             return (
               <CardWithWishlist
-                key={card.card_id}
+                key={`${card.card_id}-${card.language}`}
                 card={card}
                 isInWishlist={isInWishlist}
                 onAddToCollection={handleAddToCollection}

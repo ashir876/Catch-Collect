@@ -12,7 +12,7 @@ export interface SetsDataOptions {
 
 export const useSetsData = (options: SetsDataOptions = {}) => {
   const { 
-    language = 'de', 
+    language, 
     seriesId, 
     limit, 
     offset = 0, 
@@ -27,8 +27,12 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
       let query = supabase
         .from('sets')
         .select('*')
-        .eq('language', language)
         .order('name');
+
+      // Only filter by language if explicitly provided
+      if (language) {
+        query = query.eq('language', language);
+      }
 
       if (seriesId) {
         query = query.eq('series_id', seriesId);
@@ -57,7 +61,7 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
 
 // Hook to get total count of sets for pagination
 export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> = {}) => {
-  const { language = 'de', seriesId, searchTerm } = options;
+  const { language, seriesId, searchTerm } = options;
 
   return useQuery({
     queryKey: ['sets-count', language, seriesId, searchTerm],
@@ -66,8 +70,12 @@ export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> 
       
       let query = supabase
         .from('sets')
-        .select('*', { count: 'exact', head: true })
-        .eq('language', language);
+        .select('*', { count: 'exact', head: true });
+
+      // Only filter by language if explicitly provided
+      if (language) {
+        query = query.eq('language', language);
+      }
 
       if (seriesId) {
         query = query.eq('series_id', seriesId);
