@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useWishlistCount } from "@/hooks/useWishlistData";
+import { useCartCount } from "@/hooks/useCartCount";
 
 interface NavItem {
   path: string;
@@ -35,6 +37,10 @@ const Navigation = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
+  
+  // Get dynamic counts
+  const { data: wishlistCount = 0 } = useWishlistCount();
+  const { data: cartCount = 0 } = useCartCount();
 
   const mainNavItems: NavItem[] = [
     { path: "/", label: t('navigation.home'), icon: Home },
@@ -46,8 +52,8 @@ const Navigation = () => {
 
   const authenticatedNavItems: NavItem[] = [
     { path: "/collection", label: t('navigation.collection'), icon: Trophy },
-    { path: "/wishlist", label: t('navigation.wishlist'), icon: Heart, badge: 3 },
-    { path: "/cart", label: t('navigation.cart'), icon: ShoppingCart, badge: 2 },
+    { path: "/wishlist", label: t('navigation.wishlist'), icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
+    { path: "/cart", label: t('navigation.cart'), icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
     { path: "/profile", label: t('navigation.profile'), icon: User },
     { path: "/settings", label: t('navigation.settings'), icon: Settings }
   ];

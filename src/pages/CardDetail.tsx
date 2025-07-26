@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CardData {
   card_id: string;
@@ -43,6 +44,7 @@ const CardDetail = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchCard = async () => {
@@ -93,7 +95,7 @@ const CardDetail = () => {
 
     try {
       const { error } = await supabase
-        .from('user_collections')
+        .from('card_collections')
         .insert({
           user_id: user.id,
           card_id: card.card_id,
@@ -175,6 +177,10 @@ const CardDetail = () => {
         });
 
       if (error) throw error;
+
+      // Invalidate cart queries to update navigation badge
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-count'] });
 
       toast({
         title: t('messages.addedToCart'),

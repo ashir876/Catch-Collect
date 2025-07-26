@@ -51,6 +51,7 @@ export const useCartActions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-count'] });
       toast({
         title: t('messages.addedToCart'),
         description: t('cart.itemAdded'),
@@ -73,6 +74,7 @@ export const useCartActions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-count'] });
     }
   });
 
@@ -83,6 +85,7 @@ export const useCartActions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-count'] });
       toast({
         title: t('messages.removedFromCart'),
         description: t('cart.itemRemoved'),
