@@ -65,6 +65,7 @@
     "rarity": "Seltenheit",
     "unknownCard": "Unbekannte Karte",
     "addToCollection": "Zur Sammlung hinzufügen",
+    "removeFromCollection": "Von Sammlung entfernen",
     "addToWishlist": "Zur Wunschliste hinzufügen",
     "removeFromWishlist": "Von Wunschliste entfernen"
   },
@@ -131,6 +132,7 @@
     "alreadyInCollection": "Bereits in Sammlung",
     "alreadyInCollectionDescription": "ist bereits in deiner Sammlung.",
     "wishlistRemoveError": "Karte konnte nicht von der Wunschliste entfernt werden.",
+    "collectionRemoveError": "Karte konnte nicht von der Sammlung entfernt werden.",
     "cartError": "Karte konnte nicht in den Warenkorb gelegt werden.",
     "loginSuccess": "Erfolgreich angemeldet!",
     "logoutSuccess": "Erfolgreich abgemeldet!",
@@ -138,6 +140,7 @@
     "priceRequest": "Preisanfrage",
     "priceRequestSent": "Deine Preisanfrage für wurde gesendet",
     "hasBeenRemovedFromWishlist": "wurde von deiner Wunschliste entfernt.",
+    "hasBeenRemovedFromCollection": "wurde von deiner Sammlung entfernt.",
     "hasBeenAddedToCart": "wurde zu deinem Warenkorb hinzugefügt."
   },
   "series": {

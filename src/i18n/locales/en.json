@@ -65,6 +65,7 @@
     "rarity": "Rarity",
     "unknownCard": "Unknown Card",
     "addToCollection": "Add to Collection",
+    "removeFromCollection": "Remove from Collection",
     "addToWishlist": "Add to Wishlist",
     "removeFromWishlist": "Remove from Wishlist"
   },
@@ -131,6 +132,7 @@
     "alreadyInCollection": "Already in Collection",
     "alreadyInCollectionDescription": "is already in your collection.",
     "wishlistRemoveError": "Card could not be removed from wishlist.",
+    "collectionRemoveError": "Card could not be removed from collection.",
     "cartError": "Card could not be added to cart.",
     "loginSuccess": "Successfully logged in!",
     "logoutSuccess": "Successfully logged out!",
@@ -138,6 +140,7 @@
     "priceRequest": "Price Request",
     "priceRequestSent": "Your price request has been sent for",
     "hasBeenRemovedFromWishlist": "has been removed from your wishlist.",
+    "hasBeenRemovedFromCollection": "has been removed from your collection.",
     "hasBeenAddedToCart": "has been added to your cart."
   },
   "series": {

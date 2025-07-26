@@ -7,13 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import TradingCard from "@/components/cards/TradingCard";
 import { useTranslation } from "react-i18next";
-import { useCollectionData } from "@/hooks/useCollectionData";
+import { useCollectionData, COLLECTION_QUERY_KEY } from "@/hooks/useCollectionData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Collection = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "stats">("stats");
 
@@ -69,6 +74,46 @@ const Collection = () => {
       percentage: 0 // This would need total cards in set
     };
   }).slice(0, 5); // Show top 5 sets
+
+  const handleRemoveFromCollection = async (cardId: string, cardName: string) => {
+    if (!user) return;
+    
+    // Optimistic update - remove the card from the cache immediately
+    const previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user.id));
+    queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), (old: any) => {
+      if (!old) return old;
+      return old.filter((item: any) => item.card_id !== cardId);
+    });
+    
+    try {
+      const { error } = await supabase
+        .from('card_collections')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('card_id', cardId);
+        
+      if (error) throw error;
+      
+      // Invalidate and refetch the collection data to ensure consistency
+      await queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user.id) });
+      
+      toast({
+        title: t("messages.removedFromCollection"),
+        description: `${cardName} ${t("messages.hasBeenRemovedFromCollection")}`,
+      });
+    } catch (err) {
+      console.error('Error removing from collection:', err);
+      
+      // Revert optimistic update on error
+      queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), previousData);
+      
+      toast({
+        title: t("messages.error"),
+        description: t("messages.collectionRemoveError"),
+        variant: "destructive"
+      });
+    }
+  };
 
   // Show login prompt if user is not authenticated
   if (!user) {
@@ -331,11 +376,13 @@ const Collection = () => {
               <div key={card.id} className="relative">
                 <TradingCard
                   {...card}
-                  onAddToCollection={() => {}}
+                  onAddToCollection={() => handleRemoveFromCollection(card.id, card.name)}
                   onAddToWishlist={() => {}}
                   onAddToCart={() => {}}
+                  hidePriceAndBuy={true}
+                  disableHoverEffects={true}
                 />
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 z-30">
                   <Badge variant="secondary" className="text-xs">
                     {card.condition}
                   </Badge>

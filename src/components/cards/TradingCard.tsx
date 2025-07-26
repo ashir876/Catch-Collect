@@ -34,6 +34,7 @@ interface TradingCardProps {
   isWishlisted?: boolean;
   // Display options
   hidePriceAndBuy?: boolean;
+  disableHoverEffects?: boolean;
   // Action handlers
   onAddToCart?: (id?: string) => void;
   onAddToCollection?: (id?: string) => void;
@@ -117,6 +118,7 @@ const TradingCard = ({
   isWishlisted = false,
   // Display options
   hidePriceAndBuy = false,
+  disableHoverEffects = false,
   // Action handlers
   onAddToCart,
   onAddToCollection,
@@ -145,12 +147,12 @@ const TradingCard = ({
     <Card 
       className={cn(
         "group relative overflow-hidden transition-all duration-300 cursor-pointer",
-        "hover:scale-105 hover:shadow-card",
+        !disableHoverEffects && "hover:scale-105 hover:shadow-card",
         rarityInfo.glow && isHovered && rarityInfo.glow,
         owned && "ring-2 ring-accent ring-opacity-50"
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !disableHoverEffects && setIsHovered(true)}
+      onMouseLeave={() => !disableHoverEffects && setIsHovered(false)}
       onClick={() => onViewDetails?.(id)}
     >
       {/* Priority Badge (Wishlist) */}
@@ -169,22 +171,7 @@ const TradingCard = ({
           </Badge>
         </div>
       )}
-      {/* Wishlist Overlay Actions */}
-      {(onRequestPrice || onRemoveFromWishlist) && (
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center gap-2 z-30">
-          {onRequestPrice && (
-            <Button size="sm" variant="secondary" onClick={e => { e.stopPropagation(); onRequestPrice(); }}>
-              <Star className="h-4 w-4 mr-1" />
-              Request Price
-            </Button>
-          )}
-          {onRemoveFromWishlist && (
-            <Button size="sm" variant="destructive" onClick={e => { e.stopPropagation(); onRemoveFromWishlist(); }}>
-              <Heart className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      )}
+      {/* Wishlist Overlay Actions - Removed for cleaner UI */}
       {/* Rarity Gradient Overlay */}
       <div className={cn(
         "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
@@ -197,7 +184,10 @@ const TradingCard = ({
           <img
             src={cardImage}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+            className={cn(
+              "w-full h-full object-cover transition-transform duration-300",
+              !disableHoverEffects && "group-hover:scale-110"
+            )}
           />
           
           {/* Status Badges */}
@@ -321,14 +311,14 @@ const TradingCard = ({
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant={owned ? "destructive" : "outline"}
                   onClick={(e) => {
                     e.stopPropagation();
                     onAddToCollection?.(id);
                   }}
                 >
                   <Star className="w-4 h-4 mr-1" />
-                  {t('cards.addToCollection')}
+                  {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
                 </Button>
               </div>
             </div>

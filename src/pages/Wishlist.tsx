@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search, Heart, ShoppingCart, TrendingUp, Trash2, MessageSquare, Clock, AlertCircle } from "lucide-react";
+import { Search, Heart, TrendingUp, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Map priority number to text
 const getPriorityText = (priority: number, t: any) => {
@@ -50,6 +51,7 @@ const Wishlist = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
@@ -94,6 +96,21 @@ const Wishlist = () => {
   const handleRemoveFromWishlist = async (cardId: string, cardName: string) => {
     if (!user) return;
     
+    // Optimistic update - remove the card from all wishlist caches immediately
+    const wishlistQueryKey = ['wishlist', user.id];
+    const previousData = queryClient.getQueryData(wishlistQueryKey);
+    
+    queryClient.setQueryData(wishlistQueryKey, (old: any) => {
+      if (!old) return old;
+      return old.filter((item: any) => item.card_id !== cardId);
+    });
+    
+    // Also update the count query
+    queryClient.setQueryData(['wishlist', user.id, undefined, undefined, undefined, undefined], (old: any) => {
+      if (typeof old === 'number') return Math.max(0, old - 1);
+      return old;
+    });
+    
     try {
       const { error } = await supabase
         .from('card_wishlist')
@@ -103,15 +120,19 @@ const Wishlist = () => {
         
       if (error) throw error;
       
+      // Invalidate all wishlist queries to refetch the data
+      await queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      
       toast({
         title: t("messages.removedFromWishlist"),
         description: `${cardName} ${t("messages.hasBeenRemovedFromWishlist")}`,
       });
-      
-      // Manually trigger a refetch of the wishlist data
-      // This will be handled by the useQuery invalidation
     } catch (err) {
       console.error('Error removing from wishlist:', err);
+      
+      // Revert optimistic update on error
+      queryClient.setQueryData(wishlistQueryKey, previousData);
+      
       toast({
         title: t("messages.error"),
         description: t("messages.wishlistRemoveError"),
@@ -120,19 +141,7 @@ const Wishlist = () => {
     }
   };
 
-  const handleAddToCart = (cardId: string, cardName: string) => {
-    toast({
-      title: t("messages.addedToCart"),
-      description: `${cardName} ${t("messages.hasBeenAddedToCart")}`,
-    });
-  };
-
-  const handleRequestPrice = (cardId: string, cardName: string) => {
-    toast({
-      title: t("messages.priceRequest"),
-      description: `${t("messages.priceRequestSent")} ${cardName}`,
-    });
-  };
+  // Removed handleAddToCart and handleRequestPrice functions for cleaner UI
 
   // Create card objects for the TradingCard component from wishlist items
   const createCardObject = (item: WishlistItem) => {
@@ -331,10 +340,6 @@ const Wishlist = () => {
               {...card}
               onAddToCollection={() => {}}
               onAddToWishlist={() => handleRemoveFromWishlist(item.card_id, card.name)}
-              onAddToCart={() => handleAddToCart(item.card_id, card.name)}
-              // New overlay actions for wishlist
-              onRequestPrice={() => handleRequestPrice(item.card_id, card.name)}
-              onRemoveFromWishlist={() => handleRemoveFromWishlist(item.card_id, card.name)}
               // Pass priority and price for badges
               priority={item.priority === 2 ? "high" : item.priority === 1 ? "medium" : "low"}
               priceAvailable={!!item.card?.price}
@@ -342,6 +347,7 @@ const Wishlist = () => {
               getPriorityText={() => getPriorityText(item.priority, t)}
               getPriorityColor={() => getPriorityColor(item.priority)}
               inWishlist={true}
+              hidePriceAndBuy={true}
             />
           );
         })}
@@ -369,19 +375,7 @@ const Wishlist = () => {
         </div>
       )}
 
-      {/* Action Buttons */}
-      {totalCount > 0 && (
-        <div className="flex justify-center gap-4 mt-8 pt-8 border-t">
-          <Button variant="outline" size="lg">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            {t("wishlist.requestAllPrices")}
-          </Button>
-          <Button size="lg">
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            {t("wishlist.buyAvailableCards")}
-          </Button>
-        </div>
-      )}
+      {/* Action Buttons - Removed for cleaner UI */}
     </div>
   );
 };
