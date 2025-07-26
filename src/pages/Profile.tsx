@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 // Mock user data
 const userData = {
@@ -51,6 +52,7 @@ const recentActivity = [
 ];
 
 const Profile = () => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: userData.name,
@@ -94,17 +96,17 @@ const Profile = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-foreground mb-4">Mein Profil</h1>
+        <h1 className="text-4xl font-bold text-foreground mb-4">{t('profile.title')}</h1>
         <p className="text-muted-foreground text-lg">
-          Verwalte dein Konto und verfolge deine Sammelfortschritte
+          {t('profile.subtitle')}
         </p>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-8">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Übersicht</TabsTrigger>
-          <TabsTrigger value="settings">Einstellungen</TabsTrigger>
-          <TabsTrigger value="activity">Aktivitäten</TabsTrigger>
+          <TabsTrigger value="overview">{t('profile.overview')}</TabsTrigger>
+          <TabsTrigger value="settings">{t('profile.settings')}</TabsTrigger>
+          <TabsTrigger value="activity">{t('profile.activity')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-8">
@@ -122,13 +124,13 @@ const Profile = () => {
                   <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold">{userData.name}</h2>
                     <Badge variant={getCategoryColor(userData.customerCategory)} className="text-sm">
-                      {userData.customerCategory} Collector
+                      {userData.customerCategory} {t('profile.collector')}
                     </Badge>
                   </div>
                   <p className="text-muted-foreground">{userData.email}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    Mitglied seit {new Date(userData.memberSince).toLocaleDateString('de-DE')}
+                    {t('profile.memberSince')} {new Date(userData.memberSince).toLocaleDateString()}
                   </div>
                 </div>
               </div>
@@ -139,56 +141,56 @@ const Profile = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Karten</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('profile.cards')}</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userData.stats.totalCards.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">in deiner Sammlung</p>
+                <p className="text-xs text-muted-foreground">{t('profile.inCollection')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sammlungswert</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('profile.collectionValue')}</CardTitle>
                 <Trophy className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">CHF {userData.stats.totalValue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">geschätzter Wert</p>
+                <p className="text-xs text-muted-foreground">{t('profile.estimatedValue')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sets komplett</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('profile.completedSets')}</CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userData.stats.setsCompleted}</div>
-                <p className="text-xs text-muted-foreground">vollständige Sets</p>
+                <p className="text-xs text-muted-foreground">{t('profile.completeSets')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Wunschliste</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('profile.wishlist')}</CardTitle>
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userData.stats.wishlistItems}</div>
-                <p className="text-xs text-muted-foreground">gewünschte Karten</p>
+                <p className="text-xs text-muted-foreground">{t('profile.desiredCards')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Treuepunkte</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('profile.loyaltyPoints')}</CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{userData.loyaltyPoints}</div>
-                <p className="text-xs text-muted-foreground">Punkte gesammelt</p>
+                <p className="text-xs text-muted-foreground">{t('profile.pointsCollected')}</p>
               </CardContent>
             </Card>
           </div>
@@ -196,27 +198,27 @@ const Profile = () => {
           {/* Loyalty Program */}
           <Card>
             <CardHeader>
-              <CardTitle>Treueprogramm</CardTitle>
+              <CardTitle>{t('profile.loyaltyProgram')}</CardTitle>
               <CardDescription>
-                Sammle Punkte bei jedem Kauf (CHF 10 = 1 Punkt) und steige in höhere Kategorien auf
+                {t('profile.loyaltyDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span>Aktuelle Kategorie:</span>
+                  <span>{t('profile.currentCategory')}:</span>
                   <Badge variant={getCategoryColor(userData.customerCategory)}>
-                    {userData.customerCategory} Collector
+                    {userData.customerCategory} {t('profile.collector')}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span>Aktuelle Punkte:</span>
-                  <span className="font-bold">{userData.loyaltyPoints} Punkte</span>
+                  <span>{t('profile.currentPoints')}:</span>
+                  <span className="font-bold">{userData.loyaltyPoints} {t('profile.points')}</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Bis zur nächsten Kategorie:</span>
-                    <span>53 Punkte</span>
+                    <span>{t('profile.toNextCategory')}:</span>
+                    <span>53 {t('profile.points')}</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
                     <div className="bg-primary h-2 rounded-full" style={{ width: "82%" }}></div>
@@ -230,15 +232,15 @@ const Profile = () => {
         <TabsContent value="settings" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Persönliche Informationen</CardTitle>
+              <CardTitle>{t('profile.personalInfo')}</CardTitle>
               <CardDescription>
-                Aktualisiere deine Kontoinformationen
+                {t('profile.updateAccountInfo')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t('profile.name')}</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -247,7 +249,7 @@ const Profile = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-Mail</Label>
+                  <Label htmlFor="email">{t('profile.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -260,15 +262,15 @@ const Profile = () => {
               <div className="flex gap-2">
                 {isEditing ? (
                   <>
-                    <Button onClick={handleSave}>Speichern</Button>
+                    <Button onClick={handleSave}>{t('common.save')}</Button>
                     <Button variant="outline" onClick={() => setIsEditing(false)}>
-                      Abbrechen
+                      {t('common.cancel')}
                     </Button>
                   </>
                 ) : (
                   <Button onClick={() => setIsEditing(true)}>
                     <Settings className="mr-2 h-4 w-4" />
-                    Bearbeiten
+                    {t('common.edit')}
                   </Button>
                 )}
               </div>
@@ -279,9 +281,9 @@ const Profile = () => {
         <TabsContent value="activity" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Letzte Aktivitäten</CardTitle>
+              <CardTitle>{t('profile.recentActivity')}</CardTitle>
               <CardDescription>
-                Deine letzten Aktionen und Transaktionen
+                {t('profile.recentActivityDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -293,7 +295,7 @@ const Profile = () => {
                       <div>
                         <p className="font-medium">{activity.description}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(activity.date).toLocaleDateString('de-DE')}
+                          {new Date(activity.date).toLocaleDateString()}
                         </p>
                       </div>
                     </div>

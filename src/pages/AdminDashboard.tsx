@@ -19,8 +19,10 @@ import {
   Calendar
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const [newCard, setNewCard] = useState({
     name: "",
     series: "",
@@ -114,13 +116,13 @@ const AdminDashboard = () => {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Karten im Lager</CardTitle>
+                              <CardTitle className="text-sm font-medium">{t('admin.cardsInStock')}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">8,942</div>
               <p className="text-xs text-muted-foreground">
-                247 verschiedene Karten
+                {t('admin.differentCards')}
               </p>
             </CardContent>
           </Card>
@@ -129,7 +131,7 @@ const AdminDashboard = () => {
         <Tabs defaultValue="orders" className="space-y-4">
           <TabsList>
             <TabsTrigger value="orders">Bestellungen</TabsTrigger>
-            <TabsTrigger value="cards">Karten verwalten</TabsTrigger>
+                          <TabsTrigger value="cards">{t('admin.manageCards')}</TabsTrigger>
             <TabsTrigger value="customers">Kunden</TabsTrigger>
             <TabsTrigger value="inventory">Inventar</TabsTrigger>
           </TabsList>
@@ -182,7 +184,7 @@ const AdminDashboard = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cardName">Kartenname</Label>
+                    <Label htmlFor="cardName">{t('admin.cardName')}</Label>
                     <Input 
                       id="cardName"
                       value={newCard.name}
@@ -250,7 +252,7 @@ const AdminDashboard = () => {
                     id="description"
                     value={newCard.description}
                     onChange={(e) => setNewCard({...newCard, description: e.target.value})}
-                    placeholder="Kartenbeschreibung..."
+                    placeholder={t('admin.cardDescription')}
                   />
                 </div>
                 <Button onClick={handleAddCard} className="w-full">
@@ -297,8 +299,8 @@ const AdminDashboard = () => {
           <TabsContent value="inventory" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Inventar Übersicht</CardTitle>
-                <CardDescription>Lagerbestand und niedrige Bestände</CardDescription>
+                <CardTitle>{t('admin.inventoryOverview')}</CardTitle>
+                <CardDescription>{t('admin.inventoryDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">

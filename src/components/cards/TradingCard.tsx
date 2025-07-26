@@ -6,6 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TradingCardProps {
   id: string;
@@ -25,12 +32,21 @@ interface TradingCardProps {
   // Legacy props
   isOwned?: boolean;
   isWishlisted?: boolean;
+  // Display options
+  hidePriceAndBuy?: boolean;
   // Action handlers
   onAddToCart?: (id?: string) => void;
   onAddToCollection?: (id?: string) => void;
   onAddToWishlist?: (id?: string) => void;
   onToggleWishlist?: (id: string) => void;
   onViewDetails?: (id: string) => void;
+  // Wishlist overlay actions and badges
+  onRequestPrice?: () => void;
+  onRemoveFromWishlist?: () => void;
+  priority?: "high" | "medium" | "low";
+  priceAvailable?: boolean;
+  getPriorityText?: () => string;
+  getPriorityColor?: () => "default" | "secondary" | "destructive";
 }
 
 const rarityConfig = {
@@ -99,13 +115,22 @@ const TradingCard = ({
   // Legacy props
   isOwned = false,
   isWishlisted = false,
+  // Display options
+  hidePriceAndBuy = false,
   // Action handlers
   onAddToCart,
   onAddToCollection,
   onAddToWishlist,
   onToggleWishlist,
-  onViewDetails
+  onViewDetails,
+  onRequestPrice,
+  onRemoveFromWishlist,
+  priority,
+  priceAvailable,
+  getPriorityText,
+  getPriorityColor,
 }: TradingCardProps) => {
+  const { t } = useTranslation();
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";
   const owned = inCollection || isOwned;
@@ -128,6 +153,38 @@ const TradingCard = ({
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onViewDetails?.(id)}
     >
+      {/* Priority Badge (Wishlist) */}
+      {priority && getPriorityText && getPriorityColor && (
+        <div className="absolute top-2 left-2 z-20">
+          <Badge variant={getPriorityColor()} className="text-xs">
+            {getPriorityText()}
+          </Badge>
+        </div>
+      )}
+      {/* Availability Badge (Wishlist) */}
+      {typeof priceAvailable === "boolean" && (
+        <div className="absolute top-2 right-2 z-20">
+          <Badge variant={priceAvailable ? "default" : "secondary"} className="text-xs">
+            {priceAvailable ? "In Stock" : "Out of Stock"}
+          </Badge>
+        </div>
+      )}
+      {/* Wishlist Overlay Actions */}
+      {(onRequestPrice || onRemoveFromWishlist) && (
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center gap-2 z-30">
+          {onRequestPrice && (
+            <Button size="sm" variant="secondary" onClick={e => { e.stopPropagation(); onRequestPrice(); }}>
+              <Star className="h-4 w-4 mr-1" />
+              Request Price
+            </Button>
+          )}
+          {onRemoveFromWishlist && (
+            <Button size="sm" variant="destructive" onClick={e => { e.stopPropagation(); onRemoveFromWishlist(); }}>
+              <Heart className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
       {/* Rarity Gradient Overlay */}
       <div className={cn(
         "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
@@ -169,23 +226,32 @@ const TradingCard = ({
           {/* Quick Actions */}
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <div className="flex flex-col gap-1">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-8 h-8 p-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleWishlist?.(id);
-                  onAddToWishlist?.(id);
-                }}
-              >
-                <Heart 
-                  className={cn(
-                    "w-4 h-4",
-                    wishlisted && "fill-destructive text-destructive"
-                  )} 
-                />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-8 h-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleWishlist?.(id);
+                        onAddToWishlist?.(id);
+                      }}
+                    >
+                      <Heart 
+                        className={cn(
+                          "w-4 h-4",
+                          wishlisted && "fill-destructive text-destructive"
+                        )} 
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Link to={`/card/${id}`}>
                 <Button
                   size="sm"
@@ -214,38 +280,59 @@ const TradingCard = ({
           </div>
 
           {/* Price and Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <span className="font-bold text-lg">{price.toFixed(2)}</span>
-              <span className="text-sm text-muted-foreground">CHF</span>
+          {!hidePriceAndBuy && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="font-bold text-lg">{price.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground">CHF</span>
+              </div>
+              
+              {inStock && !owned && (
+                <Button
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToCart?.(id);
+                  }}
+                  className="bg-gradient-primary hover:shadow-card transition-all duration-200"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-1" />
+                  Kaufen
+                </Button>
+              )}
+              {!inStock && owned && onAddToCollection && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToCollection(id);
+                  }}
+                >
+                  Sammlung
+                </Button>
+              )}
             </div>
-            
-            {inStock && !owned && (
-              <Button
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddToCart?.(id);
-                }}
-                className="bg-gradient-primary hover:shadow-card transition-all duration-200"
-              >
-                <ShoppingCart className="w-4 h-4 mr-1" />
-                Kaufen
-              </Button>
-            )}
-            {!inStock && owned && onAddToCollection && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddToCollection(id);
-                }}
-              >
-                Sammlung
-              </Button>
-            )}
-          </div>
+          )}
+          
+          {/* Collection Actions (when price/buy is hidden) */}
+          {hidePriceAndBuy && (
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToCollection?.(id);
+                  }}
+                >
+                  <Star className="w-4 h-4 mr-1" />
+                  {t('cards.addToCollection')}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
 

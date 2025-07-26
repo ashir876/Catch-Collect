@@ -2,21 +2,44 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useCardsData = (language: string = 'de', setId?: string, limit: number = 50) => {
+export interface CardsDataOptions {
+  language?: string;
+  setId?: string;
+  limit?: number;
+  offset?: number;
+  searchTerm?: string;
+}
+
+export const useCardsData = (options: CardsDataOptions = {}) => {
+  const { 
+    language = 'de', 
+    setId, 
+    limit, 
+    offset = 0, 
+    searchTerm 
+  } = options;
+
   return useQuery({
-    queryKey: ['cards', language, setId, limit],
+    queryKey: ['cards', language, setId, limit, offset, searchTerm],
     queryFn: async () => {
-      console.log('Fetching cards data:', { language, setId, limit });
+      console.log('Fetching cards data:', { language, setId, limit, offset, searchTerm });
       
       let query = supabase
         .from('cards')
         .select('*')
         .eq('language', language)
-        .order('name')
-        .limit(limit);
+        .order('name');
 
       if (setId) {
         query = query.eq('set_id', setId);
+      }
+
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
+
+      if (limit) {
+        query = query.range(offset, offset + limit - 1);
       }
 
       const { data, error } = await query;
@@ -28,6 +51,41 @@ export const useCardsData = (language: string = 'de', setId?: string, limit: num
 
       console.log('Cards data fetched:', data?.length, 'cards');
       return data;
+    },
+  });
+};
+
+// Hook to get total count of cards for pagination
+export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'> = {}) => {
+  const { language = 'de', setId, searchTerm } = options;
+
+  return useQuery({
+    queryKey: ['cards-count', language, setId, searchTerm],
+    queryFn: async () => {
+      console.log('Fetching cards count:', { language, setId, searchTerm });
+      
+      let query = supabase
+        .from('cards')
+        .select('*', { count: 'exact', head: true })
+        .eq('language', language);
+
+      if (setId) {
+        query = query.eq('set_id', setId);
+      }
+
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
+
+      const { count, error } = await query;
+
+      if (error) {
+        console.error('Error fetching cards count:', error);
+        throw error;
+      }
+
+      console.log('Cards count fetched:', count);
+      return count || 0;
     },
   });
 };

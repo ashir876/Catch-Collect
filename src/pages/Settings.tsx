@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Crown, Star, Trophy, Medal, Gift } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const Settings = () => {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [loyaltyPoints] = useState(47); // CHF 470 spent = 47 points
@@ -33,32 +35,32 @@ const Settings = () => {
 
   const handleSaveSettings = () => {
     toast({
-      title: "Einstellungen gespeichert",
-      description: "Ihre Einstellungen wurden erfolgreich aktualisiert.",
+      title: t('settings.saved'),
+      description: t('settings.savedDescription'),
     });
   };
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">Einstellungen</h1>
+        <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
 
         {/* Loyalty Program */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5" />
-              Treueprogramm
+              {t('settings.loyaltyProgram')}
             </CardTitle>
             <CardDescription>
-              Sammeln Sie Punkte und steigen Sie in den Rängen auf! CHF 10 = 1 Punkt
+              {t('settings.loyaltyDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Aktuelle Punkte</p>
-                <p className="text-2xl font-bold">{loyaltyPoints} Punkte</p>
+                <p className="text-sm text-muted-foreground">{t('settings.currentPoints')}</p>
+                <p className="text-2xl font-bold">{loyaltyPoints} {t('settings.points')}</p>
               </div>
               <Badge variant="secondary" className={`${customerTiers[currentTierIndex].color} text-white`}>
                 {customerTier}
@@ -67,13 +69,13 @@ const Settings = () => {
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Fortschritt zum nächsten Level</span>
+                <span>{t('settings.progressToNextLevel')}</span>
                 {nextTier && <span>{nextTier.name}</span>}
               </div>
               <Progress value={progressToNextTier} className="h-2" />
               {nextTier && (
                 <p className="text-xs text-muted-foreground">
-                  Noch CHF {nextTier.minSpent - totalSpent} bis zum {nextTier.name} Level
+                  {t('settings.remainingToNextLevel', { amount: nextTier.minSpent - totalSpent, tier: nextTier.name })}
                 </p>
               )}
             </div>
@@ -102,25 +104,25 @@ const Settings = () => {
         {/* Account Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Account Einstellungen</CardTitle>
+            <CardTitle>{t('settings.accountSettings')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Vorname</Label>
+                <Label htmlFor="firstName">{t('settings.firstName')}</Label>
                 <Input id="firstName" defaultValue="Max" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Nachname</Label>
+                <Label htmlFor="lastName">{t('settings.lastName')}</Label>
                 <Input id="lastName" defaultValue="Mustermann" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
+              <Label htmlFor="email">{t('settings.email')}</Label>
               <Input id="email" type="email" defaultValue="max.mustermann@example.com" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="address">Adresse</Label>
+              <Label htmlFor="address">{t('settings.address')}</Label>
               <Input id="address" defaultValue="Musterstraße 123, 8000 Zürich" />
             </div>
           </CardContent>
@@ -129,14 +131,14 @@ const Settings = () => {
         {/* Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle>Präferenzen</CardTitle>
+            <CardTitle>{t('settings.preferences')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="notifications">E-Mail Benachrichtigungen</Label>
+                <Label htmlFor="notifications">{t('settings.emailNotifications')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Erhalten Sie Updates über neue Karten und Angebote
+                  {t('settings.emailNotificationsDescription')}
                 </p>
               </div>
               <Switch
@@ -148,9 +150,9 @@ const Settings = () => {
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="darkMode">Dark Mode</Label>
+                <Label htmlFor="darkMode">{t('settings.darkMode')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Dunkles Theme aktivieren
+                  {t('settings.darkModeDescription')}
                 </p>
               </div>
               <Switch
@@ -163,7 +165,7 @@ const Settings = () => {
         </Card>
 
         <Button onClick={handleSaveSettings} className="w-full">
-          Einstellungen speichern
+          {t('settings.saveSettings')}
         </Button>
       </div>
     </div>

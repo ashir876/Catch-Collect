@@ -8,8 +8,11 @@ import { useTranslation } from 'react-i18next';
 
 const Home = () => {
   const { t } = useTranslation();
-  const { data: seriesData, isLoading: seriesLoading } = useSeriesData('en');
-  const { data: cardsData, isLoading: cardsLoading } = useCardsData('en', undefined, 8);
+  const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
+  const { data: cardsData, isLoading: cardsLoading } = useCardsData({ 
+    language: 'en', 
+    limit: 8 
+  });
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">

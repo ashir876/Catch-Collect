@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import TradingCard from "@/components/cards/TradingCard";
 import { useToast } from "@/hooks/use-toast";
-import { useWishlistData, WishlistItem } from "@/hooks/useWishlistData";
+import { useWishlistData, useWishlistCount, WishlistItem } from "@/hooks/useWishlistData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 
 // Map priority number to text
 const getPriorityText = (priority: number, t: any) => {
@@ -28,7 +29,7 @@ const getPriorityText = (priority: number, t: any) => {
 };
 
 // Map priority number to color
-const getPriorityColor = (priority: number) => {
+const getPriorityColor = (priority: number): "default" | "secondary" | "destructive" => {
   switch (priority) {
     case 2:
       return "destructive";
@@ -44,26 +45,50 @@ const getPriorityColor = (priority: number) => {
 const Wishlist = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20); // Show 20 items per page
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: wishlistItems = [], isLoading, error } = useWishlistData();
   const { t } = useTranslation();
 
-  // Filter wishlist items based on search and priority
-  const filteredItems = wishlistItems.filter(item => {
-    const cardName = item.card?.name || "";
-    const matchesSearch = cardName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    let matchesPriority = true;
-    if (priorityFilter !== "all") {
-      const priorityValue = priorityFilter === "high" ? 2 : priorityFilter === "medium" ? 1 : 0;
-      matchesPriority = item.priority === priorityValue;
-    }
-    
-    return matchesSearch && matchesPriority;
+  // Calculate offset for pagination
+  const offset = (currentPage - 1) * itemsPerPage;
+
+  // Get priority value for filtering
+  const getPriorityValue = (priorityFilter: string) => {
+    if (priorityFilter === "all") return undefined;
+    return priorityFilter === "high" ? 2 : priorityFilter === "medium" ? 1 : 0;
+  };
+
+  // Fetch wishlist data with pagination
+  const { data: wishlistItems = [], isLoading, error } = useWishlistData({
+    limit: itemsPerPage,
+    offset,
+    priority: getPriorityValue(priorityFilter),
+    searchTerm: searchTerm || undefined
   });
 
-  // Calculate total wishlist value
+  // Fetch total count for pagination
+  const { data: totalCount = 0 } = useWishlistCount({
+    priority: getPriorityValue(priorityFilter),
+    searchTerm: searchTerm || undefined
+  });
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // Reset to first page when filters change
+  const handleFilterChange = (newPriorityFilter: string) => {
+    setPriorityFilter(newPriorityFilter);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    setCurrentPage(1);
+  };
+
+  // Calculate total wishlist value (this would need to be calculated from all items, not just current page)
   const totalWishlistValue = wishlistItems.reduce((sum, item) => sum + (item.card?.price || 0), 0);
 
   const handleRemoveFromWishlist = async (cardId: string, cardName: string) => {
@@ -203,7 +228,7 @@ const Wishlist = () => {
             <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{wishlistItems.length}</div>
+            <div className="text-2xl font-bold">{totalCount}</div>
             <p className="text-xs text-muted-foreground">
               {wishlistItems.filter(i => i.card?.price).length} {t("wishlist.available")}
             </p>
@@ -246,35 +271,35 @@ const Wishlist = () => {
           <Input
             placeholder={t("wishlist.searchPlaceholder")}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
           />
         </div>
         <div className="flex gap-2">
           <Button
             variant={priorityFilter === "all" ? "default" : "outline"}
-            onClick={() => setPriorityFilter("all")}
+            onClick={() => handleFilterChange("all")}
             size="sm"
           >
             {t("common.all")}
           </Button>
           <Button
             variant={priorityFilter === "high" ? "default" : "outline"}
-            onClick={() => setPriorityFilter("high")}
+            onClick={() => handleFilterChange("high")}
             size="sm"
           >
             {t("wishlist.highPriority")}
           </Button>
           <Button
             variant={priorityFilter === "medium" ? "default" : "outline"}
-            onClick={() => setPriorityFilter("medium")}
+            onClick={() => handleFilterChange("medium")}
             size="sm"
           >
             {t("wishlist.mediumPriority")}
           </Button>
           <Button
             variant={priorityFilter === "low" ? "default" : "outline"}
-            onClick={() => setPriorityFilter("low")}
+            onClick={() => handleFilterChange("low")}
             size="sm"
           >
             {t("wishlist.lowPriority")}
@@ -282,63 +307,59 @@ const Wishlist = () => {
         </div>
       </div>
 
+      {/* Pagination Info */}
+      {totalCount > 0 && (
+        <div className="mb-4">
+          <PaginationInfo
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={itemsPerPage}
+          />
+        </div>
+      )}
+
       {/* Wishlist Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {filteredItems.map((item) => {
+        {wishlistItems.map((item) => {
           const card = createCardObject(item);
           if (!card) return null;
           
           return (
-            <div key={item.id} className="relative group">
-              <TradingCard
-                {...card}
-                onAddToCollection={() => {}}
-                onAddToWishlist={() => handleRemoveFromWishlist(item.card_id, card.name)}
-                onAddToCart={() => handleAddToCart(item.card_id, card.name)}
-              />
-              
-              {/* Priority Badge */}
-              <div className="absolute top-2 left-2">
-                <Badge variant={getPriorityColor(item.priority)} className="text-xs">
-                  {getPriorityText(item.priority, t)}
-                </Badge>
-              </div>
-
-              {/* Availability Badge */}
-              <div className="absolute top-2 right-2">
-                <Badge 
-                  variant={item.card?.price ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {item.card?.price ? t("shop.inStock") : t("shop.outOfStock")}
-                </Badge>
-              </div>
-
-              {/* Overlay Actions */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleRequestPrice(item.card_id, card.name)}
-                >
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  {t("wishlist.requestPrice")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleRemoveFromWishlist(item.card_id, card.name)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <TradingCard
+              key={item.id}
+              {...card}
+              onAddToCollection={() => {}}
+              onAddToWishlist={() => handleRemoveFromWishlist(item.card_id, card.name)}
+              onAddToCart={() => handleAddToCart(item.card_id, card.name)}
+              // New overlay actions for wishlist
+              onRequestPrice={() => handleRequestPrice(item.card_id, card.name)}
+              onRemoveFromWishlist={() => handleRemoveFromWishlist(item.card_id, card.name)}
+              // Pass priority and price for badges
+              priority={item.priority === 2 ? "high" : item.priority === 1 ? "medium" : "low"}
+              priceAvailable={!!item.card?.price}
+              // Pass translation function for badge text
+              getPriorityText={() => getPriorityText(item.priority, t)}
+              getPriorityColor={() => getPriorityColor(item.priority)}
+              inWishlist={true}
+            />
           );
         })}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
+
       {/* Empty State */}
-      {filteredItems.length === 0 && (
+      {wishlistItems.length === 0 && (
         <div className="text-center py-12">
           <Heart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{t("wishlist.noCardsFound")}</h3>
@@ -349,7 +370,7 @@ const Wishlist = () => {
       )}
 
       {/* Action Buttons */}
-      {wishlistItems.length > 0 && (
+      {totalCount > 0 && (
         <div className="flex justify-center gap-4 mt-8 pt-8 border-t">
           <Button variant="outline" size="lg">
             <MessageSquare className="mr-2 h-4 w-4" />

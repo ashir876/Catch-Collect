@@ -27,22 +27,40 @@ export interface WishlistItem {
   }
 }
 
-export const useWishlistData = () => {
+export interface WishlistDataOptions {
+  limit?: number;
+  offset?: number;
+  priority?: number;
+  searchTerm?: string;
+}
+
+export const useWishlistData = (options: WishlistDataOptions = {}) => {
   const { user } = useAuth();
+  const { limit, offset = 0, priority, searchTerm } = options;
 
   return useQuery({
-    queryKey: ['wishlist', user?.id],
+    queryKey: ['wishlist', user?.id, limit, offset, priority, searchTerm],
     queryFn: async () => {
       if (!user) return [];
 
-      console.log('Fetching wishlist data for user:', user.id);
+      console.log('Fetching wishlist data for user:', user.id, { limit, offset, priority, searchTerm });
       
-      // First get the wishlist items
-      const { data: wishlistItems, error: wishlistError } = await supabase
+      // First get the wishlist items with pagination
+      let wishlistQuery = supabase
         .from('card_wishlist')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      if (priority !== undefined) {
+        wishlistQuery = wishlistQuery.eq('priority', priority);
+      }
+
+      if (limit) {
+        wishlistQuery = wishlistQuery.range(offset, offset + limit - 1);
+      }
+
+      const { data: wishlistItems, error: wishlistError } = await wishlistQuery;
 
       if (wishlistError) {
         console.error('Error fetching wishlist:', wishlistError);
@@ -53,10 +71,16 @@ export const useWishlistData = () => {
       if (wishlistItems && wishlistItems.length > 0) {
         const cardIds = wishlistItems.map(item => item.card_id);
         
-        const { data: cardsData, error: cardsError } = await supabase
+        let cardsQuery = supabase
           .from('cards')
           .select('*')
           .in('card_id', cardIds);
+
+        if (searchTerm) {
+          cardsQuery = cardsQuery.ilike('name', `%${searchTerm}%`);
+        }
+          
+        const { data: cardsData, error: cardsError } = await cardsQuery;
           
         if (cardsError) {
           console.error('Error fetching card details:', cardsError);
@@ -80,5 +104,67 @@ export const useWishlistData = () => {
       return wishlistItems as WishlistItem[];
     },
     enabled: !!user,
+  });
+};
+
+// Hook to get total count of wishlist items for pagination
+export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'offset'> = {}) => {
+  const { user } = useAuth();
+  const { priority, searchTerm } = options;
+
+  return useQuery({
+    queryKey: ['wishlist-count', user?.id, priority, searchTerm],
+    queryFn: async () => {
+      if (!user) return 0;
+
+      console.log('Fetching wishlist count for user:', user.id, { priority, searchTerm });
+      
+      let query = supabase
+        .from('card_wishlist')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (priority !== undefined) {
+        query = query.eq('priority', priority);
+      }
+
+      const { count, error } = await query;
+
+      if (error) {
+        console.error('Error fetching wishlist count:', error);
+        throw error;
+      }
+
+      console.log('Wishlist count fetched:', count);
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+};
+
+// Hook to check if a specific card is in the user's wishlist
+export const useIsCardInWishlist = (cardId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['wishlist-check', user?.id, cardId],
+    queryFn: async () => {
+      if (!user || !cardId) return false;
+
+      const { data, error } = await supabase
+        .from('card_wishlist')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('card_id', cardId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error checking wishlist:', error);
+        throw error;
+      }
+
+      return !!data;
+    },
+    enabled: !!user && !!cardId,
   });
 };

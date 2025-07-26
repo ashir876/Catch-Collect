@@ -48,6 +48,8 @@ const CardDetail = () => {
     const fetchCard = async () => {
       if (!id) return;
       
+      console.log('Fetching card with ID:', id);
+      
       try {
         const { data, error } = await supabase
           .from('cards')
@@ -55,7 +57,12 @@ const CardDetail = () => {
           .eq('card_id', id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('Card data found:', data);
         setCard(data);
       } catch (error) {
         console.error('Error fetching card:', error);
@@ -86,11 +93,11 @@ const CardDetail = () => {
 
     try {
       const { error } = await supabase
-        .from('card_collections')
+        .from('user_collections')
         .insert({
           user_id: user.id,
           card_id: card.card_id,
-          language: 'de'
+          language: 'en'
         });
 
       if (error) throw error;
