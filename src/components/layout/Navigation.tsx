@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,8 @@ import {
   Trophy,
   Settings,
   LogIn,
-  LogOut
+  LogOut,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,19 +43,24 @@ const Navigation = () => {
   const { data: cartCount = 0 } = useCartCount();
 
   const mainNavItems: NavItem[] = [
-    { path: "/", label: t('navigation.home'), icon: Home },
-    { path: "/series", label: t('navigation.series'), icon: Grid3X3 },
-    { path: "/sets", label: t('navigation.sets'), icon: Package },
-    { path: "/cards", label: t('navigation.cards'), icon: Star },
-    { path: "/shop", label: t('navigation.shop'), icon: ShoppingCart }
+    { path: "/", label: "HOME", icon: Home },
+    { path: "/cards", label: "CARDS", icon: Star },
+    { path: "/series", label: "SERIES", icon: Grid3X3 },
+    { path: "/sets", label: "SETS", icon: Package },
+    
+    { path: "/shop", label: "SHOP", icon: ShoppingCart }
   ];
 
   const authenticatedNavItems: NavItem[] = [
-    { path: "/collection", label: t('navigation.collection'), icon: Trophy },
-    { path: "/wishlist", label: t('navigation.wishlist'), icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
-    { path: "/cart", label: t('navigation.cart'), icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
-    { path: "/profile", label: t('navigation.profile'), icon: User },
-    { path: "/settings", label: t('navigation.settings'), icon: Settings }
+    { path: "/wishlist", label: "", icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
+    { path: "/cart", label: "", icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
+    { path: "/profile", label: "", icon: User },
+    { path: "/settings", label: "", icon: Settings }
+  ];
+
+  // Add admin link if user has admin role (you can implement role checking here)
+  const adminNavItems: NavItem[] = [
+    { path: "/admin", label: t('navigation.admin'), icon: Shield }
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -78,81 +83,83 @@ const Navigation = () => {
             />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
-            {mainNavItems.map((item) => (
-              <Link key={item.path} to={item.path}>
-                <div className={isActive(item.path) ? "pixel-nav-item-active" : "pixel-nav-item"}>
-                  <item.icon className="w-4 h-4 mr-2 inline" />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="pixel-badge ml-2">
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-2">
+              {mainNavItems.map((item) => (
+                <Link key={item.path} to={item.path}>
+                  <div className={isActive(item.path) ? "pixel-nav-item-active" : "pixel-nav-item"}>
+                    <item.icon className="w-4 h-4 mr-2 inline" />
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="pixel-badge ml-2">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
 
-          {/* User Menu Desktop */}
-          <div className="hidden md:flex items-center space-x-2">
-            <LanguageSwitcher />
-            {user ? (
-              <>
-                {authenticatedNavItems.map((item) => (
-                  <Link key={item.path} to={item.path}>
-                    <div className={cn(
-                      "relative border-2 border-black px-3 py-2 hover:bg-primary hover:text-primary-foreground transition-colors",
-                      isActive(item.path) ? "bg-primary text-primary-foreground" : "bg-muted"
-                    )}>
-                      <item.icon className="w-4 h-4" />
-                      {item.badge && (
-                        <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground border-2 border-black text-xs min-w-5 h-5 flex items-center justify-center font-black">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-                <Button 
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="border-2 border-black font-black"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {t('navigation.signOut')}
-                </Button>
-              </>
-            ) : (
-              <Link to="/auth">
-                <Button className="border-2 border-black font-black uppercase">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  {t('navigation.auth')}
-                </Button>
-              </Link>
-            )}
-          </div>
+            {/* User Menu Desktop */}
+            <div className="hidden md:flex items-center space-x-2">
+              {user ? (
+                <>
+                  {authenticatedNavItems.map((item) => (
+                    <Link key={item.path} to={item.path}>
+                      <div className="pixel-nav-item-small">
+                        <item.icon className="w-4 h-4" />
+                        {item.badge && (
+                          <span className="pixel-badge-small">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                  {/* Admin navigation items */}
+                  {adminNavItems.map((item) => (
+                    <Link key={item.path} to={item.path}>
+                      <div className={isActive(item.path) ? "pixel-nav-item-admin-active" : "pixel-nav-item-admin"}>
+                        <item.icon className="w-4 h-4" />
+                      </div>
+                    </Link>
+                  ))}
+                  <Button 
+                    onClick={handleSignOut}
+                    variant="outline"
+                    className="pixel-button-secondary"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </>
+              ) : (
+                <Link to="/auth">
+                  <Button className="pixel-button">
+                    <LogIn className="w-4 h-4" />
+                    {t('navigation.auth')}
+                  </Button>
+                </Link>
+              )}
+              <LanguageSwitcher />
+            </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden border-2 border-black bg-muted px-3 py-2 hover:bg-primary hover:text-primary-foreground transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="pixel-button-small"
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t-4 border-black bg-background py-4">
-            <div className="space-y-2">
-              {/* Language Switcher for Mobile */}
+          <div className="md:hidden border-t-4 border-black bg-background">
+            <div className="py-4 space-y-2">
               <div className="mx-2 mb-4">
                 <LanguageSwitcher />
               </div>
@@ -204,6 +211,22 @@ const Navigation = () => {
                       </div>
                     </Link>
                   ))}
+                  {/* Admin navigation items for mobile */}
+                  {adminNavItems.map((item) => (
+                    <Link 
+                      key={item.path} 
+                      to={item.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className={cn(
+                        "mx-2 border-2 border-red-600 px-4 py-3 font-black uppercase text-sm transition-colors",
+                        isActive(item.path) ? "bg-red-600 text-white" : "bg-red-50 hover:bg-red-600 hover:text-white"
+                      )}>
+                        <item.icon className="w-4 h-4 mr-2 inline" />
+                        {item.label}
+                      </div>
+                    </Link>
+                  ))}
                   <div className="mx-2 mt-2">
                     <Button 
                       onClick={handleSignOut}
@@ -235,4 +258,4 @@ const Navigation = () => {
   );
 };
 
-export default Navigation;
+export default Navigation; 

@@ -1,13 +1,18 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, Star } from "lucide-react";
+import { Grid3X3, Star, TrendingUp, Users, Trophy, Package } from "lucide-react";
 import { useSeriesData } from "@/hooks/useSeriesData";
 import { useCardsData } from "@/hooks/useCardsData";
 import { useTranslation } from 'react-i18next';
+import SearchBar from "@/components/SearchBar";
+import UserStats from "@/components/user/UserStats";
+import SocialFeed from "@/components/social/SocialFeed";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Home = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
   const { data: cardsData, isLoading: cardsLoading } = useCardsData({ 
     language: 'en', 
@@ -51,17 +56,56 @@ const Home = () => {
           </p>
           
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Link to="/shop">
-              <Button className="pixel-button text-lg px-12 py-6 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200">
+              <Button className="pixel-button text-lg px-12 py-6 bg-yellow-500 hover:bg-yellow-600 hover:scale-105 transition-all duration-200 text-black font-bold">
                 {t('home.shopNow')}
               </Button>
             </Link>
             <Link to="/collection">
-              <Button className="pixel-button-secondary text-lg px-12 py-6 hover:scale-105 transition-all duration-200">
+              <Button className="pixel-button text-lg px-12 py-6 bg-blue-500 hover:bg-blue-600 hover:scale-105 transition-all duration-200 text-white font-bold">
                 {t('home.myCollection')}
               </Button>
             </Link>
+          </div>
+
+          {/* Search Bar */}
+          <div className="w-full px-4 mb-16">
+            <SearchBar />
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Stats Section */}
+      <section className="py-12 px-4 bg-muted/20 relative z-10">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-black text-center mb-8 uppercase tracking-wider">
+            <span className="bg-accent text-accent-foreground px-6 py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              {t('home.quickStats')}
+            </span>
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="pixel-card text-center p-6">
+              <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
+              <div className="text-3xl font-bold mb-2">1,234</div>
+              <p className="text-sm text-muted-foreground">{t('home.totalCards')}</p>
+            </div>
+            <div className="pixel-card text-center p-6">
+              <Grid3X3 className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+              <div className="text-3xl font-bold mb-2">56</div>
+              <p className="text-sm text-muted-foreground">{t('home.series')}</p>
+            </div>
+            <div className="pixel-card text-center p-6">
+              <Package className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <div className="text-3xl font-bold mb-2">89</div>
+              <p className="text-sm text-muted-foreground">{t('home.sets')}</p>
+            </div>
+            <div className="pixel-card text-center p-6">
+              <Users className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+              <div className="text-3xl font-bold mb-2">2,847</div>
+              <p className="text-sm text-muted-foreground">{t('home.collectors')}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -191,6 +235,33 @@ const Home = () => {
               </Button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* User Stats Section (if logged in) */}
+      {user && (
+        <section className="py-16 px-4 bg-background relative z-10">
+          <div className="container mx-auto">
+            <h2 className="text-4xl font-black text-center mb-12 uppercase tracking-wider">
+              <span className="bg-primary text-primary-foreground px-6 py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <Trophy className="inline mr-2 h-8 w-8" />
+                {t('home.yourProgress')}
+              </span>
+            </h2>
+            <UserStats />
+          </div>
+        </section>
+      )}
+
+      {/* Social Feed Section */}
+      <section className="py-16 px-4 bg-muted/20 relative z-10">
+        <div className="container mx-auto">
+          <h2 className="text-4xl font-black text-center mb-12 uppercase tracking-wider">
+            <span className="bg-accent text-accent-foreground px-6 py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              {t('home.community')}
+            </span>
+          </h2>
+          <SocialFeed />
         </div>
       </section>
 

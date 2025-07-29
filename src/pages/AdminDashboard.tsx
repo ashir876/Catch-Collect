@@ -47,8 +47,8 @@ const AdminDashboard = () => {
 
   const handleAddCard = () => {
     toast({
-      title: "Karte hinzugefügt",
-      description: `${newCard.name} wurde erfolgreich hinzugefügt.`,
+      title: t('admin.cardAdded'),
+      description: t('admin.cardAddedDescription', { name: newCard.name }),
     });
     setNewCard({
       name: "",
@@ -63,8 +63,8 @@ const AdminDashboard = () => {
 
   const handleGenerateInvoice = (orderId: string) => {
     toast({
-      title: "Rechnung erstellt",
-      description: `Rechnung für Bestellung ${orderId} wurde erstellt und versendet.`,
+      title: t('admin.invoiceCreated'),
+      description: t('admin.invoiceCreatedDescription', { orderId }),
     });
   };
 
@@ -72,51 +72,51 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <Badge variant="secondary">Administrator</Badge>
+          <h1 className="text-3xl font-bold">{t('admin.title')}</h1>
+          <Badge variant="secondary">{t('admin.administrator')}</Badge>
         </div>
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gesamtumsatz</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('admin.totalRevenue')}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">CHF 12,847</div>
               <p className="text-xs text-muted-foreground">
-                +8.2% seit letztem Monat
+                {t('admin.revenueGrowth')}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bestellungen</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('admin.orders')}</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">247</div>
               <p className="text-xs text-muted-foreground">
-                +12 neue heute
+                {t('admin.newOrdersToday')}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Kunden</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('admin.customers')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1,483</div>
               <p className="text-xs text-muted-foreground">
-                +23 neue diese Woche
+                {t('admin.newCustomersThisWeek')}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm font-medium">{t('admin.cardsInStock')}</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('admin.cardsInStock')}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -130,17 +130,17 @@ const AdminDashboard = () => {
 
         <Tabs defaultValue="orders" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="orders">Bestellungen</TabsTrigger>
-                          <TabsTrigger value="cards">{t('admin.manageCards')}</TabsTrigger>
-            <TabsTrigger value="customers">Kunden</TabsTrigger>
-            <TabsTrigger value="inventory">Inventar</TabsTrigger>
+            <TabsTrigger value="orders">{t('admin.orders')}</TabsTrigger>
+            <TabsTrigger value="cards">{t('admin.manageCards')}</TabsTrigger>
+            <TabsTrigger value="customers">{t('admin.customers')}</TabsTrigger>
+            <TabsTrigger value="inventory">{t('admin.inventory')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Aktuelle Bestellungen</CardTitle>
-                <CardDescription>Verwalten Sie Bestellungen und erstellen Sie Rechnungen</CardDescription>
+                <CardTitle>{t('admin.currentOrders')}</CardTitle>
+                <CardDescription>{t('admin.ordersDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -158,7 +158,7 @@ const AdminDashboard = () => {
                             order.status === 'paid' ? 'default' : 
                             order.status === 'shipped' ? 'secondary' : 'outline'
                           }>
-                            {order.status}
+                            {t(`admin.orderStatus.${order.status}`)}
                           </Badge>
                         </div>
                         <Button 
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
                           onClick={() => handleGenerateInvoice(order.id)}
                         >
                           <FileText className="h-4 w-4 mr-2" />
-                          Rechnung
+                          {t('admin.invoice')}
                         </Button>
                       </div>
                     </div>
@@ -179,7 +179,7 @@ const AdminDashboard = () => {
           <TabsContent value="cards" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Neue Karte hinzufügen</CardTitle>
+                <CardTitle>{t('admin.addNewCard')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -189,29 +189,29 @@ const AdminDashboard = () => {
                       id="cardName"
                       value={newCard.name}
                       onChange={(e) => setNewCard({...newCard, name: e.target.value})}
-                      placeholder="z.B. Pikachu"
+                      placeholder={t('admin.cardNamePlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="series">Serie</Label>
+                    <Label htmlFor="series">{t('admin.series')}</Label>
                     <Input 
                       id="series"
                       value={newCard.series}
                       onChange={(e) => setNewCard({...newCard, series: e.target.value})}
-                      placeholder="z.B. Base Set"
+                      placeholder={t('admin.seriesPlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="set">Set</Label>
+                    <Label htmlFor="set">{t('admin.set')}</Label>
                     <Input 
                       id="set"
                       value={newCard.set}
                       onChange={(e) => setNewCard({...newCard, set: e.target.value})}
-                      placeholder="z.B. 1st Edition"
+                      placeholder={t('admin.setPlaceholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="price">Preis (CHF)</Label>
+                    <Label htmlFor="price">{t('admin.price')}</Label>
                     <Input 
                       id="price"
                       type="number"
@@ -221,7 +221,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="stock">Lagerbestand</Label>
+                    <Label htmlFor="stock">{t('admin.stock')}</Label>
                     <Input 
                       id="stock"
                       type="number"
@@ -231,23 +231,23 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="rarity">Seltenheit</Label>
+                    <Label htmlFor="rarity">{t('admin.rarity')}</Label>
                     <select 
                       id="rarity"
                       value={newCard.rarity}
                       onChange={(e) => setNewCard({...newCard, rarity: e.target.value})}
                       className="w-full p-2 border rounded-md"
                     >
-                      <option value="Common">Common</option>
-                      <option value="Uncommon">Uncommon</option>
-                      <option value="Rare">Rare</option>
-                      <option value="Holo Rare">Holo Rare</option>
-                      <option value="Ultra Rare">Ultra Rare</option>
+                      <option value="Common">{t('admin.rarityCommon')}</option>
+                      <option value="Uncommon">{t('admin.rarityUncommon')}</option>
+                      <option value="Rare">{t('admin.rarityRare')}</option>
+                      <option value="Holo Rare">{t('admin.rarityHoloRare')}</option>
+                      <option value="Ultra Rare">{t('admin.rarityUltraRare')}</option>
                     </select>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Beschreibung</Label>
+                  <Label htmlFor="description">{t('admin.description')}</Label>
                   <Textarea 
                     id="description"
                     value={newCard.description}
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
                 </div>
                 <Button onClick={handleAddCard} className="w-full">
                   <Plus className="h-4 w-4 mr-2" />
-                  Karte hinzufügen
+                  {t('admin.addCard')}
                 </Button>
               </CardContent>
             </Card>
@@ -266,8 +266,8 @@ const AdminDashboard = () => {
           <TabsContent value="customers" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Kundenverwaltung</CardTitle>
-                <CardDescription>Verwalten Sie Kundenkonten und Tier-Status</CardDescription>
+                <CardTitle>{t('admin.customerManagement')}</CardTitle>
+                <CardDescription>{t('admin.customerManagementDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -276,7 +276,7 @@ const AdminDashboard = () => {
                       <div className="space-y-1">
                         <p className="font-medium">{customer.name}</p>
                         <p className="text-sm text-muted-foreground">{customer.email}</p>
-                        <p className="text-sm text-muted-foreground">{customer.orders} Bestellungen</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.orderCount', { count: customer.orders })}</p>
                       </div>
                       <div className="flex items-center gap-4">
                         <Badge variant="secondary">{customer.tier}</Badge>
@@ -304,7 +304,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">
-                  Inventar-Management wird hier angezeigt
+                  {t('admin.inventoryManagementPlaceholder')}
                 </div>
               </CardContent>
             </Card>
