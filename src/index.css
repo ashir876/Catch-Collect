@@ -348,6 +348,8 @@
   .pixel-text-yellow-animated {
     font-size: 1.5rem;
     line-height: 1.2;
+    animation: none !important;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1) !important;
   }
   
   .pixel-card {
@@ -383,6 +385,24 @@
     height: 14px;
     font-size: 0.625rem;
   }
+  
+  /* Disable floating animations on mobile */
+  .animate-float-1,
+  .animate-float-2,
+  .animate-float-3 {
+    animation: none !important;
+  }
+  
+  /* Disable pixel glow animations on mobile */
+  .animate-pixel-glow {
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Disable pixel bounce animations on mobile */
+  .animate-pixel-bounce {
+    animation: none !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -392,6 +412,27 @@
   
   .pixel-text-header {
     font-size: 1.25rem;
+  }
+  
+  /* Disable background animations on mobile and tablet */
+  .pixel-text-yellow-animated {
+    animation: none !important;
+    text-shadow: 4px 4px 0px rgba(0, 0, 0, 1) !important;
+  }
+  
+  .animate-float-1,
+  .animate-float-2,
+  .animate-float-3 {
+    animation: none !important;
+  }
+  
+  .animate-pixel-glow {
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  
+  .animate-pixel-bounce {
+    animation: none !important;
   }
 }
 

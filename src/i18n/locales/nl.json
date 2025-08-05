@@ -185,7 +185,11 @@
     "toNextCategory": "Naar volgende categorie",
     "updateAccountInfo": "Update je accountinformatie",
     "recentActivity": "Recente activiteit",
-    "recentActivityDescription": "Je recente acties en transacties"
+    "recentActivityDescription": "Je recente acties en transacties",
+    "errorLoading": "Fout bij het laden van profielgegevens",
+    "noData": "Geen profielgegevens beschikbaar",
+    "noActivity": "Geen recente activiteit",
+    "unknown": "Onbekend"
   },
   "settings": {
     "title": "Instellingen",
@@ -286,6 +290,7 @@
     "confirm": "Bevestigen",
     "yes": "Ja",
     "no": "Nee",
-    "all": "Alle"
+    "all": "Alle",
+    "retry": "Opnieuw proberen"
   }
 } 

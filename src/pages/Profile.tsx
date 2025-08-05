@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, Mail, Calendar, Trophy, Star, Package, Heart, ShoppingCart, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,56 +8,31 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
-
-// Mock user data
-const userData = {
-  id: "1",
-  name: "Max Mustermann",
-  email: "max.mustermann@example.com",
-  memberSince: "2023-06-15",
-  avatar: "/placeholder.svg",
-  customerCategory: "Shining",
-  loyaltyPoints: 247,
-  stats: {
-    totalCards: 1247,
-    totalValue: 2847.95,
-    setsCompleted: 3,
-    wishlistItems: 12,
-    ordersPlaced: 8
-  }
-};
-
-const recentActivity = [
-  {
-    id: "1",
-    type: "purchase",
-    description: "Pikachu VMAX gekauft",
-    date: "2024-03-10",
-    value: 45.99
-  },
-  {
-    id: "2", 
-    type: "wishlist",
-    description: "Charizard V zur Wunschliste hinzugefügt",
-    date: "2024-03-08",
-    value: null
-  },
-  {
-    id: "3",
-    type: "collection",
-    description: "Set 'Brilliant Stars' zu 85% abgeschlossen",
-    date: "2024-03-05",
-    value: null
-  }
-];
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Profile = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { data: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
+  const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(10);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: userData.name,
-    email: userData.email
+    name: userProfile?.full_name || '',
+    email: userProfile?.email || ''
   });
+
+  // Update form data when profile loads
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        name: userProfile.full_name || '',
+        email: userProfile.email || ''
+      });
+    }
+  }, [userProfile]);
 
   const handleSave = () => {
     setIsEditing(false);
@@ -92,6 +67,45 @@ const Profile = () => {
     }
   };
 
+  // Show loading state
+  if (profileLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (profileError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{t('profile.errorLoading')}</p>
+          <Button onClick={() => window.location.reload()}>
+            {t('common.retry')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user profile data, show message
+  if (!userProfile) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">{t('profile.noData')}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -115,22 +129,22 @@ const Profile = () => {
             <CardHeader>
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={userData.avatar} alt={userData.name} />
+                  <AvatarImage src={userProfile.avatar_url || "/placeholder.svg"} alt={userProfile.full_name || userProfile.email} />
                   <AvatarFallback className="text-lg">
-                    {userData.name.split(' ').map(n => n[0]).join('')}
+                    {(userProfile.full_name || userProfile.email).split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold">{userData.name}</h2>
-                    <Badge variant={getCategoryColor(userData.customerCategory)} className="text-sm">
-                      {userData.customerCategory} {t('profile.collector')}
+                    <h2 className="text-2xl font-bold">{userProfile.full_name || userProfile.email}</h2>
+                    <Badge variant={getCategoryColor(userProfile.account_type || 'default')} className="text-sm">
+                      {userProfile.account_type || 'Standard'} {t('profile.collector')}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground">{userData.email}</p>
+                  <p className="text-muted-foreground">{userProfile.email}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    {t('profile.memberSince')} {new Date(userData.memberSince).toLocaleDateString()}
+                    {t('profile.memberSince')} {userProfile.created_at ? new Date(userProfile.created_at).toLocaleDateString() : t('profile.unknown')}
                   </div>
                 </div>
               </div>
@@ -145,7 +159,7 @@ const Profile = () => {
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{userData.stats.totalCards.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{userProfile.totalCards.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">{t('profile.inCollection')}</p>
               </CardContent>
             </Card>
@@ -156,7 +170,7 @@ const Profile = () => {
                 <Trophy className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">CHF {userData.stats.totalValue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">CHF {userProfile.totalValue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">{t('profile.estimatedValue')}</p>
               </CardContent>
             </Card>
@@ -167,7 +181,7 @@ const Profile = () => {
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{userData.stats.setsCompleted}</div>
+                <div className="text-2xl font-bold">{userProfile.setsCompleted}</div>
                 <p className="text-xs text-muted-foreground">{t('profile.completeSets')}</p>
               </CardContent>
             </Card>
@@ -178,7 +192,7 @@ const Profile = () => {
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{userData.stats.wishlistItems}</div>
+                <div className="text-2xl font-bold">{userProfile.wishlistItems}</div>
                 <p className="text-xs text-muted-foreground">{t('profile.desiredCards')}</p>
               </CardContent>
             </Card>
@@ -189,7 +203,7 @@ const Profile = () => {
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{userData.loyaltyPoints}</div>
+                <div className="text-2xl font-bold">{userProfile.loyalty_points || 0}</div>
                 <p className="text-xs text-muted-foreground">{t('profile.pointsCollected')}</p>
               </CardContent>
             </Card>
@@ -207,13 +221,13 @@ const Profile = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span>{t('profile.currentCategory')}:</span>
-                  <Badge variant={getCategoryColor(userData.customerCategory)}>
-                    {userData.customerCategory} {t('profile.collector')}
+                  <Badge variant={getCategoryColor(userProfile.account_type || 'default')}>
+                    {userProfile.account_type || 'Standard'} {t('profile.collector')}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>{t('profile.currentPoints')}:</span>
-                  <span className="font-bold">{userData.loyaltyPoints} {t('profile.points')}</span>
+                  <span className="font-bold">{userProfile.loyalty_points || 0} {t('profile.points')}</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -287,26 +301,36 @@ const Profile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-4 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      {getActivityIcon(activity.type)}
-                      <div>
-                        <p className="font-medium">{activity.description}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(activity.date).toLocaleDateString()}
-                        </p>
+              {activityLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : recentActivity && recentActivity.length > 0 ? (
+                <div className="space-y-4">
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-center justify-between p-4 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        {getActivityIcon(activity.type)}
+                        <div>
+                          <p className="font-medium">{activity.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(activity.date).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
+                      {activity.value && (
+                        <Badge variant="secondary">
+                          CHF {activity.value}
+                        </Badge>
+                      )}
                     </div>
-                    {activity.value && (
-                      <Badge variant="secondary">
-                        CHF {activity.value}
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">{t('profile.noActivity')}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

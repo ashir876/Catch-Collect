@@ -23,8 +23,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Animated Background Cubes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Animated Background Cubes - Hidden on Mobile */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block">
         <div className="animate-float-1 absolute top-20 left-10 w-12 h-12 bg-primary/20 border-2 border-black transform rotate-12"></div>
         <div className="animate-float-2 absolute top-40 right-20 w-8 h-8 bg-accent/20 border-2 border-black transform -rotate-45"></div>
         <div className="animate-float-3 absolute bottom-60 left-1/4 w-10 h-10 bg-secondary/20 border-2 border-black transform rotate-45"></div>

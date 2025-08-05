@@ -362,7 +362,11 @@
     "toNextCategory": "Bis zur nächsten Kategorie",
     "updateAccountInfo": "Aktualisiere deine Kontoinformationen",
     "recentActivity": "Letzte Aktivitäten",
-    "recentActivityDescription": "Deine letzten Aktionen und Transaktionen"
+    "recentActivityDescription": "Deine letzten Aktionen und Transaktionen",
+    "errorLoading": "Fehler beim Laden der Profildaten",
+    "noData": "Keine Profildaten verfügbar",
+    "noActivity": "Keine letzten Aktivitäten",
+    "unknown": "Unbekannt"
   },
   "settings": {
     "title": "Einstellungen",
@@ -463,6 +467,7 @@
     "confirm": "Bestätigen",
     "yes": "Ja",
     "no": "Nein",
-    "all": "Alle"
+    "all": "Alle",
+    "retry": "Wiederholen"
   }
 }
