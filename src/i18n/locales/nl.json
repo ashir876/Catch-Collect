@@ -70,7 +70,10 @@
     "noCardsSubtitle": "Probeer je zoekopdracht aan te passen.",
     "cards": "kaarten",
     "card": "kaart",
-    "found": "gevonden"
+    "found": "gevonden",
+    "addToCollection": "Toevoegen aan collectie",
+    "addToWishlist": "Toevoegen aan verlanglijst",
+    "inWishlist": "Op verlanglijst"
   },
   "shop": {
     "title": "Winkel",

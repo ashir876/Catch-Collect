@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Tooltip,
@@ -13,6 +12,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import CardDetailModal from "./CardDetailModal";
+
+interface CardData {
+  card_id: string;
+  name: string;
+  set_name: string;
+  set_id?: string;
+  card_number?: string;
+  rarity?: string;
+  types?: string[];
+  hp?: number;
+  image_url?: string;
+  description?: string;
+  illustrator?: string;
+  attacks?: any;
+  weaknesses?: any;
+  retreat?: number;
+  set_symbol_url?: string;
+}
 
 interface TradingCardProps {
   id: string;
@@ -48,6 +66,8 @@ interface TradingCardProps {
   priceAvailable?: boolean;
   getPriorityText?: () => string;
   getPriorityColor?: () => "default" | "secondary" | "destructive";
+  // Full card data for modal
+  cardData?: CardData;
 }
 
 const rarityConfig = {
@@ -131,6 +151,8 @@ const TradingCard = ({
   priceAvailable,
   getPriorityText,
   getPriorityColor,
+  // Full card data for modal
+  cardData,
 }: TradingCardProps) => {
   const { t } = useTranslation();
   // Normalize props
@@ -241,18 +263,30 @@ const TradingCard = ({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <Link to={`/card/${id}`}>
+              {cardData ? (
+                <CardDetailModal card={cardData}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 p-0"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                </CardDetailModal>
+              ) : (
                 <Button
                   size="sm"
                   variant="secondary"
                   className="w-8 h-8 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Fallback to navigation if no card data available
+                    onViewDetails?.(id);
                   }}
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
-              </Link>
+              )}
             </div>
           </div>
         </div>

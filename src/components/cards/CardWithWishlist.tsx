@@ -41,6 +41,7 @@ const CardWithWishlist = ({
       inWishlist={isInWishlist}
       description={card.description || ''}
       hidePriceAndBuy={true}
+      cardData={card}
       onAddToCollection={() => onAddToCollection(card.card_id, card.name || 'Unknown Card', card.language)}
       onAddToWishlist={() => onAddToWishlist(card.card_id, card.name || 'Unknown Card', card.language)}
     />

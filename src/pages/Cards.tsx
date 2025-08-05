@@ -1,10 +1,11 @@
 
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Heart, ShoppingCart, Star, Filter } from "lucide-react";
+import { Search, Heart, ShoppingCart, Star, Filter, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import TradingCard from "@/components/cards/TradingCard";
 import { useToast } from "@/hooks/use-toast";
 import { useCardsData, useCardsCount } from "@/hooks/useCardsData";
@@ -28,6 +29,7 @@ const Cards = () => {
   const [languageFilter, setLanguageFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // Show 20 items per page
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -368,14 +370,33 @@ const Cards = () => {
 
       {/* Search and Filters */}
       <div className="space-y-4 mb-8">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={t('cards.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder={t('cards.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              onClick={() => setViewMode("grid")}
+              size="sm"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              onClick={() => setViewMode("list")}
+              size="sm"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         <div className="flex flex-wrap gap-4">
@@ -407,20 +428,37 @@ const Cards = () => {
         </p>
       </div>
 
-      {/* Cards Grid */}
+      {/* Cards Display */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className="pixel-card animate-pulse">
-              <div className="aspect-[3/4] bg-muted"></div>
-              <div className="p-4">
-                <div className="h-6 bg-muted rounded mb-2"></div>
-                <div className="h-4 bg-muted rounded"></div>
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {[...Array(20)].map((_, i) => (
+              <div key={i} className="pixel-card animate-pulse">
+                <div className="aspect-[3/4] bg-muted"></div>
+                <div className="p-4">
+                  <div className="h-6 bg-muted rounded mb-2"></div>
+                  <div className="h-4 bg-muted rounded"></div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {[...Array(20)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="flex gap-4 p-6 border rounded-lg">
+                  <div className="w-24 h-32 bg-muted rounded-lg"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-6 bg-muted rounded w-1/3"></div>
+                    <div className="h-4 bg-muted rounded w-1/2"></div>
+                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filteredCards.map((card) => {
             const isInWishlist = wishlistItems.some(item => item.card_id === card.card_id);
@@ -434,6 +472,76 @@ const Cards = () => {
                 onAddToWishlist={handleAddToWishlist}
                 mapDatabaseRarityToComponent={mapDatabaseRarityToComponent}
               />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredCards.map((card) => {
+            const isInWishlist = wishlistItems.some(item => item.card_id === card.card_id);
+            
+            return (
+              <Card key={`${card.card_id}-${card.language}`} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex gap-4">
+                    <div className="w-24 h-32 flex-shrink-0">
+                      <img
+                        src={card.image_url || "/placeholder.svg"}
+                        alt={card.name}
+                        className="w-full h-full object-cover rounded-lg"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold text-lg">{card.name}</h3>
+                          <p className="text-muted-foreground">{card.set_name} • {card.card_number}</p>
+                          {card.rarity && (
+                            <div className="mt-1">
+                              {mapDatabaseRarityToComponent(card.rarity)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddToCollection(card.card_id, card.name, card.language)}
+                            >
+                              <Heart className="mr-2 h-4 w-4" />
+                              {t('cards.addToCollection')}
+                            </Button>
+                            <Button
+                              variant={isInWishlist ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleAddToWishlist(card.card_id, card.name, card.language)}
+                            >
+                              <Star className="mr-2 h-4 w-4" />
+                              {isInWishlist ? t('cards.inWishlist') : t('cards.addToWishlist')}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      {card.description && (
+                        <p className="text-muted-foreground mb-4 line-clamp-2">{card.description}</p>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <Badge variant="secondary">{card.language}</Badge>
+                          {card.hp && <Badge variant="outline">HP: {card.hp}</Badge>}
+                          {card.types && card.types.length > 0 && (
+                            <Badge variant="outline">{card.types.join(', ')}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

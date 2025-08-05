@@ -68,7 +68,8 @@
     "addToCollection": "Zur Sammlung hinzufügen",
     "removeFromCollection": "Von Sammlung entfernen",
     "addToWishlist": "Zur Wunschliste hinzufügen",
-    "removeFromWishlist": "Von Wunschliste entfernen"
+    "removeFromWishlist": "Von Wunschliste entfernen",
+    "inWishlist": "In Wunschliste"
   },
   "cardDetail": {
     "backToCards": "Zurück zu den Karten",
@@ -76,18 +77,26 @@
     "addToWishlist": "Zur Wunschliste hinzufügen",
     "addToCart": "In den Warenkorb",
     "cardInfo": "Karteninformationen",
-    "cardNumber": "Kartennummer",
-    "artist": "Künstler",
+    "set": "Set",
+    "number": "Nummer",
     "rarity": "Seltenheit",
-    "setName": "Set-Name",
     "attacks": "Angriffe",
     "weaknesses": "Schwächen",
     "resistances": "Resistenzen",
     "retreatCost": "Rückzugskosten",
     "damage": "Schaden",
     "cost": "Kosten",
+    "description": "Beschreibung",
+    "illustrator": "Illustrator",
+    "types": "Typen",
     "cardNotFound": "Karte nicht gefunden",
     "cardNotFoundSubtitle": "Die angeforderte Karte konnte nicht gefunden werden.",
+    "addedToCollection": "Zur Sammlung hinzugefügt",
+    "addedToWishlist": "Zur Wunschliste hinzugefügt",
+    "addedToCart": "In den Warenkorb gelegt",
+    "errorAddingToCollection": "Fehler beim Hinzufügen zur Sammlung",
+    "errorAddingToWishlist": "Fehler beim Hinzufügen zur Wunschliste",
+    "errorAddingToCart": "Fehler beim Hinzufügen zum Warenkorb",
     "hp": "KP",
     "type": "Typ"
   },
@@ -142,7 +151,8 @@
     "priceRequestSent": "Deine Preisanfrage für wurde gesendet",
     "hasBeenRemovedFromWishlist": "wurde von deiner Wunschliste entfernt.",
     "hasBeenRemovedFromCollection": "wurde von deiner Sammlung entfernt.",
-    "hasBeenAddedToCart": "wurde zu deinem Warenkorb hinzugefügt."
+    "hasBeenAddedToCart": "wurde zu deinem Warenkorb hinzugefügt.",
+    "loading": "Lädt..."
   },
   "series": {
     "title": "Pokemon Serien",

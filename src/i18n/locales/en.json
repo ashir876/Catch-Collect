@@ -134,7 +134,8 @@
     "addToCollection": "Add to Collection",
     "removeFromCollection": "Remove from Collection",
     "addToWishlist": "Add to Wishlist",
-    "removeFromWishlist": "Remove from Wishlist"
+    "removeFromWishlist": "Remove from Wishlist",
+    "inWishlist": "In Wishlist"
   },
   "cardDetail": {
     "backToCards": "Back to Cards",
@@ -142,18 +143,26 @@
     "addToWishlist": "Add to Wishlist",
     "addToCart": "Add to Cart",
     "cardInfo": "Card Information",
-    "cardNumber": "Card Number",
-    "artist": "Artist",
+    "set": "Set",
+    "number": "Number",
     "rarity": "Rarity",
-    "setName": "Set Name",
     "attacks": "Attacks",
     "weaknesses": "Weaknesses",
     "resistances": "Resistances",
     "retreatCost": "Retreat Cost",
     "damage": "Damage",
     "cost": "Cost",
+    "description": "Description",
+    "illustrator": "Illustrator",
+    "types": "Types",
     "cardNotFound": "Card not found",
     "cardNotFoundSubtitle": "The requested card could not be found.",
+    "addedToCollection": "Added to collection",
+    "addedToWishlist": "Added to wishlist",
+    "addedToCart": "Added to cart",
+    "errorAddingToCollection": "Error adding to collection",
+    "errorAddingToWishlist": "Error adding to wishlist",
+    "errorAddingToCart": "Error adding to cart",
     "hp": "HP",
     "type": "Type"
   },
@@ -208,7 +217,8 @@
     "priceRequestSent": "Your price request has been sent for",
     "hasBeenRemovedFromWishlist": "has been removed from your wishlist.",
     "hasBeenRemovedFromCollection": "has been removed from your collection.",
-    "hasBeenAddedToCart": "has been added to your cart."
+    "hasBeenAddedToCart": "has been added to your cart.",
+    "loading": "Loading..."
   },
   "series": {
     "title": "Pokemon Series",

@@ -9,6 +9,8 @@ import SearchBar from "@/components/SearchBar";
 import UserStats from "@/components/user/UserStats";
 // import SocialFeed from "@/components/social/SocialFeed";
 import { useAuth } from "@/contexts/AuthContext";
+import TradingCard from "@/components/cards/TradingCard";
+import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -198,31 +200,29 @@ const Home = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {cardsData?.map((card) => (
-                <Link key={card.card_id} to={`/card/${card.card_id}`}>
-                  <div className="pixel-card group hover:brightness-110 hover:scale-105 transition-all duration-300">
-                    <div className="aspect-[3/4] overflow-hidden">
-                      <img 
-                        src={card.image_url || '/placeholder.svg'} 
-                        alt={card.name || t('cards.card')} 
-                        className="w-full h-full object-cover pixelated group-hover:scale-110 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="p-4 bg-background border-t-4 border-black">
-                      <h3 className="font-black text-xs sm:text-sm uppercase tracking-wide mb-1 truncate">
-                        {card.name}
-                      </h3>
-                      <p className="text-muted-foreground font-bold text-xs mb-2">
-                        {card.set_name}
-                      </p>
-                      {card.rarity && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 text-yellow-500" />
-                          <span className="text-xs font-bold uppercase">{card.rarity}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                <TradingCard
+                  key={card.card_id}
+                  id={card.card_id}
+                  name={card.name || 'Unknown Card'}
+                  series="Pokemon TCG"
+                  set={card.set_name || 'Unknown Set'}
+                  number={card.card_number || ''}
+                  rarity={mapDatabaseRarityToComponent(card.rarity || 'Common')}
+                  type={card.types?.[0] || 'Normal'}
+                  price={0}
+                  image={card.image_url || '/placeholder.svg'}
+                  inCollection={false}
+                  inWishlist={false}
+                  description={card.description || ''}
+                  hidePriceAndBuy={true}
+                  cardData={card}
+                  onAddToCollection={() => {
+                    // Add to collection logic here
+                  }}
+                  onAddToWishlist={() => {
+                    // Add to wishlist logic here
+                  }}
+                />
               ))}
             </div>
           )}
