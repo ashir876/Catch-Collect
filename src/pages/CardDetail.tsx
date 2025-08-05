@@ -141,6 +141,10 @@ const CardDetail = () => {
 
       if (error) throw error;
 
+      // Invalidate wishlist queries to update navigation badge
+      queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
+
       toast({
         title: t('messages.addedToWishlist'),
         description: `${card.name} ${t('messages.addedToWishlist').toLowerCase()}.`,

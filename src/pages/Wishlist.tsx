@@ -122,6 +122,7 @@ const Wishlist = () => {
       
       // Invalidate all wishlist queries to refetch the data
       await queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
       
       toast({
         title: t("messages.removedFromWishlist"),

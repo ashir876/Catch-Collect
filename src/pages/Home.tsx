@@ -2,8 +2,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Grid3X3, Star, TrendingUp, Users, Trophy, Package } from "lucide-react";
-import { useSeriesData } from "@/hooks/useSeriesData";
-import { useCardsData } from "@/hooks/useCardsData";
+import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
+import { useCardsData, useCardsCount } from "@/hooks/useCardsData";
+import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
 import { useTranslation } from 'react-i18next';
 import SearchBar from "@/components/SearchBar";
 import UserStats from "@/components/user/UserStats";
@@ -18,8 +19,14 @@ const Home = () => {
   const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
   const { data: cardsData, isLoading: cardsLoading } = useCardsData({ 
     language: i18n.language, 
-    limit: 8 
+    limit: 10 
   });
+  const { data: setsData, isLoading: setsLoading } = useSetsData({ language: 'en' });
+  
+  // Get actual counts for quick stats - count all languages
+  const { data: totalCardsCount = 0 } = useCardsCount({});
+  const { data: totalSeriesCount = 0 } = useSeriesCount({});
+  const { data: totalSetsCount = 0 } = useSetsCount({});
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -90,17 +97,17 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="pixel-card text-center p-6">
               <TrendingUp className="h-12 w-12 text-primary mx-auto mb-4" />
-              <div className="text-3xl font-bold mb-2">1,234</div>
+              <div className="text-3xl font-bold mb-2">{totalCardsCount || 0}</div>
               <p className="text-sm text-muted-foreground">{t('home.totalCards')}</p>
             </div>
             <div className="pixel-card text-center p-6">
               <Grid3X3 className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-              <div className="text-3xl font-bold mb-2">56</div>
+              <div className="text-3xl font-bold mb-2">{totalSeriesCount || 0}</div>
               <p className="text-sm text-muted-foreground">{t('home.series')}</p>
             </div>
             <div className="pixel-card text-center p-6">
               <Package className="h-12 w-12 text-green-500 mx-auto mb-4" />
-              <div className="text-3xl font-bold mb-2">89</div>
+              <div className="text-3xl font-bold mb-2">{totalSetsCount || 0}</div>
               <p className="text-sm text-muted-foreground">{t('home.sets')}</p>
             </div>
             <div className="pixel-card text-center p-6">
@@ -112,8 +119,8 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Series Section */}
-      <section className="py-12 sm:py-16 px-4 bg-background relative z-10">
+      {/* Series Section - Commented out for now */}
+      {/* <section className="py-12 sm:py-16 px-4 bg-background relative z-10">
         <div className="w-full max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider px-4">
             <span className="bg-primary text-primary-foreground px-4 sm:px-6 py-2 sm:py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shadow-none">
@@ -174,20 +181,20 @@ const Home = () => {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Featured Cards Section */}
       <section className="py-12 sm:py-16 px-4 bg-muted/30 relative z-10">
-        <div className="w-full max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider px-4">
+        <div className="container mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider">
             <span className="bg-accent text-accent-foreground px-4 sm:px-6 py-2 sm:py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shadow-none">
               {t('home.featuredCards')}
             </span>
           </h2>
           
           {cardsLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {[...Array(8)].map((_, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              {[...Array(10)].map((_, i) => (
                 <div key={i} className="pixel-card animate-pulse">
                   <div className="aspect-[3/4] bg-muted"></div>
                   <div className="p-4">
@@ -198,7 +205,7 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
               {cardsData?.map((card) => (
                 <TradingCard
                   key={card.card_id}
@@ -241,8 +248,8 @@ const Home = () => {
       {/* User Stats Section (if logged in) */}
       {user && (
         <section className="py-12 sm:py-16 px-4 bg-background relative z-10">
-          <div className="w-full max-w-6xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider px-4">
+          <div className="container mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider">
               <span className="bg-primary text-primary-foreground px-4 sm:px-6 py-2 sm:py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shadow-none">
                 <Trophy className="inline mr-2 h-6 w-6 sm:h-8 sm:w-8" />
                 {t('home.yourProgress')}

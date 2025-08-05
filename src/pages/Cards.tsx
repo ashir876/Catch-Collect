@@ -18,6 +18,7 @@ import { COLLECTION_QUERY_KEY } from "@/hooks/useCollectionData";
 import { useWishlistData } from "@/hooks/useWishlistData";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
 import LanguageFilter from "@/components/LanguageFilter";
+import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import React from "react"; // Added missing import
 import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 
@@ -27,8 +28,14 @@ const Cards = () => {
   const setFilter = searchParams.get("set");
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
+  const [rarityFilter, setRarityFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [hpRange, setHpRange] = useState({ min: "", max: "" });
+  const [illustratorFilter, setIllustratorFilter] = useState("all");
+  const [collectionFilter, setCollectionFilter] = useState("all");
+  const [wishlistFilter, setWishlistFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20); // Show 20 items per page
+  const [itemsPerPage] = useState(50); // Show 50 items per page for more compact view
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toast } = useToast();
   const { user } = useAuth();
@@ -37,20 +44,36 @@ const Cards = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch cards data with pagination and language filter
+  // Fetch cards data with all filters
   const { data: cardsData, isLoading, error } = useCardsData({
     setId: setFilter || undefined,
     language: languageFilter === "all" ? undefined : languageFilter,
     limit: itemsPerPage,
     offset,
-    searchTerm: searchTerm || undefined
+    searchTerm: searchTerm || undefined,
+    rarity: rarityFilter === "all" ? undefined : rarityFilter,
+    type: typeFilter === "all" ? undefined : typeFilter,
+    hpMin: hpRange.min ? parseInt(hpRange.min) : undefined,
+    hpMax: hpRange.max ? parseInt(hpRange.max) : undefined,
+    illustrator: illustratorFilter === "all" ? undefined : illustratorFilter,
+    collectionFilter: collectionFilter === "all" ? undefined : collectionFilter,
+    wishlistFilter: wishlistFilter === "all" ? undefined : wishlistFilter,
+    userId: user?.id
   });
 
-  // Fetch total count for pagination with language filter
+  // Fetch total count for pagination with all filters
   const { data: totalCount = 0 } = useCardsCount({
     setId: setFilter || undefined,
     language: languageFilter === "all" ? undefined : languageFilter,
-    searchTerm: searchTerm || undefined
+    searchTerm: searchTerm || undefined,
+    rarity: rarityFilter === "all" ? undefined : rarityFilter,
+    type: typeFilter === "all" ? undefined : typeFilter,
+    hpMin: hpRange.min ? parseInt(hpRange.min) : undefined,
+    hpMax: hpRange.max ? parseInt(hpRange.max) : undefined,
+    illustrator: illustratorFilter === "all" ? undefined : illustratorFilter,
+    collectionFilter: collectionFilter === "all" ? undefined : collectionFilter,
+    wishlistFilter: wishlistFilter === "all" ? undefined : wishlistFilter,
+    userId: user?.id
   });
 
   // Fetch wishlist data for all cards
@@ -68,6 +91,45 @@ const Cards = () => {
   const handleLanguageFilterChange = (newLanguageFilter: string) => {
     setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
+  };
+
+  const handleRarityFilterChange = (newRarityFilter: string) => {
+    setRarityFilter(newRarityFilter);
+    setCurrentPage(1);
+  };
+
+  const handleTypeFilterChange = (newTypeFilter: string) => {
+    setTypeFilter(newTypeFilter);
+    setCurrentPage(1);
+  };
+
+  const handleHpRangeChange = (newHpRange: { min: string; max: string }) => {
+    setHpRange(newHpRange);
+    setCurrentPage(1);
+  };
+
+  const handleIllustratorFilterChange = (newIllustratorFilter: string) => {
+    setIllustratorFilter(newIllustratorFilter);
+    setCurrentPage(1);
+  };
+
+  const handleCollectionFilterChange = (newCollectionFilter: string) => {
+    setCollectionFilter(newCollectionFilter);
+    setCurrentPage(1);
+  };
+
+  const handleWishlistFilterChange = (newWishlistFilter: string) => {
+    setWishlistFilter(newWishlistFilter);
+    setCurrentPage(1);
+  };
+
+  const handleReloadCollection = () => {
+    queryClient.invalidateQueries({ queryKey: ['collection', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
+    toast({
+      title: t('messages.collectionReloaded'),
+      description: t('messages.collectionReloadedDescription'),
+    });
   };
 
 
@@ -320,6 +382,7 @@ const Cards = () => {
 
       // Refetch in background to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
 
       toast({
         title: t('messages.addedToWishlist'),
@@ -330,6 +393,7 @@ const Cards = () => {
       
       // Revert optimistic update on error
       queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
       
       // Show more specific error message
       let errorMessage = t('messages.wishlistError');
@@ -368,44 +432,44 @@ const Cards = () => {
         </p>
       </div>
 
-      {/* Search and Filters */}
-      <div className="space-y-4 mb-8">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder={t('cards.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === "grid" ? "default" : "outline"}
-              onClick={() => setViewMode("grid")}
-              size="sm"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              onClick={() => setViewMode("list")}
-              size="sm"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-4">
-          {/* Language Filter */}
-          <LanguageFilter
-            selectedLanguage={languageFilter}
-            onLanguageChange={handleLanguageFilterChange}
-            className="mb-4"
-          />
+      {/* Advanced Search and Filters */}
+             <AdvancedFilters
+         searchTerm={searchTerm}
+         onSearchChange={handleSearchChange}
+         languageFilter={languageFilter}
+         onLanguageChange={handleLanguageFilterChange}
+         rarityFilter={rarityFilter}
+         onRarityChange={handleRarityFilterChange}
+         typeFilter={typeFilter}
+         onTypeChange={handleTypeFilterChange}
+         hpRange={hpRange}
+         onHpRangeChange={handleHpRangeChange}
+         illustratorFilter={illustratorFilter}
+         onIllustratorChange={handleIllustratorFilterChange}
+         collectionFilter={collectionFilter}
+         onCollectionChange={handleCollectionFilterChange}
+         wishlistFilter={wishlistFilter}
+         onWishlistChange={handleWishlistFilterChange}
+         onReloadCollection={handleReloadCollection}
+       />
+
+      {/* View Mode Toggle */}
+      <div className="flex justify-end mb-6">
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            onClick={() => setViewMode("grid")}
+            size="sm"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            onClick={() => setViewMode("list")}
+            size="sm"
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -443,15 +507,15 @@ const Cards = () => {
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
-            {[...Array(20)].map((_, i) => (
+          <div className="space-y-2">
+            {[...Array(50)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="flex gap-4 p-6 border rounded-lg">
-                  <div className="w-24 h-32 bg-muted rounded-lg"></div>
+                <div className="flex gap-3 p-3 border rounded-lg">
+                  <div className="w-16 h-20 bg-muted rounded-lg"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-6 bg-muted rounded w-1/3"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                    <div className="h-4 bg-muted rounded w-1/3"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="h-3 bg-muted rounded w-1/4"></div>
                   </div>
                 </div>
               </div>
@@ -476,15 +540,15 @@ const Cards = () => {
           })}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {filteredCards.map((card) => {
             const isInWishlist = wishlistItems.some(item => item.card_id === card.card_id);
             
             return (
               <Card key={`${card.card_id}-${card.language}`} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex gap-4">
-                    <div className="w-24 h-32 flex-shrink-0">
+                <CardContent className="p-3">
+                  <div className="flex gap-3 items-center">
+                    <div className="w-16 h-20 flex-shrink-0">
                       <img
                         src={card.image_url || "/placeholder.svg"}
                         alt={card.name}
@@ -494,49 +558,42 @@ const Cards = () => {
                         }}
                       />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold text-lg">{card.name}</h3>
-                          <p className="text-muted-foreground">{card.set_name} • {card.card_number}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm truncate">{card.name}</h3>
+                          <p className="text-muted-foreground text-xs">{card.set_name} • {card.card_number}</p>
                           {card.rarity && (
                             <div className="mt-1">
                               {mapDatabaseRarityToComponent(card.rarity)}
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddToCollection(card.card_id, card.name, card.language)}
-                            >
-                              <Heart className="mr-2 h-4 w-4" />
-                              {t('cards.addToCollection')}
-                            </Button>
-                            <Button
-                              variant={isInWishlist ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handleAddToWishlist(card.card_id, card.name, card.language)}
-                            >
-                              <Star className="mr-2 h-4 w-4" />
-                              {isInWishlist ? t('cards.inWishlist') : t('cards.addToWishlist')}
-                            </Button>
-                          </div>
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddToCollection(card.card_id, card.name, card.language)}
+                            className="h-8 px-2"
+                          >
+                            <Heart className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant={isInWishlist ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleAddToWishlist(card.card_id, card.name, card.language)}
+                            className="h-8 px-2"
+                          >
+                            <Star className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
-                      {card.description && (
-                        <p className="text-muted-foreground mb-4 line-clamp-2">{card.description}</p>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <Badge variant="secondary">{card.language}</Badge>
-                          {card.hp && <Badge variant="outline">HP: {card.hp}</Badge>}
-                          {card.types && card.types.length > 0 && (
-                            <Badge variant="outline">{card.types.join(', ')}</Badge>
-                          )}
-                        </div>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="secondary" className="text-xs">{card.language}</Badge>
+                        {card.hp && <Badge variant="outline" className="text-xs">HP: {card.hp}</Badge>}
+                        {card.types && card.types.length > 0 && (
+                          <Badge variant="outline" className="text-xs">{card.types[0]}</Badge>
+                        )}
                       </div>
                     </div>
                   </div>

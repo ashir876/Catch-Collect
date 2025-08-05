@@ -168,7 +168,7 @@ const SearchBar = () => {
           placeholder={t('search.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-10 pr-10 pixel-input w-full text-center text-sm sm:text-base"
+          className="pl-10 pr-10 pixel-input w-full text-center text-sm sm:text-base bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-100"
           onFocus={() => setShowResults(true)}
         />
         {query && (

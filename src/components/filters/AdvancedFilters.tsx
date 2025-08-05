@@ -1,319 +1,288 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { ChevronDown, ChevronUp, Search, Filter, Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Filter, 
-  X, 
-  Star, 
-  Package, 
-  Grid3X3,
-  Zap,
-  Shield,
-  Heart,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from 'react-i18next';
-import { supabase } from "@/integrations/supabase/client";
-
-interface FilterState {
-  rarity: string[];
-  types: string[];
-  series: string[];
-  sets: string[];
-  minHp: number | null;
-  maxHp: number | null;
-  hasAttacks: boolean | null;
-  hasWeaknesses: boolean | null;
-  priceRange: [number, number] | null;
-}
+import { useAuth } from "@/contexts/AuthContext";
+import { useCollectionData } from "@/hooks/useCollectionData";
+import { useWishlistData } from "@/hooks/useWishlistData";
+import { useIllustratorsData } from "@/hooks/useIllustratorsData";
 
 interface AdvancedFiltersProps {
-  onFiltersChange: (filters: FilterState) => void;
-  className?: string;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  languageFilter: string;
+  onLanguageChange: (value: string) => void;
+  rarityFilter: string;
+  onRarityChange: (value: string) => void;
+  typeFilter: string;
+  onTypeChange: (value: string) => void;
+  hpRange: { min: string; max: string };
+  onHpRangeChange: (range: { min: string; max: string }) => void;
+  illustratorFilter: string;
+  onIllustratorChange: (value: string) => void;
+  collectionFilter: string;
+  onCollectionChange: (value: string) => void;
+  wishlistFilter: string;
+  onWishlistChange: (value: string) => void;
+  onReloadCollection: () => void;
 }
 
-const AdvancedFilters = ({ onFiltersChange, className }: AdvancedFiltersProps) => {
+const AdvancedFilters = ({
+  searchTerm,
+  onSearchChange,
+  languageFilter,
+  onLanguageChange,
+  rarityFilter,
+  onRarityChange,
+  typeFilter,
+  onTypeChange,
+  hpRange,
+  onHpRangeChange,
+  illustratorFilter,
+  onIllustratorChange,
+  collectionFilter,
+  onCollectionChange,
+  wishlistFilter,
+  onWishlistChange,
+  onReloadCollection
+}: AdvancedFiltersProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({
-    rarity: [],
-    types: [],
-    series: [],
-    sets: [],
-    minHp: null,
-    maxHp: null,
-    hasAttacks: null,
-    hasWeaknesses: null,
-    priceRange: null
-  });
+  const { data: collectionData = [] } = useCollectionData();
+  const { data: wishlistData = [] } = useWishlistData();
+  const { data: illustrators = [] } = useIllustratorsData();
 
-  const [availableFilters, setAvailableFilters] = useState({
-    rarities: [],
-    types: [],
-    series: [],
-    sets: []
-  });
+  const rarities = [
+    'Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret',
+    'Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret'
+  ];
 
-  useEffect(() => {
-    const loadAvailableFilters = async () => {
-      try {
-        // Load rarities
-        const { data: rarities } = await supabase
-          .from('cards')
-          .select('rarity')
-          .not('rarity', 'is', null);
+  const types = [
+    'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
+    'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
+  ];
 
-        // Load types
-        const { data: types } = await supabase
-          .from('cards')
-          .select('types');
+  const languages = [
+    { value: 'all', label: t('filters.allLanguages') },
+    { value: 'en', label: 'English' },
+    { value: 'de', label: 'Deutsch' },
+    { value: 'nl', label: 'Nederlands' }
+  ];
 
-        // Load series
-        const { data: series } = await supabase
-          .from('series')
-          .select('series_id, series_name');
+  const collectionStatuses = [
+    { value: 'all', label: t('filters.allCards') },
+    { value: 'in_collection', label: t('filters.inCollection') },
+    { value: 'not_in_collection', label: t('filters.notInCollection') }
+  ];
 
-        // Load sets
-        const { data: sets } = await supabase
-          .from('sets')
-          .select('set_id, set_name');
-
-        setAvailableFilters({
-          rarities: [...new Set(rarities?.map(r => r.rarity).filter(Boolean) || [])],
-          types: [...new Set(types?.flatMap(t => t.types || []).filter(Boolean) || [])],
-          series: series || [],
-          sets: sets || []
-        });
-      } catch (error) {
-        console.error('Error loading filters:', error);
-      }
-    };
-
-    loadAvailableFilters();
-  }, []);
-
-  useEffect(() => {
-    onFiltersChange(filters);
-  }, [filters, onFiltersChange]);
-
-  const toggleFilter = (category: keyof FilterState, value: string) => {
-    if (category === 'rarity' || category === 'types' || category === 'series' || category === 'sets') {
-      setFilters(prev => ({
-        ...prev,
-        [category]: prev[category].includes(value)
-          ? prev[category].filter(v => v !== value)
-          : [...prev[category], value]
-      }));
-    }
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      rarity: [],
-      types: [],
-      series: [],
-      sets: [],
-      minHp: null,
-      maxHp: null,
-      hasAttacks: null,
-      hasWeaknesses: null,
-      priceRange: null
-    });
-  };
-
-  const hasActiveFilters = Object.values(filters).some(value => 
-    Array.isArray(value) ? value.length > 0 : value !== null
-  );
+  const wishlistStatuses = [
+    { value: 'all', label: t('filters.allCards') },
+    { value: 'in_wishlist', label: t('filters.inWishlist') },
+    { value: 'not_in_wishlist', label: t('filters.notInWishlist') }
+  ];
 
   return (
-    <Card className={`pixel-card ${className}`}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            {t('filters.title')}
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {hasActiveFilters && (
+    <div className="mb-8">
+      {/* Main Search Bar */}
+      <div className="relative mb-6">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Input
+          placeholder={t('filters.searchByNameIdNumber')}
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-12 pr-4 h-12 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        />
+      </div>
+
+      {/* Quick Filters Row */}
+      <div className="flex flex-wrap gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">{t('filters.language')}:</span>
+          <Select value={languageFilter} onValueChange={onLanguageChange}>
+            <SelectTrigger className="w-32 h-8 text-sm border border-gray-300 rounded-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {languages.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">{t('filters.rarity')}:</span>
+          <Select value={rarityFilter} onValueChange={onRarityChange}>
+            <SelectTrigger className="w-32 h-8 text-sm border border-gray-300 rounded-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('filters.allRarities')}</SelectItem>
+              {rarities.map((rarity) => (
+                <SelectItem key={rarity} value={rarity}>
+                  {rarity}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">{t('filters.type')}:</span>
+          <Select value={typeFilter} onValueChange={onTypeChange}>
+            <SelectTrigger className="w-32 h-8 text-sm border border-gray-300 rounded-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('filters.allTypes')}</SelectItem>
+              {types.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* HP Range */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">HP:</span>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              placeholder="0"
+              value={hpRange.min}
+              onChange={(e) => onHpRangeChange({ ...hpRange, min: e.target.value })}
+              className="w-16 h-8 text-sm border border-gray-300 rounded-md"
+            />
+            <span className="text-sm text-gray-500">-</span>
+            <Input
+              type="number"
+              placeholder="300"
+              value={hpRange.max}
+              onChange={(e) => onHpRangeChange({ ...hpRange, max: e.target.value })}
+              className="w-16 h-8 text-sm border border-gray-300 rounded-md"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced Filters Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <Button
+          variant="ghost"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-sm text-gray-600 hover:text-gray-800 p-0 h-auto"
+        >
+          <Filter className="mr-2 h-4 w-4" />
+          {t('filters.advancedSearch')}
+          {isExpanded ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+        </Button>
+
+        {/* Collection Status */}
+        {user && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant={collectionFilter === 'in_collection' ? 'default' : 'outline'}
                 size="sm"
-                onClick={clearFilters}
-                className="pixel-button-small"
+                onClick={() => onCollectionChange('in_collection')}
+                className="h-7 px-3 text-xs"
               >
-                <X className="h-4 w-4 mr-1" />
-                {t('filters.clear')}
+                <Heart className="mr-1 h-3 w-3" />
+                {t('filters.inCollection')}
               </Button>
-            )}
+              <Button
+                variant={wishlistFilter === 'in_wishlist' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onWishlistChange('in_wishlist')}
+                className="h-7 px-3 text-xs"
+              >
+                <Star className="mr-1 h-3 w-3" />
+                {t('filters.inWishlist')}
+              </Button>
+            </div>
+            <div className="text-xs text-gray-500">
+              {t('filters.collectionStats', { 
+                collection: collectionData.length, 
+                wishlist: wishlistData.length 
+              })}
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="pixel-button-small"
+              onClick={onReloadCollection}
+              className="h-7 px-2 text-xs text-blue-600 hover:text-blue-800"
             >
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {t('filters.reloadCollectionData')}
             </Button>
           </div>
-        </div>
-      </CardHeader>
+        )}
+      </div>
 
+      {/* Advanced Filters (Collapsible) */}
       {isExpanded && (
-        <CardContent className="space-y-6">
-          {/* Rarity Filter */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Star className="h-4 w-4" />
-              {t('filters.rarity')}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {availableFilters.rarities.map((rarity) => (
-                <Badge
-                  key={rarity}
-                  variant={filters.rarity.includes(rarity) ? "default" : "outline"}
-                  className="cursor-pointer pixel-badge"
-                  onClick={() => toggleFilter('rarity', rarity)}
-                >
-                  {rarity}
-                </Badge>
-              ))}
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                         <div>
+               <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.illustrator')}</label>
+               <Select value={illustratorFilter} onValueChange={onIllustratorChange}>
+                 <SelectTrigger className="border border-gray-300 rounded-md">
+                   <SelectValue placeholder={t('filters.selectIllustrator')} />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">{t('filters.allIllustrators')}</SelectItem>
+                   {illustrators.map((illustrator) => (
+                     <SelectItem key={illustrator} value={illustrator}>
+                       {illustrator}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.productType')}</label>
+              <Select value="cards" disabled>
+                <SelectTrigger className="border border-gray-300 rounded-md">
+                  <SelectValue placeholder={t('filters.selectProductType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cards">{t('filters.singleCards')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.series')}</label>
+              <Select value="all" disabled>
+                <SelectTrigger className="border border-gray-300 rounded-md">
+                  <SelectValue placeholder={t('filters.selectSeries')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('filters.all')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Types Filter */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              {t('filters.types')}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {availableFilters.types.map((type) => (
-                <Badge
-                  key={type}
-                  variant={filters.types.includes(type) ? "default" : "outline"}
-                  className="cursor-pointer pixel-badge"
-                  onClick={() => toggleFilter('types', type)}
-                >
-                  {type}
-                </Badge>
-              ))}
+          {!user && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                {t('filters.loginToSeeCollection')}
+              </p>
             </div>
-          </div>
-
-          {/* Series Filter */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Grid3X3 className="h-4 w-4" />
-              {t('filters.series')}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {availableFilters.series.map((series) => (
-                <Badge
-                  key={series.series_id}
-                  variant={filters.series.includes(series.series_id) ? "default" : "outline"}
-                  className="cursor-pointer pixel-badge"
-                  onClick={() => toggleFilter('series', series.series_id)}
-                >
-                  {series.series_name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Sets Filter */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              {t('filters.sets')}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {availableFilters.sets.map((set) => (
-                <Badge
-                  key={set.set_id}
-                  variant={filters.sets.includes(set.set_id) ? "default" : "outline"}
-                  className="cursor-pointer pixel-badge"
-                  onClick={() => toggleFilter('sets', set.set_id)}
-                >
-                  {set.set_name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* HP Range Filter */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Heart className="h-4 w-4" />
-              {t('filters.hpRange')}
-            </h4>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder={t('filters.minHp')}
-                className="pixel-input flex-1"
-                value={filters.minHp || ''}
-                onChange={(e) => setFilters(prev => ({
-                  ...prev,
-                  minHp: e.target.value ? parseInt(e.target.value) : null
-                }))}
-              />
-              <span className="self-center">-</span>
-              <input
-                type="number"
-                placeholder={t('filters.maxHp')}
-                className="pixel-input flex-1"
-                value={filters.maxHp || ''}
-                onChange={(e) => setFilters(prev => ({
-                  ...prev,
-                  maxHp: e.target.value ? parseInt(e.target.value) : null
-                }))}
-              />
-            </div>
-          </div>
-
-          {/* Special Filters */}
-          <div>
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              {t('filters.special')}
-            </h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="hasAttacks"
-                  checked={filters.hasAttacks === true}
-                  onChange={(e) => setFilters(prev => ({
-                    ...prev,
-                    hasAttacks: e.target.checked ? true : null
-                  }))}
-                  className="pixel-checkbox"
-                />
-                <label htmlFor="hasAttacks" className="text-sm cursor-pointer">
-                  {t('filters.hasAttacks')}
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="hasWeaknesses"
-                  checked={filters.hasWeaknesses === true}
-                  onChange={(e) => setFilters(prev => ({
-                    ...prev,
-                    hasWeaknesses: e.target.checked ? true : null
-                  }))}
-                  className="pixel-checkbox"
-                />
-                <label htmlFor="hasWeaknesses" className="text-sm cursor-pointer">
-                  {t('filters.hasWeaknesses')}
-                </label>
-              </div>
-            </div>
-          </div>
-        </CardContent>
+          )}
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
 

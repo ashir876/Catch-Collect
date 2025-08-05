@@ -16,7 +16,8 @@ import {
   Settings,
   LogIn,
   LogOut,
-  Shield
+  Shield,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,15 +45,15 @@ const Navigation = () => {
 
   const mainNavItems: NavItem[] = [
     { path: "/", label: "HOME", icon: Home },
-    { path: "/cards", label: "CARDS", icon: Star },
     { path: "/series", label: "SERIES", icon: Grid3X3 },
     { path: "/sets", label: "SETS", icon: Package },
-    
+    { path: "/cards", label: "CARDS", icon: Star },
     { path: "/shop", label: "SHOP", icon: ShoppingCart }
   ];
 
   const authenticatedNavItems: NavItem[] = [
     { path: "/wishlist", label: t('navigation.wishlist'), icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
+    { path: "/collection", label: t('navigation.collection'), icon: BookOpen },
     { path: "/cart", label: t('navigation.cart'), icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
     { path: "/profile", label: t('navigation.profile'), icon: User },
     { path: "/settings", label: t('navigation.settings'), icon: Settings }
@@ -61,6 +62,7 @@ const Navigation = () => {
   // Desktop-only icon items (without labels)
   const desktopIconItems: NavItem[] = [
     { path: "/wishlist", label: "", icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
+    { path: "/collection", label: "", icon: BookOpen },
     { path: "/cart", label: "", icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
     { path: "/profile", label: "", icon: User },
     { path: "/settings", label: "", icon: Settings }

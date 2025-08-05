@@ -111,9 +111,9 @@ const Series = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(12)].map((_, i) => (
-              <Card key={i} className="border-4 border-black animate-pulse">
-                <div className="h-48 bg-muted"></div>
-                <CardHeader>
+              <Card key={i} className="border-4 border-black animate-pulse h-80 flex flex-col">
+                <div className="h-48 bg-muted flex-shrink-0"></div>
+                <CardHeader className="flex-1 p-4">
                   <div className="h-6 bg-muted rounded mb-2"></div>
                   <div className="h-4 bg-muted rounded"></div>
                 </CardHeader>
@@ -126,8 +126,8 @@ const Series = () => {
               const linkUrl = `/sets?series=${series.series_id}${languageFilter !== "all" ? `&language=${languageFilter}` : ""}`;
               return (
                 <Link key={series.series_id} to={linkUrl}>
-                  <Card className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group">
-                    <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center p-4 overflow-hidden">
+                  <Card className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
+                    <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
                       {series.logo_url ? (
                         <img 
                           src={series.logo_url} 
@@ -141,8 +141,8 @@ const Series = () => {
                         </div>
                       )}
                     </div>
-                    <CardHeader className="bg-background">
-                      <CardTitle className="font-black text-lg uppercase tracking-wide">
+                    <CardHeader className="bg-background flex-1 flex flex-col justify-center p-4">
+                      <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
                         {series.series_name}
                       </CardTitle>
                       <CardDescription className="font-bold text-muted-foreground">

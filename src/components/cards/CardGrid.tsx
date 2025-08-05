@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CardData {
   card_id: string;
@@ -68,6 +69,7 @@ const CardGrid = ({
 }: CardGridProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [cards, setCards] = useState<CardData[]>(initialCards || []);
   const [filteredCards, setFilteredCards] = useState<CardData[]>(initialCards || []);
   const [loading, setLoading] = useState(!initialCards);
@@ -230,6 +232,10 @@ const CardGrid = ({
         });
 
       if (error) throw error;
+
+      // Invalidate wishlist queries to update navigation badge
+      queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
 
       // Update local state to show the card is in wishlist
       setCards(prev => prev.map(card => 

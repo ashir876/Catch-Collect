@@ -8,6 +8,14 @@ export interface CardsDataOptions {
   limit?: number;
   offset?: number;
   searchTerm?: string;
+  rarity?: string;
+  type?: string;
+  hpMin?: number;
+  hpMax?: number;
+  illustrator?: string;
+  collectionFilter?: string;
+  wishlistFilter?: string;
+  userId?: string;
 }
 
 export const useCardsData = (options: CardsDataOptions = {}) => {
@@ -16,14 +24,20 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
     setId, 
     limit, 
     offset = 0, 
-    searchTerm 
+    searchTerm,
+    rarity,
+    type,
+    hpMin,
+    hpMax,
+    illustrator,
+    collectionFilter,
+    wishlistFilter,
+    userId
   } = options;
 
   return useQuery({
-    queryKey: ['cards', language, setId, limit, offset, searchTerm],
+    queryKey: ['cards', language, setId, limit, offset, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId],
     queryFn: async () => {
-    
-      
       let query = supabase
         .from('cards')
         .select('*')
@@ -39,7 +53,84 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
       }
 
       if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+        query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%`);
+      }
+
+      if (rarity && rarity !== 'all') {
+        query = query.eq('rarity', rarity);
+      }
+
+      if (type && type !== 'all') {
+        query = query.contains('types', [type]);
+      }
+
+      if (hpMin !== undefined && hpMin !== null) {
+        query = query.gte('hp', hpMin);
+      }
+
+      if (hpMax !== undefined && hpMax !== null) {
+        query = query.lte('hp', hpMax);
+      }
+
+      if (illustrator && illustrator !== 'all') {
+        query = query.eq('illustrator', illustrator);
+      }
+
+      // Collection and wishlist filters require additional queries
+      if ((collectionFilter && collectionFilter !== 'all') || (wishlistFilter && wishlistFilter !== 'all')) {
+        if (userId) {
+          // For collection filter
+          if (collectionFilter === 'in_collection') {
+            const { data: collectionData } = await supabase
+              .from('card_collections')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (collectionData && collectionData.length > 0) {
+              const cardIds = collectionData.map(item => item.card_id);
+              query = query.in('card_id', cardIds);
+            } else {
+              // No cards in collection, return empty result
+              return [];
+            }
+          } else if (collectionFilter === 'not_in_collection') {
+            const { data: collectionData } = await supabase
+              .from('card_collections')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (collectionData && collectionData.length > 0) {
+              const cardIds = collectionData.map(item => item.card_id);
+              query = query.not('card_id', 'in', cardIds);
+            }
+          }
+
+          // For wishlist filter
+          if (wishlistFilter === 'in_wishlist') {
+            const { data: wishlistData } = await supabase
+              .from('card_wishlist')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (wishlistData && wishlistData.length > 0) {
+              const cardIds = wishlistData.map(item => item.card_id);
+              query = query.in('card_id', cardIds);
+            } else {
+              // No cards in wishlist, return empty result
+              return [];
+            }
+          } else if (wishlistFilter === 'not_in_wishlist') {
+            const { data: wishlistData } = await supabase
+              .from('card_wishlist')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (wishlistData && wishlistData.length > 0) {
+              const cardIds = wishlistData.map(item => item.card_id);
+              query = query.not('card_id', 'in', cardIds);
+            }
+          }
+        }
       }
 
       if (limit) {
@@ -53,7 +144,6 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
         throw error;
       }
 
-      
       return data;
     },
   });
@@ -61,13 +151,11 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
 
 // Hook to get total count of cards for pagination
 export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'> = {}) => {
-  const { language, setId, searchTerm } = options;
+  const { language, setId, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId } = options;
 
   return useQuery({
-    queryKey: ['cards-count', language, setId, searchTerm],
+    queryKey: ['cards-count', language, setId, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId],
     queryFn: async () => {
-    
-      
       let query = supabase
         .from('cards')
         .select('*', { count: 'exact', head: true });
@@ -82,7 +170,84 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
       }
 
       if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+        query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%`);
+      }
+
+      if (rarity && rarity !== 'all') {
+        query = query.eq('rarity', rarity);
+      }
+
+      if (type && type !== 'all') {
+        query = query.contains('types', [type]);
+      }
+
+      if (hpMin !== undefined && hpMin !== null) {
+        query = query.gte('hp', hpMin);
+      }
+
+      if (hpMax !== undefined && hpMax !== null) {
+        query = query.lte('hp', hpMax);
+      }
+
+      if (illustrator && illustrator !== 'all') {
+        query = query.eq('illustrator', illustrator);
+      }
+
+      // Collection and wishlist filters require additional queries
+      if ((collectionFilter && collectionFilter !== 'all') || (wishlistFilter && wishlistFilter !== 'all')) {
+        if (userId) {
+          // For collection filter
+          if (collectionFilter === 'in_collection') {
+            const { data: collectionData } = await supabase
+              .from('card_collections')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (collectionData && collectionData.length > 0) {
+              const cardIds = collectionData.map(item => item.card_id);
+              query = query.in('card_id', cardIds);
+            } else {
+              // No cards in collection, return 0
+              return 0;
+            }
+          } else if (collectionFilter === 'not_in_collection') {
+            const { data: collectionData } = await supabase
+              .from('card_collections')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (collectionData && collectionData.length > 0) {
+              const cardIds = collectionData.map(item => item.card_id);
+              query = query.not('card_id', 'in', cardIds);
+            }
+          }
+
+          // For wishlist filter
+          if (wishlistFilter === 'in_wishlist') {
+            const { data: wishlistData } = await supabase
+              .from('card_wishlist')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (wishlistData && wishlistData.length > 0) {
+              const cardIds = wishlistData.map(item => item.card_id);
+              query = query.in('card_id', cardIds);
+            } else {
+              // No cards in wishlist, return 0
+              return 0;
+            }
+          } else if (wishlistFilter === 'not_in_wishlist') {
+            const { data: wishlistData } = await supabase
+              .from('card_wishlist')
+              .select('card_id')
+              .eq('user_id', userId);
+            
+            if (wishlistData && wishlistData.length > 0) {
+              const cardIds = wishlistData.map(item => item.card_id);
+              query = query.not('card_id', 'in', cardIds);
+            }
+          }
+        }
       }
 
       const { count, error } = await query;
@@ -92,7 +257,6 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
         throw error;
       }
 
-      
       return count || 0;
     },
   });

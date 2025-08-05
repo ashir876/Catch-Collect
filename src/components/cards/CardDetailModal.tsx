@@ -127,6 +127,7 @@ const CardDetailModal = ({ card, children }: CardDetailModalProps) => {
 
       // Invalidate and refetch wishlist data
       queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-count'] });
     } catch (error) {
       console.error('Error adding to wishlist:', error);
       toast({
