@@ -20,7 +20,7 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
   return useQuery({
     queryKey: ['series', language, limit, offset, searchTerm],
     queryFn: async () => {
-      console.log('Fetching series data:', { language, limit, offset, searchTerm });
+    
       
       let query = supabase
         .from('series')
@@ -47,7 +47,7 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
         throw error;
       }
 
-      console.log('Series data fetched:', data?.length, 'series');
+      
       return data;
     },
   });
@@ -60,7 +60,7 @@ export const useSeriesCount = (options: Omit<SeriesDataOptions, 'limit' | 'offse
   return useQuery({
     queryKey: ['series-count', language, searchTerm],
     queryFn: async () => {
-      console.log('Fetching series count:', { language, searchTerm });
+    
       
       let query = supabase
         .from('series')
@@ -82,7 +82,7 @@ export const useSeriesCount = (options: Omit<SeriesDataOptions, 'limit' | 'offse
         throw error;
       }
 
-      console.log('Series count fetched:', count);
+      
       return count || 0;
     },
   });

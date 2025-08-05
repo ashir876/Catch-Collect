@@ -11,7 +11,7 @@ export const useCartData = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      console.log('Fetching cart data for user:', user.id);
+    
       
       const { data, error } = await supabase
         .from('carts')
@@ -24,7 +24,7 @@ export const useCartData = () => {
         throw error;
       }
 
-      console.log('Cart data fetched:', data?.length, 'items');
+      
       return data;
     },
     enabled: !!user,

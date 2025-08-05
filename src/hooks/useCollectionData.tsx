@@ -14,7 +14,7 @@ export const useCollectionData = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      console.log('Fetching collection data for user:', user.id);
+    
       
       // First, get the collection items from card_collections table
       const { data: collectionItems, error: collectionError } = await supabase
@@ -53,7 +53,7 @@ export const useCollectionData = () => {
         };
       });
 
-      console.log('Collection data fetched:', data?.length, 'cards');
+      
       return data;
     },
     enabled: !!user,

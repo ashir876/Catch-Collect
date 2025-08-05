@@ -52,6 +52,14 @@ const Navigation = () => {
   ];
 
   const authenticatedNavItems: NavItem[] = [
+    { path: "/wishlist", label: t('navigation.wishlist'), icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
+    { path: "/cart", label: t('navigation.cart'), icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
+    { path: "/profile", label: t('navigation.profile'), icon: User },
+    { path: "/settings", label: t('navigation.settings'), icon: Settings }
+  ];
+
+  // Desktop-only icon items (without labels)
+  const desktopIconItems: NavItem[] = [
     { path: "/wishlist", label: "", icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
     { path: "/cart", label: "", icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
     { path: "/profile", label: "", icon: User },
@@ -104,7 +112,7 @@ const Navigation = () => {
             <div className="hidden md:flex items-center space-x-2">
               {user ? (
                 <>
-                  {authenticatedNavItems.map((item) => (
+                  {desktopIconItems.map((item) => (
                     <Link key={item.path} to={item.path}>
                       <div className="pixel-nav-item-small">
                         <item.icon className="w-4 h-4" />
@@ -127,7 +135,7 @@ const Navigation = () => {
                   <Button 
                     onClick={handleSignOut}
                     variant="outline"
-                    className="pixel-button-secondary"
+                    className="bg-red-500 hover:bg-red-600 text-white border-2 border-black px-3 py-2 font-black uppercase text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-100"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
@@ -140,7 +148,9 @@ const Navigation = () => {
                   </Button>
                 </Link>
               )}
-              <LanguageSwitcher />
+              <div className="relative">
+                <LanguageSwitcher />
+              </div>
             </div>
 
           {/* Mobile Menu Button */}
@@ -231,7 +241,7 @@ const Navigation = () => {
                     <Button 
                       onClick={handleSignOut}
                       variant="outline"
-                      className="w-full border-2 border-black font-black uppercase"
+                      className="w-full bg-red-500 hover:bg-red-600 text-white border-2 border-black font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-100"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       {t('navigation.signOut')}

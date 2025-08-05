@@ -16,71 +16,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { COLLECTION_QUERY_KEY } from "@/hooks/useCollectionData";
 import { useWishlistData } from "@/hooks/useWishlistData";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
+import LanguageFilter from "@/components/LanguageFilter";
 import React from "react"; // Added missing import
-
-// Helper function to map database rarity to component rarity
-const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
-  const normalizedRarity = dbRarity.toLowerCase();
-  
-  switch (normalizedRarity) {
-    // English terms
-    case "common":
-    case "uncommon":
-      return "common";
-    case "rare":
-      return "rare";
-    case "ultra rare":
-    case "hyper rare":
-      return "epic";
-    case "legendary":
-    case "secret rare":
-      return "legendary";
-    
-    // German terms
-    case "häufig":
-      return "common";
-    case "selten":
-      return "rare";
-    case "ungewöhnlich":
-      return "rare";
-    case "ultra selten":
-      return "epic";
-    case "versteckt selten":
-      return "legendary";
-    case "holografisch selten":
-      return "legendary";
-    case "holografisch selten v":
-      return "legendary";
-    case "doppelselten":
-      return "legendary";
-    case "shiny rare":
-      return "legendary";
-    case "keine":
-      return "common";
-    
-    // French terms
-    case "commune":
-    case "peu commune":
-    case "incomum":
-      return "common";
-    
-    // Portuguese terms
-    case "comum":
-      return "common";
-    
-    default:
-      console.warn(`Unknown database rarity: ${dbRarity}, defaulting to common`);
-      return "common";
-  }
-};
+import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 
 const Cards = () => {
   const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const setFilter = searchParams.get("set");
   const [searchTerm, setSearchTerm] = useState("");
-  const [rarityFilter, setRarityFilter] = useState("all");
-  const [collectionFilter, setCollectionFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // Show 20 items per page
   const { toast } = useToast();
@@ -90,17 +35,19 @@ const Cards = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch cards data with pagination (all languages)
+  // Fetch cards data with pagination and language filter
   const { data: cardsData, isLoading, error } = useCardsData({
     setId: setFilter || undefined,
+    language: languageFilter === "all" ? undefined : languageFilter,
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
   });
 
-  // Fetch total count for pagination (all languages)
+  // Fetch total count for pagination with language filter
   const { data: totalCount = 0 } = useCardsCount({
     setId: setFilter || undefined,
+    language: languageFilter === "all" ? undefined : languageFilter,
     searchTerm: searchTerm || undefined
   });
 
@@ -116,20 +63,19 @@ const Cards = () => {
     setCurrentPage(1);
   };
 
-  const handleRarityFilterChange = (newRarityFilter: string) => {
-    setRarityFilter(newRarityFilter);
+  const handleLanguageFilterChange = (newLanguageFilter: string) => {
+    setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
   };
 
-  // Filter cards by rarity (client-side filtering since rarity is not in the database query)
-  const filteredCards = cardsData?.filter(card => {
-    const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
-    return matchesRarity;
-  }) || [];
+
+
+  // Use cards data directly since we're filtering by language at the database level
+  const filteredCards = cardsData || [];
 
   // Test function to check database connectivity
   const testDatabaseConnection = async () => {
-    console.log('Testing database connection...');
+
     
     try {
       // Test cards table
@@ -138,7 +84,7 @@ const Cards = () => {
         .select('card_id, name, language')
         .limit(1);
       
-      console.log('Cards table test:', { data: cardsTest, error: cardsError });
+      
       
       // Test card_wishlist table
       const { data: wishlistTest, error: wishlistError } = await supabase
@@ -146,7 +92,7 @@ const Cards = () => {
         .select('*')
         .limit(1);
       
-      console.log('Card wishlist table test:', { data: wishlistTest, error: wishlistError });
+      
       
       // Test card_collections table
       const { data: collectionsTest, error: collectionsError } = await supabase
@@ -154,7 +100,7 @@ const Cards = () => {
         .select('*')
         .limit(1);
       
-      console.log('Card collections table test:', { data: collectionsTest, error: collectionsError });
+      
       
     } catch (error) {
       console.error('Database connection test error:', error);
@@ -167,7 +113,7 @@ const Cards = () => {
   }, []);
 
   const handleAddToCollection = async (cardId: string, cardName: string, cardLanguage?: string) => {
-    console.log('handleAddToCollection called with:', { cardId, cardName, cardLanguage, user: user?.id });
+
     
     if (!user) {
       toast({
@@ -212,7 +158,7 @@ const Cards = () => {
         throw cardError;
       }
 
-      console.log('Card data for collection:', cardData);
+      
 
       // Add to collection
       const { error } = await supabase
@@ -282,7 +228,7 @@ const Cards = () => {
   };
 
   const handleAddToWishlist = async (cardId: string, cardName: string, cardLanguage?: string) => {
-    console.log('handleAddToWishlist called with:', { cardId, cardName, cardLanguage, user: user?.id });
+
     
     if (!user) {
       toast({
@@ -327,7 +273,7 @@ const Cards = () => {
         throw cardError;
       }
 
-      console.log('Card data for wishlist:', cardData);
+      
 
       // Add to wishlist
       const insertData = {
@@ -336,7 +282,7 @@ const Cards = () => {
         language: cardData.language || 'en' // Default to 'en' if language is not available
       };
       
-      console.log('Inserting wishlist item:', insertData);
+      
       
       const { error } = await supabase
         .from('card_wishlist')
@@ -433,37 +379,12 @@ const Cards = () => {
         </div>
         
         <div className="flex flex-wrap gap-4">
-          {/* Rarity Filter */}
-          <div className="flex gap-2">
-            <Button
-              variant={rarityFilter === "all" ? "default" : "outline"}
-              onClick={() => handleRarityFilterChange("all")}
-              size="sm"
-            >
-              {t('cards.allRarities')}
-            </Button>
-            <Button
-              variant={rarityFilter === "Common" ? "default" : "outline"}
-              onClick={() => handleRarityFilterChange("Common")}
-              size="sm"
-            >
-              {t('cards.common')}
-            </Button>
-            <Button
-              variant={rarityFilter === "Rare" ? "default" : "outline"}
-              onClick={() => handleRarityFilterChange("Rare")}
-              size="sm"
-            >
-              {t('cards.rare')}
-            </Button>
-            <Button
-              variant={rarityFilter === "Ultra Rare" ? "default" : "outline"}
-              onClick={() => handleRarityFilterChange("Ultra Rare")}
-              size="sm"
-            >
-              {t('cards.ultraRare')}
-            </Button>
-          </div>
+          {/* Language Filter */}
+          <LanguageFilter
+            selectedLanguage={languageFilter}
+            onLanguageChange={handleLanguageFilterChange}
+            className="mb-4"
+          />
         </div>
       </div>
 

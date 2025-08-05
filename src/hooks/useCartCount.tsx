@@ -10,7 +10,7 @@ export const useCartCount = () => {
     queryFn: async () => {
       if (!user) return 0;
 
-      console.log('Fetching cart count for user:', user.id);
+    
       
       const { count, error } = await supabase
         .from('carts')
@@ -22,7 +22,7 @@ export const useCartCount = () => {
         throw error;
       }
 
-      console.log('Cart count fetched:', count);
+      
       return count || 0;
     },
     enabled: !!user,

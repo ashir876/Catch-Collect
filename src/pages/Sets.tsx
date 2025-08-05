@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Package, TrendingUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,15 @@ import { Link } from "react-router-dom";
 import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
+import LanguageFilter from "@/components/LanguageFilter";
 
 const Sets = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const seriesFilter = searchParams.get("series");
+  const urlLanguageFilter = searchParams.get("language");
   const [searchTerm, setSearchTerm] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
@@ -23,17 +26,19 @@ const Sets = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch sets data with pagination (all languages)
+  // Fetch sets data with pagination and language filter
   const { data: setsData, isLoading, error } = useSetsData({
     seriesId: seriesFilter || undefined,
+    language: languageFilter === "all" ? undefined : languageFilter,
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
   });
 
-  // Fetch total count for pagination (all languages)
+  // Fetch total count for pagination with language filter
   const { data: totalCount = 0 } = useSetsCount({
     seriesId: seriesFilter || undefined,
+    language: languageFilter === "all" ? undefined : languageFilter,
     searchTerm: searchTerm || undefined
   });
 
@@ -46,10 +51,33 @@ const Sets = () => {
     setCurrentPage(1);
   };
 
+  const handleLanguageFilterChange = (newLanguageFilter: string) => {
+    setLanguageFilter(newLanguageFilter);
+    setCurrentPage(1);
+    
+    // Update URL with new language filter
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newLanguageFilter === "all") {
+      newSearchParams.delete("language");
+    } else {
+      newSearchParams.set("language", newLanguageFilter);
+    }
+    window.history.replaceState(null, "", `?${newSearchParams.toString()}`);
+  };
+
   const handleSortChange = (newSortBy: string) => {
     setSortBy(newSortBy);
     setCurrentPage(1);
   };
+
+  // Update language filter when URL parameter changes
+  useEffect(() => {
+    const newLanguageFilter = urlLanguageFilter || "all";
+    if (newLanguageFilter !== languageFilter) {
+      setLanguageFilter(newLanguageFilter);
+      setCurrentPage(1);
+    }
+  }, [urlLanguageFilter]);
 
   // Sort sets (client-side sorting since we can't sort in the database query easily)
   const sortedSets = setsData?.sort((a, b) => {
@@ -90,40 +118,49 @@ const Sets = () => {
         </p>
       </div>
 
-      {/* Search and Sort */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={t('sets.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10"
-          />
+      {/* Search, Filters and Sort */}
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder={t('sets.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {/* <div className="flex gap-2">
+            <Button
+              variant={sortBy === "newest" ? "default" : "outline"}
+              onClick={() => handleSortChange("newest")}
+              size="sm"
+            >
+              {t('sets.newest')}
+            </Button>
+            <Button
+              variant={sortBy === "oldest" ? "default" : "outline"}
+              onClick={() => handleSortChange("oldest")}
+              size="sm"
+            >
+              {t('sets.oldest')}
+            </Button>
+            <Button
+              variant={sortBy === "name" ? "default" : "outline"}
+              onClick={() => handleSortChange("name")}
+              size="sm"
+            >
+              {t('sets.name')}
+            </Button>
+          </div> */}
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant={sortBy === "newest" ? "default" : "outline"}
-            onClick={() => handleSortChange("newest")}
-            size="sm"
-          >
-            {t('sets.newest')}
-          </Button>
-          <Button
-            variant={sortBy === "oldest" ? "default" : "outline"}
-            onClick={() => handleSortChange("oldest")}
-            size="sm"
-          >
-            {t('sets.oldest')}
-          </Button>
-          <Button
-            variant={sortBy === "name" ? "default" : "outline"}
-            onClick={() => handleSortChange("name")}
-            size="sm"
-          >
-            {t('sets.name')}
-          </Button>
-        </div>
+        
+        {/* Language Filter */}
+        <LanguageFilter
+          selectedLanguage={languageFilter}
+          onLanguageChange={handleLanguageFilterChange}
+          className="mb-4"
+        />
       </div>
 
       {/* Pagination Info */}
@@ -160,7 +197,7 @@ const Sets = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedSets.map((set) => {
             // Mock completion data for now - this would come from user's collection
-            const cardCount = set.card_count || 0;
+            const cardCount = set.total || 0;
             const ownedCards = Math.floor(Math.random() * cardCount); // Mock data
             const completionPercentage = getCompletionPercentage(ownedCards, cardCount);
             const isComplete = ownedCards === cardCount && cardCount > 0;
@@ -177,7 +214,7 @@ const Sets = () => {
                         {set.name || t('sets.unknownSet')}
                       </CardTitle>
                       <CardDescription className="line-clamp-2">
-                        {set.description || t('sets.noDescription')}
+                        {t('sets.noDescription')}
                       </CardDescription>
                     </div>
                     {isComplete && (

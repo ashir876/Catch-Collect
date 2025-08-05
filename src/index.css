@@ -65,6 +65,11 @@
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
   }
+
+  /* Ensure proper viewport handling */
+  html {
+    overflow-x: hidden;
+  }
 }
 
 @layer components {
@@ -74,32 +79,36 @@
   }
   
   .pixel-button {
-    @apply bg-primary text-primary-foreground border-4 border-black px-6 py-3 font-black uppercase text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-100;
+    @apply bg-primary text-primary-foreground border-4 border-black px-4 sm:px-6 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-100;
   }
   
   .pixel-button-secondary {
-    @apply bg-secondary text-secondary-foreground border-4 border-black px-6 py-3 font-black uppercase text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-100;
+    @apply bg-secondary text-secondary-foreground border-4 border-black px-4 sm:px-6 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-100;
+  }
+  
+  .pixel-button-small {
+    @apply bg-primary text-primary-foreground border-2 border-black px-2 sm:px-3 py-1 sm:py-2 font-black uppercase text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-100;
   }
   
   .pixel-badge {
-    @apply bg-accent text-accent-foreground border-2 border-black px-3 py-1 text-xs font-black uppercase;
+    @apply bg-accent text-accent-foreground border-2 border-black px-2 sm:px-3 py-1 text-xs font-black uppercase;
   }
   
   .pixel-nav-item {
-    @apply bg-muted border-2 border-black px-4 py-2 font-black uppercase text-sm hover:bg-primary hover:text-primary-foreground transition-colors duration-100;
+    @apply bg-muted border-2 border-black px-2 sm:px-4 py-2 font-black uppercase text-xs sm:text-sm hover:bg-primary hover:text-primary-foreground transition-colors duration-100;
   }
   
   .pixel-nav-item-active {
-    @apply bg-primary text-primary-foreground border-2 border-black px-4 py-2 font-black uppercase text-sm;
+    @apply bg-primary text-primary-foreground border-2 border-black px-2 sm:px-4 py-2 font-black uppercase text-xs sm:text-sm;
   }
   
   .pixel-text-large {
-    @apply text-4xl md:text-6xl font-black uppercase tracking-wider;
+    @apply text-2xl sm:text-4xl md:text-6xl font-black uppercase tracking-wider;
     text-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
   }
   
   .pixel-text-header {
-    @apply text-2xl font-black uppercase tracking-wide;
+    @apply text-xl sm:text-2xl font-black uppercase tracking-wide;
     text-shadow: 2px 2px 0px rgba(0, 0, 0, 1);
   }
   
@@ -182,27 +191,39 @@
   .animate-float-3 {
     animation: float3 7s ease-in-out infinite;
   }
+
+  /* Responsive improvements */
+  .pixel-input {
+    @apply border-4 border-black bg-white text-black font-bold;
+    box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+  }
+
+  .pixel-input:focus {
+    @apply border-4 border-black bg-white text-black font-bold;
+    box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+    transform: translate(2px, 2px);
+  }
 }
 
 /* Navigation Items */
 .pixel-nav-item {
-  @apply border-2 border-black px-4 py-3 font-black uppercase text-sm transition-colors bg-muted hover:bg-primary hover:text-primary-foreground;
+  @apply border-2 border-black px-2 sm:px-4 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm transition-colors bg-muted hover:bg-primary hover:text-primary-foreground;
 }
 
 .pixel-nav-item-active {
-  @apply border-2 border-black px-4 py-3 font-black uppercase text-sm transition-colors bg-primary text-primary-foreground;
+  @apply border-2 border-black px-2 sm:px-4 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm transition-colors bg-primary text-primary-foreground;
 }
 
 .pixel-nav-item-small {
-  @apply border-2 border-black p-2 font-black uppercase text-sm transition-colors bg-muted hover:bg-primary hover:text-primary-foreground w-10 h-10 flex items-center justify-center;
+  @apply border-2 border-black p-2 font-black uppercase text-xs sm:text-sm transition-colors bg-muted hover:bg-primary hover:text-primary-foreground w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center relative;
 }
 
 .pixel-nav-item-admin {
-  @apply border-2 border-red-600 px-4 py-3 font-black uppercase text-sm transition-colors bg-red-50 hover:bg-red-600 hover:text-white;
+  @apply border-2 border-red-600 px-2 sm:px-4 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm transition-colors bg-red-50 hover:bg-red-600 hover:text-white;
 }
 
 .pixel-nav-item-admin-active {
-  @apply border-2 border-red-600 px-4 py-3 font-black uppercase text-sm transition-colors bg-red-600 text-white;
+  @apply border-2 border-red-600 px-2 sm:px-4 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm transition-colors bg-red-600 text-white;
 }
 
 .pixel-badge {
@@ -210,7 +231,12 @@
 }
 
 .pixel-badge-small {
-  @apply bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded border border-black absolute -top-1 -right-1;
+  @apply bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded border border-black absolute -top-1 -right-1 z-10;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Pixel art specific styles */
@@ -315,4 +341,102 @@
   75% {
     transform: translate(25px, -5px) rotate(135deg);
   }
+}
+
+/* Responsive media queries for better mobile experience */
+@media (max-width: 640px) {
+  .pixel-text-yellow-animated {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+  
+  .pixel-card {
+    margin: 0.5rem;
+  }
+  
+  .pixel-button {
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  /* Mobile-friendly heading styles */
+  h2 span {
+    display: inline-block;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure proper text wrapping on mobile */
+  .uppercase {
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Mobile navigation badge improvements */
+  .pixel-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .pixel-badge-small {
+    min-width: 14px;
+    height: 14px;
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .pixel-text-large {
+    font-size: 1.5rem;
+  }
+  
+  .pixel-text-header {
+    font-size: 1.25rem;
+  }
+}
+
+/* Ensure search results always appear on top */
+.search-results-overlay {
+  z-index: 10000 !important;
+  position: relative;
+  width: 100% !important;
+  min-width: 100% !important;
+}
+
+/* Force search container to have proper stacking context */
+.search-container {
+  position: relative;
+  z-index: 9999;
+  width: 100%;
+}
+
+/* Prevent layout shift when dropdowns open */
+body {
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* Ensure dropdown menus don't cause layout shifts */
+[data-radix-popper-content-wrapper] {
+  z-index: 1000;
+}
+
+/* Prevent body padding changes when scrollbars appear */
+html {
+  overflow-x: auto;
+}
+
+/* Ensure navigation container doesn't shift when dropdowns open */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Prevent dropdown from affecting layout */
+[data-radix-portal] {
+  position: fixed;
+  z-index: 1001;
 }

@@ -6,7 +6,7 @@ export const useProductsData = (language: string = 'de', limit: number = 50) => 
   return useQuery({
     queryKey: ['products', language, limit],
     queryFn: async () => {
-      console.log('Fetching products data:', { language, limit });
+    
       
       const { data, error } = await supabase
         .from('products')
@@ -21,7 +21,7 @@ export const useProductsData = (language: string = 'de', limit: number = 50) => 
         throw error;
       }
 
-      console.log('Products data fetched:', data?.length, 'products');
+      
       return data;
     },
   });

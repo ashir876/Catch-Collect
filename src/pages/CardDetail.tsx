@@ -50,7 +50,7 @@ const CardDetail = () => {
     const fetchCard = async () => {
       if (!id) return;
       
-      console.log('Fetching card with ID:', id);
+    
       
       try {
         const { data, error } = await supabase
@@ -64,7 +64,7 @@ const CardDetail = () => {
           throw error;
         }
         
-        console.log('Card data found:', data);
+
         setCard(data);
       } catch (error) {
         console.error('Error fetching card:', error);

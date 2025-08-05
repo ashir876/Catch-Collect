@@ -39,6 +39,7 @@
   "series": {
     "title": "Series",
     "subtitle": "Ontdek alle Pokemon series",
+    "language": "Taal",
     "loading": "Series laden...",
     "loadError": "Fout bij het laden van series",
     "loadErrorSubtitle": "Er is een fout opgetreden bij het laden van de series."
@@ -46,6 +47,7 @@
   "sets": {
     "title": "Sets",
     "subtitle": "Ontdek alle sets binnen de series",
+    "language": "Taal",
     "loading": "Sets laden...",
     "loadError": "Fout bij het laden van sets",
     "loadErrorSubtitle": "Er is een fout opgetreden bij het laden van de sets.",
@@ -56,6 +58,7 @@
     "title": "Kaarten",
     "subtitle": "Ontdek alle beschikbare kaarten",
     "searchPlaceholder": "Zoek naar kaarten...",
+    "language": "Taal",
     "allRarities": "Alle zeldzaamheden",
     "common": "Gewoon",
     "rare": "Zeldzaam",

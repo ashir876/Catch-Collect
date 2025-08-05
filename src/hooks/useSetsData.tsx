@@ -22,7 +22,6 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
   return useQuery({
     queryKey: ['sets', language, seriesId, limit, offset, searchTerm],
     queryFn: async () => {
-      console.log('Fetching sets data:', { language, seriesId, limit, offset, searchTerm });
       
       let query = supabase
         .from('sets')
@@ -53,7 +52,7 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
         throw error;
       }
 
-      console.log('Sets data fetched:', data?.length, 'sets');
+      
       return data;
     },
   });
@@ -66,7 +65,7 @@ export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> 
   return useQuery({
     queryKey: ['sets-count', language, seriesId, searchTerm],
     queryFn: async () => {
-      console.log('Fetching sets count:', { language, seriesId, searchTerm });
+    
       
       let query = supabase
         .from('sets')
@@ -92,7 +91,7 @@ export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> 
         throw error;
       }
 
-      console.log('Sets count fetched:', count);
+      
       return count || 0;
     },
   });

@@ -22,7 +22,7 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
   return useQuery({
     queryKey: ['cards', language, setId, limit, offset, searchTerm],
     queryFn: async () => {
-      console.log('Fetching cards data:', { language, setId, limit, offset, searchTerm });
+    
       
       let query = supabase
         .from('cards')
@@ -53,7 +53,7 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
         throw error;
       }
 
-      console.log('Cards data fetched:', data?.length, 'cards');
+      
       return data;
     },
   });
@@ -66,7 +66,7 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
   return useQuery({
     queryKey: ['cards-count', language, setId, searchTerm],
     queryFn: async () => {
-      console.log('Fetching cards count:', { language, setId, searchTerm });
+    
       
       let query = supabase
         .from('cards')
@@ -92,7 +92,7 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
         throw error;
       }
 
-      console.log('Cards count fetched:', count);
+      
       return count || 0;
     },
   });

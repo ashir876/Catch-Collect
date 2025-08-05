@@ -159,7 +159,7 @@ const SearchBar = () => {
   };
 
   return (
-    <div className="relative w-full" ref={searchRef}>
+    <div className="relative w-full search-container" ref={searchRef}>
       {/* Search Input */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -168,7 +168,7 @@ const SearchBar = () => {
           placeholder={t('search.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-10 pr-10 pixel-input w-full text-center"
+          className="pl-10 pr-10 pixel-input w-full text-center text-sm sm:text-base"
           onFocus={() => setShowResults(true)}
         />
         {query && (
@@ -184,7 +184,7 @@ const SearchBar = () => {
       </div>
 
       {/* Filter Buttons */}
-      <div className="flex gap-2 mt-2 justify-center">
+      <div className="flex flex-wrap gap-2 mt-2 justify-center">
         {filters.map((filter) => {
           const Icon = filter.icon;
           const isActive = activeFilters.includes(filter.key) || activeFilters.length === 0;
@@ -195,10 +195,11 @@ const SearchBar = () => {
               variant={isActive ? "default" : "outline"}
               size="sm"
               onClick={() => toggleFilter(filter.key)}
-              className="pixel-button-small"
+              className="pixel-button-small text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
               <Icon className="h-3 w-3 mr-1" />
-              {filter.label}
+              <span className="hidden sm:inline">{filter.label}</span>
+              <span className="sm:hidden">{filter.key}</span>
             </Button>
           );
         })}
@@ -206,8 +207,8 @@ const SearchBar = () => {
 
       {/* Search Results */}
       {showResults && (query.length >= 2 || results.length > 0) && (
-        <Card className="absolute top-full left-0 right-0 mt-2 z-50 pixel-card">
-          <CardContent className="p-4">
+        <Card className="absolute top-full left-0 right-0 mt-2 pixel-card max-h-96 overflow-y-auto search-results-overlay w-full">
+          <CardContent className="p-2 sm:p-4">
             {isSearching ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
@@ -219,9 +220,9 @@ const SearchBar = () => {
                   <div
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleResultClick(result)}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors"
                   >
-                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                       {result.image_url ? (
                         <img 
                           src={result.image_url} 
@@ -230,15 +231,15 @@ const SearchBar = () => {
                         />
                       ) : (
                         <div className="text-muted-foreground">
-                          {result.type === 'card' && <Star className="h-4 w-4" />}
-                          {result.type === 'series' && <Grid3X3 className="h-4 w-4" />}
-                          {result.type === 'set' && <Package className="h-4 w-4" />}
+                          {result.type === 'card' && <Star className="h-3 w-3 sm:h-4 sm:w-4" />}
+                          {result.type === 'series' && <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4" />}
+                          {result.type === 'set' && <Package className="h-3 w-3 sm:h-4 sm:w-4" />}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm truncate">{result.name}</h4>
-                      <div className="flex items-center gap-2 mt-1">
+                      <h4 className="font-semibold text-xs sm:text-sm truncate">{result.name}</h4>
+                      <div className="flex items-center gap-1 sm:gap-2 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-xs">
                           {result.type === 'card' && t('search.card')}
                           {result.type === 'series' && t('search.series')}
@@ -261,7 +262,7 @@ const SearchBar = () => {
               </div>
             ) : query.length >= 2 ? (
               <div className="text-center py-4">
-                <p className="text-muted-foreground">{t('search.noResults')}</p>
+                <p className="text-muted-foreground text-sm">{t('search.noResults')}</p>
               </div>
             ) : null}
           </CardContent>

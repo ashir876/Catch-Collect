@@ -53,8 +53,9 @@ const SocialFeed = () => {
         .from('social_posts')
         .select(`
           *,
-          profiles:user_id (
-            username,
+          users:user_id (
+            email,
+            full_name,
             avatar_url
           ),
           cards:card_id (
@@ -70,8 +71,8 @@ const SocialFeed = () => {
       const formattedPosts = postsData?.map(post => ({
         id: post.id,
         user_id: post.user_id,
-        username: post.profiles?.username || 'Anonymous',
-        avatar_url: post.profiles?.avatar_url,
+        username: post.users?.full_name || post.users?.email?.split('@')[0] || 'Anonymous',
+        avatar_url: post.users?.avatar_url,
         content: post.content,
         image_url: post.image_url || post.cards?.image_url,
         likes: post.likes || 0,

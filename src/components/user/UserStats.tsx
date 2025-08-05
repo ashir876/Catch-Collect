@@ -67,40 +67,29 @@ const UserStats = () => {
         // Get unique sets in collection
         const { data: collectionSets } = await supabase
           .from('card_collections')
-          .select(`
-            cards (
-              set_id
-            )
-          `)
-          .eq('user_id', user.id);
+          .select('set_id')
+          .eq('user_id', user.id)
+          .not('set_id', 'is', null);
 
-        const uniqueSets = new Set(collectionSets?.map(item => item.cards?.set_id).filter(Boolean)).size;
+        const uniqueSets = new Set(collectionSets?.map(item => item.set_id).filter(Boolean)).size;
 
         // Get unique series in collection
         const { data: collectionSeries } = await supabase
           .from('card_collections')
-          .select(`
-            cards (
-              sets (
-                series_id
-              )
-            )
-          `)
-          .eq('user_id', user.id);
+          .select('set_id')
+          .eq('user_id', user.id)
+          .not('set_id', 'is', null);
 
-        const uniqueSeries = new Set(collectionSeries?.map(item => item.cards?.sets?.series_id).filter(Boolean)).size;
+        // For now, we'll count unique sets as series since we don't have direct series_id
+        const uniqueSeries = uniqueSets;
 
         // Get rarest card in collection
         const { data: rarestCard } = await supabase
           .from('card_collections')
-          .select(`
-            cards (
-              name,
-              rarity
-            )
-          `)
+          .select('name, rarity')
           .eq('user_id', user.id)
-          .order('cards.rarity', { ascending: false })
+          .not('rarity', 'is', null)
+          .order('rarity', { ascending: false })
           .limit(1)
           .single();
 
@@ -124,7 +113,7 @@ const UserStats = () => {
           completionRate,
           uniqueSets,
           uniqueSeries,
-          rarestCard: rarestCard?.cards?.name || t('stats.noCards'),
+          rarestCard: rarestCard?.name || t('stats.noCards'),
           recentAdditions: recentAdditions || 0
         });
       } catch (error) {

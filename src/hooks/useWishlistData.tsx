@@ -43,7 +43,7 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
     queryFn: async () => {
       if (!user) return [];
 
-      console.log('Fetching wishlist data for user:', user.id, { limit, offset, priority, searchTerm });
+    
       
       // First get the wishlist items with pagination
       let wishlistQuery = supabase
@@ -96,11 +96,11 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
           };
         });
         
-        console.log('Wishlist data fetched:', enhancedWishlistItems.length, 'cards');
+
         return enhancedWishlistItems as WishlistItem[];
       }
       
-      console.log('Wishlist is empty');
+      
       return wishlistItems as WishlistItem[];
     },
     enabled: !!user,
@@ -117,7 +117,7 @@ export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'o
     queryFn: async () => {
       if (!user) return 0;
 
-      console.log('Fetching wishlist count for user:', user.id, { priority, searchTerm });
+    
       
       let query = supabase
         .from('card_wishlist')
@@ -135,7 +135,7 @@ export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'o
         throw error;
       }
 
-      console.log('Wishlist count fetched:', count);
+      
       return count || 0;
     },
     enabled: !!user,
