@@ -21,7 +21,12 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
 
   return useQuery({
     queryKey: ['sets', language, seriesId, limit, offset, searchTerm],
+    staleTime: 0, // Always consider data stale to ensure fresh data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     queryFn: async () => {
+      
+
       
       let query = supabase
         .from('sets')
@@ -52,6 +57,7 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
         throw error;
       }
 
+
       
       return data;
     },
@@ -64,6 +70,9 @@ export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> 
 
   return useQuery({
     queryKey: ['sets-count', language, seriesId, searchTerm],
+    staleTime: 0, // Always consider data stale to ensure fresh data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     queryFn: async () => {
     
       

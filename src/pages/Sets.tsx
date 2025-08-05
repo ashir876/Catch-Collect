@@ -16,7 +16,6 @@ const Sets = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const seriesFilter = searchParams.get("series");
-  const urlLanguageFilter = searchParams.get("language");
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -54,15 +53,6 @@ const Sets = () => {
   const handleLanguageFilterChange = (newLanguageFilter: string) => {
     setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
-    
-    // Update URL with new language filter
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (newLanguageFilter === "all") {
-      newSearchParams.delete("language");
-    } else {
-      newSearchParams.set("language", newLanguageFilter);
-    }
-    window.history.replaceState(null, "", `?${newSearchParams.toString()}`);
   };
 
   const handleSortChange = (newSortBy: string) => {
@@ -70,14 +60,7 @@ const Sets = () => {
     setCurrentPage(1);
   };
 
-  // Update language filter when URL parameter changes
-  useEffect(() => {
-    const newLanguageFilter = urlLanguageFilter || "all";
-    if (newLanguageFilter !== languageFilter) {
-      setLanguageFilter(newLanguageFilter);
-      setCurrentPage(1);
-    }
-  }, [urlLanguageFilter]);
+
 
   // Sort sets (client-side sorting since we can't sort in the database query easily)
   const sortedSets = setsData?.sort((a, b) => {
