@@ -71,9 +71,16 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{t('admin.title')}</h1>
-          <Badge variant="secondary">{t('admin.administrator')}</Badge>
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+              {t('admin.title')}
+            </span>
+          </h1>
+          <div className="flex justify-center">
+            <Badge variant="secondary">{t('admin.administrator')}</Badge>
+          </div>
         </div>
 
         {/* Overview Cards */}

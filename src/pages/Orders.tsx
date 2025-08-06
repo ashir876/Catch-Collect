@@ -136,11 +136,15 @@ const Orders = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{t('orders.title')}</h1>
-          <div className="text-sm text-muted-foreground">
+        <div className="text-center mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+              {t('orders.title')}
+            </span>
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
             {orders.length} {orders.length !== 1 ? t('orders.orders') : t('orders.order')}
-          </div>
+          </p>
         </div>
 
         {/* Filters */}

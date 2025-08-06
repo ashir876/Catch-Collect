@@ -92,25 +92,29 @@ const Sets = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-foreground mb-4">{t('sets.title')}</h1>
-        <p className="text-muted-foreground text-lg">
-          {t('sets.subtitle')}
-        </p>
-      </div>
+          <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+              {t('sets.title')}
+            </span>
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
+            {t('sets.subtitle')}
+          </p>
+        </div>
 
       {/* Search, Filters and Sort */}
       <div className="space-y-4 mb-8">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
             <Input
               placeholder={t('sets.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
+              className="pl-12 pr-4 py-3 text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
             />
           </div>
           {/* <div className="flex gap-2">
@@ -187,6 +191,24 @@ const Sets = () => {
             
             return (
               <Card key={set.set_id} className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                {/* Set Logo/Image Section */}
+                {(set.logo_url || set.symbol_url) && (
+                  <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden border-b-2 border-gray-200">
+                    {set.logo_url ? (
+                      <img 
+                        src={set.logo_url} 
+                        alt={set.name || 'Set Logo'} 
+                        className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : set.symbol_url ? (
+                      <img 
+                        src={set.symbol_url} 
+                        alt={set.name || 'Set Symbol'} 
+                        className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : null}
+                  </div>
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -196,9 +218,6 @@ const Sets = () => {
                       <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">
                         {set.name || t('sets.unknownSet')}
                       </CardTitle>
-                      <CardDescription className="line-clamp-2">
-                        {t('sets.noDescription')}
-                      </CardDescription>
                     </div>
                     {isComplete && (
                       <Badge className="bg-success/10 text-success border-success">

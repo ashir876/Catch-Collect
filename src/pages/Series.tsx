@@ -127,7 +127,7 @@ const Series = () => {
               return (
                 <Link key={series.series_id} to={linkUrl}>
                   <Card className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
-                    <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
+                    <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
                       {series.logo_url ? (
                         <img 
                           src={series.logo_url} 

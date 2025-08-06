@@ -171,14 +171,18 @@ const Collection = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-foreground mb-4">{t('collection.title')}</h1>
-        <p className="text-muted-foreground text-lg">
-          {t('collection.subtitle')}
-        </p>
-      </div>
+          <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+              {t('collection.title')}
+            </span>
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
+            {t('collection.subtitle')}
+          </p>
+        </div>
 
       {/* View Toggle */}
       <div className="flex gap-2 mb-8">
