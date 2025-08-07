@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Search, Package, TrendingUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
+import { useSeriesData } from "@/hooks/useSeriesData";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import LanguageFilter from "@/components/LanguageFilter";
 
 const Sets = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const seriesFilter = searchParams.get("series");
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +23,9 @@ const Sets = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
+
+  // Fetch series data for filter
+  const { data: seriesData = [] } = useSeriesData({ language: 'de' });
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
@@ -57,6 +62,17 @@ const Sets = () => {
 
   const handleSortChange = (newSortBy: string) => {
     setSortBy(newSortBy);
+    setCurrentPage(1);
+  };
+
+  const handleSeriesFilterChange = (seriesId: string | null) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (seriesId) {
+      newSearchParams.set("series", seriesId);
+    } else {
+      newSearchParams.delete("series");
+    }
+    navigate(`?${newSearchParams.toString()}`);
     setCurrentPage(1);
   };
 
@@ -104,6 +120,34 @@ const Sets = () => {
             {t('sets.subtitle')}
           </p>
         </div>
+
+      {/* Series Filter */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">
+          {t('sets.filterBySeries')}
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={!seriesFilter ? "default" : "outline"}
+            onClick={() => handleSeriesFilterChange(null)}
+            size="sm"
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            {t('common.all')}
+          </Button>
+          {seriesData.map((series) => (
+            <Button
+              key={series.series_id}
+              variant={seriesFilter === series.series_id ? "default" : "outline"}
+              onClick={() => handleSeriesFilterChange(series.series_id)}
+              size="sm"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              {series.series_name}
+            </Button>
+          ))}
+        </div>
+      </div>
 
       {/* Search, Filters and Sort */}
       <div className="space-y-4 mb-8">

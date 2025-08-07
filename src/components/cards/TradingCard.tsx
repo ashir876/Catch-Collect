@@ -3,16 +3,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
+import { Heart, ShoppingCart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import CardDetailModal from "./CardDetailModal";
+import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
 
 interface CardData {
   card_id: string;
@@ -30,6 +25,7 @@ interface CardData {
   weaknesses?: any;
   retreat?: number;
   set_symbol_url?: string;
+  language?: string;
 }
 
 interface TradingCardProps {
@@ -40,7 +36,6 @@ interface TradingCardProps {
   number?: string;
   rarity: "common" | "rare" | "epic" | "legendary";
   type?: string;
-  price: number;
   image?: string;
   imageUrl?: string;
   inStock?: boolean;
@@ -60,10 +55,8 @@ interface TradingCardProps {
   onToggleWishlist?: (id: string) => void;
   onViewDetails?: (id: string) => void;
   // Wishlist overlay actions and badges
-  onRequestPrice?: () => void;
   onRemoveFromWishlist?: () => void;
   priority?: "high" | "medium" | "low";
-  priceAvailable?: boolean;
   getPriorityText?: () => string;
   getPriorityColor?: () => "default" | "secondary" | "destructive";
   // Full card data for modal
@@ -126,7 +119,6 @@ const TradingCard = ({
   number,
   rarity,
   type,
-  price,
   image,
   imageUrl,
   inStock = true,
@@ -145,16 +137,17 @@ const TradingCard = ({
   onAddToWishlist,
   onToggleWishlist,
   onViewDetails,
-  onRequestPrice,
   onRemoveFromWishlist,
   priority,
-  priceAvailable,
   getPriorityText,
   getPriorityColor,
   // Full card data for modal
   cardData,
 }: TradingCardProps) => {
   const { t } = useTranslation();
+  const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
+  const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
+  
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";
   const owned = inCollection || isOwned;
@@ -165,17 +158,32 @@ const TradingCard = ({
   const normalizedRarity = normalizeRarity(rarity);
   const rarityInfo = rarityConfig[normalizedRarity];
 
-  return (
+  // Handle collection toggle
+  const handleCollectionToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (owned) {
+      removeFromCollection({ cardId: id });
+    } else {
+      addToCollection({ cardId: id, cardName: name, cardLanguage: cardData?.language });
+    }
+  };
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (wishlisted) {
+      removeFromWishlist({ cardId: id });
+    } else {
+      addToWishlist({ cardId: id, cardName: name, cardLanguage: cardData?.language });
+    }
+  };
+
+  const cardContent = (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 cursor-pointer",
-        !disableHoverEffects && "hover:scale-105 hover:shadow-card",
-        rarityInfo.glow && isHovered && rarityInfo.glow,
+        "group relative overflow-hidden transition-all duration-300 cursor-pointer flex flex-col",
         owned && "ring-2 ring-accent ring-opacity-50"
       )}
-      onMouseEnter={() => !disableHoverEffects && setIsHovered(true)}
-      onMouseLeave={() => !disableHoverEffects && setIsHovered(false)}
-      onClick={() => onViewDetails?.(id)}
     >
       {/* Priority Badge (Wishlist) */}
       {priority && getPriorityText && getPriorityColor && (
@@ -185,31 +193,16 @@ const TradingCard = ({
           </Badge>
         </div>
       )}
-      {/* Availability Badge (Wishlist) */}
-      {typeof priceAvailable === "boolean" && (
-        <div className="absolute top-2 right-2 z-20">
-          <Badge variant={priceAvailable ? "default" : "secondary"} className="text-xs">
-            {priceAvailable ? "In Stock" : "Out of Stock"}
-          </Badge>
-        </div>
-      )}
-      {/* Wishlist Overlay Actions - Removed for cleaner UI */}
-      {/* Rarity Gradient Overlay */}
-      <div className={cn(
-        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-        rarityInfo.gradient
-      )} />
+
+
       
-      <CardContent className="p-4 relative z-10">
+      <CardContent className="p-4 relative z-10 flex flex-col flex-1">
         {/* Card Image */}
-        <div className="relative mb-3 aspect-[2/3] overflow-hidden rounded-lg bg-muted">
+        <div className="relative mb-3 aspect-[3/4] overflow-visible rounded-lg bg-muted">
           <img
             src={cardImage}
             alt={name}
-            className={cn(
-              "w-full h-full object-cover transition-transform duration-300",
-              !disableHoverEffects && "group-hover:scale-110"
-            )}
+            className="w-full h-full object-contain transition-transform duration-300"
           />
           
           {/* Status Badges */}
@@ -235,66 +228,13 @@ const TradingCard = ({
             )}
           </div>
 
-          {/* Quick Actions */}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="flex flex-col gap-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="w-8 h-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddToWishlist?.(id);
-                      }}
-                    >
-                      <Heart 
-                        className={cn(
-                          "w-4 h-4",
-                          wishlisted && "fill-destructive text-destructive"
-                        )} 
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {cardData ? (
-                <CardDetailModal card={cardData}>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-8 h-8 p-0"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </CardDetailModal>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-8 h-8 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Fallback to navigation if no card data available
-                    onViewDetails?.(id);
-                  }}
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+
         </div>
 
         {/* Card Info */}
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1">
           <div>
-            <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-sm line-clamp-2 transition-colors">
               {name}
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -302,69 +242,68 @@ const TradingCard = ({
             </p>
           </div>
 
-          {/* Price and Actions */}
-          {!hidePriceAndBuy && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-lg">{price.toFixed(2)}</span>
-                <span className="text-sm text-muted-foreground">CHF</span>
-              </div>
-              
-              {inStock && !owned && (
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddToCart?.(id);
-                  }}
-                  className="bg-gradient-primary hover:shadow-card transition-all duration-200"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1" />
-                  Kaufen
-                </Button>
-              )}
-              {!inStock && owned && onAddToCollection && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddToCollection(id);
-                  }}
-                >
-                  Sammlung
-                </Button>
-              )}
-            </div>
+
+        </div>
+
+        {/* Bottom Action Buttons */}
+        <div className="mt-4 space-y-2">
+          {/* Add to Cart Button */}
+          {!hidePriceAndBuy && inStock && !owned && onAddToCart && (
+            <Button
+              size="sm"
+              className="w-full bg-gradient-primary hover:shadow-card transition-all duration-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart?.(id);
+              }}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Kaufen
+            </Button>
           )}
-          
-          {/* Collection Actions (when price/buy is hidden) */}
-          {hidePriceAndBuy && (
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={owned ? "destructive" : "outline"}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddToCollection?.(id);
-                  }}
-                >
-                  <Star className="w-4 h-4 mr-1" />
-                  {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
-                </Button>
-              </div>
-            </div>
+
+          {/* Add to Collection Button */}
+          {(hidePriceAndBuy || (!hidePriceAndBuy && !onAddToCart)) && (
+            <Button
+              size="sm"
+              variant={owned ? "destructive" : "outline"}
+              className="w-full"
+              onClick={handleCollectionToggle}
+              disabled={isAddingToCollection || isRemovingFromCollection}
+            >
+              <Star className="w-4 h-4 mr-2" />
+              {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
+            </Button>
           )}
+
+          {/* Add to Wishlist Button */}
+          <Button
+            size="sm"
+            variant={wishlisted ? "destructive" : "secondary"}
+            className="w-full"
+            onClick={handleWishlistToggle}
+            disabled={isAddingToWishlist || isRemovingFromWishlist}
+          >
+            <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
+            {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
+          </Button>
         </div>
       </CardContent>
 
-      {/* Foil Effect for Legendary Cards */}
-      {normalizedRarity === "legendary" && (
-        <div className="absolute inset-0 bg-gradient-foil opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" />
-      )}
+
     </Card>
   );
+
+  // Wrap with CardDetailModal if cardData is available
+  if (cardData) {
+    return (
+      <CardDetailModal card={cardData}>
+        {cardContent}
+      </CardDetailModal>
+    );
+  }
+
+  return cardContent;
 };
 
 export default TradingCard;

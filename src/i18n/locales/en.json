@@ -29,7 +29,6 @@
     "series": "Series",
     "sets": "Sets",
     "card": "Card",
-    "series": "Series",
     "set": "Set"
   },
   "filters": {
@@ -229,7 +228,9 @@
     "addedToWishlist": "Added to Wishlist", 
     "addedToCart": "Added to Cart",
     "removedFromCollection": "Removed from Collection",
+    "removedFromCollectionDescription": "The card has been removed from your collection.",
     "removedFromWishlist": "Removed from Wishlist",
+    "removedFromWishlistDescription": "The card has been removed from your wishlist.",
     "removedFromCart": "Removed from Cart",
     "error": "Error",
     "success": "Success",
@@ -270,6 +271,7 @@
     "title": "Pokemon Sets",
     "subtitle": "Browse all Pokemon TCG sets",
     "searchPlaceholder": "Search for sets...",
+    "filterBySeries": "Filter by Series:",
     "language": "Language",
     "noSetsFound": "No sets found",
     "noSetsSubtitle": "Currently no sets are available for this series.",
@@ -307,8 +309,6 @@
     "estimatedValue": "estimated value",
     "differentSets": "different sets",
     "inThisSet": "in this set",
-    "emptyCollection": "Your collection is empty",
-    "emptyCollectionSubtitle": "Start adding cards to build your collection!",
     "loadError": "Error loading collection",
     "loadErrorSubtitle": "The collection could not be loaded."
   },

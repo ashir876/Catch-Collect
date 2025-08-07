@@ -156,7 +156,6 @@ const Wishlist = () => {
       number: item.card.number || "",
       rarity: (item.card.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
       type: item.card.type || "",
-      price: item.card.price || 0,
       image: item.card.image_url || "/placeholder.svg",
       inCollection: false,
       inWishlist: true,

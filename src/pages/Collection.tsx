@@ -34,7 +34,6 @@ const Collection = () => {
     number: item.cards?.card_number || '',
     rarity: (item.cards?.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
     type: item.cards?.types?.[0] || 'Normal',
-    price: item.cards?.price || 0,
     image: item.cards?.image_url || '/placeholder.svg',
     inCollection: true,
     inWishlist: false,
@@ -51,7 +50,7 @@ const Collection = () => {
   // Calculate collection statistics from real data
   const collectionStats = {
     totalCards: ownedCards.length,
-    totalValue: ownedCards.reduce((sum, card) => sum + (card.price || 0), 0),
+    totalValue: 0, // Price removed from cards
     totalSets: new Set(ownedCards.map(card => card.set)).size,
     completedSets: 0, // This would need more complex logic to calculate
     rarityBreakdown: {

@@ -18,6 +18,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
+import { useCollectionData } from "@/hooks/useCollectionData";
 
 interface CardData {
   card_id: string;
@@ -35,6 +37,8 @@ interface CardData {
   weaknesses: any;
   retreat: number;
   set_symbol_url: string;
+  inCollection?: boolean;
+  inWishlist?: boolean;
 }
 
 interface FilterState {
@@ -70,6 +74,9 @@ const CardGrid = ({
   const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
+  const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
+  const { data: collectionItems = [] } = useCollectionData();
   const [cards, setCards] = useState<CardData[]>(initialCards || []);
   const [filteredCards, setFilteredCards] = useState<CardData[]>(initialCards || []);
   const [loading, setLoading] = useState(!initialCards);
@@ -96,6 +103,10 @@ const CardGrid = ({
 
   useEffect(() => {
     applyFiltersAndSort();
+  }, [cards, filters, sortBy, sortOrder, collectionItems]);
+
+  useEffect(() => {
+    applyFiltersAndSort();
   }, [cards, filters, sortBy, sortOrder]);
 
   const fetchCards = async () => {
@@ -117,6 +128,13 @@ const CardGrid = ({
 
   const applyFiltersAndSort = () => {
     let filtered = [...cards];
+
+    // Add collection and wishlist status to each card
+    filtered = filtered.map(card => ({
+      ...card,
+      inCollection: collectionItems.some(item => item.card_id === card.card_id),
+      inWishlist: false // TODO: Add wishlist data if needed
+    }));
 
     // Apply filters
     if (filters.rarity.length > 0) {
@@ -194,58 +212,12 @@ const CardGrid = ({
     setFilteredCards(filtered);
   };
 
-  const handleAddToCollection = async (cardId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('card_collections')
-        .insert({
-          user_id: user.id,
-          card_id: cardId,
-          language: 'en'
-        });
-
-      if (error) throw error;
-
-      // Update local state to show the card is in collection
-      setCards(prev => prev.map(card => 
-        card.card_id === cardId 
-          ? { ...card, inCollection: true }
-          : card
-      ));
-    } catch (error) {
-      console.error('Error adding to collection:', error);
-    }
+  const handleAddToCollection = async (cardId: string, cardName: string) => {
+    addToCollection({ cardId, cardName, cardLanguage: 'en' });
   };
 
-  const handleAddToWishlist = async (cardId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('card_wishlist')
-        .insert({
-          user_id: user.id,
-          card_id: cardId,
-          language: 'en'
-        });
-
-      if (error) throw error;
-
-      // Invalidate wishlist queries to update navigation badge
-      queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
-
-      // Update local state to show the card is in wishlist
-      setCards(prev => prev.map(card => 
-        card.card_id === cardId 
-          ? { ...card, inWishlist: true }
-          : card
-      ));
-    } catch (error) {
-      console.error('Error adding to wishlist:', error);
-    }
+  const handleAddToWishlist = async (cardId: string, cardName: string) => {
+    addToWishlist({ cardId, cardName, cardLanguage: 'en' });
   };
 
   const handleAddToCart = async (cardId: string) => {
@@ -352,64 +324,69 @@ const CardGrid = ({
 
       {/* Cards Grid/List */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredCards.map((card) => (
-            <Card key={card.card_id} className="pixel-card group hover:scale-105 transition-all duration-300">
+            <Card key={card.card_id} className="pixel-card group transition-all duration-300 flex flex-col">
               <Link to={`/card/${card.card_id}`}>
-                <div className="aspect-[3/4] overflow-hidden">
+                <div className="aspect-[3/4] overflow-visible">
                   <img 
                     src={card.image_url || '/placeholder.svg'} 
                     alt={card.name} 
-                    className="w-full h-full object-cover pixelated group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-contain pixelated transition-transform duration-500"
                   />
                 </div>
               </Link>
-              <CardContent className="p-4 bg-background border-t-4 border-black">
-                <h3 className="font-black text-sm uppercase tracking-wide mb-1 truncate">
-                  {card.name}
-                </h3>
-                <p className="text-muted-foreground font-bold text-xs mb-2">
-                  {card.set_name}
-                </p>
-                <div className="flex items-center justify-between mb-3">
-                  {card.rarity && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Star className="h-3 w-3 mr-1" />
-                      {card.rarity}
-                    </Badge>
-                  )}
-                  {card.hp && (
-                    <span className="text-xs font-bold">HP: {card.hp}</span>
-                  )}
+              <CardContent className="p-4 bg-background border-t-4 border-black flex flex-col flex-1">
+                <div className="flex-1">
+                  <h3 className="font-black text-sm uppercase tracking-wide mb-1 truncate">
+                    {card.name}
+                  </h3>
+                  <p className="text-muted-foreground font-bold text-xs mb-2">
+                    {card.set_name}
+                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    {card.rarity && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Star className="h-3 w-3 mr-1" />
+                        {card.rarity}
+                      </Badge>
+                    )}
+                    {card.hp && (
+                      <span className="text-xs font-bold">HP: {card.hp}</span>
+                    )}
+                  </div>
                 </div>
                 
-                {/* Action Buttons */}
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    onClick={() => handleAddToCollection(card.card_id)}
-                    className="pixel-button-small flex-1"
-                    disabled={card.inCollection}
-                  >
-                    <Heart className={`h-3 w-3 ${card.inCollection ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleAddToWishlist(card.card_id)}
-                    className="pixel-button-small flex-1"
-                    disabled={card.inWishlist}
-                  >
-                    <Star className={`h-3 w-3 ${card.inWishlist ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleAddToCart(card.card_id)}
-                    className="pixel-button-small flex-1"
-                  >
-                    <ShoppingCart className="h-3 w-3" />
-                  </Button>
+                {/* Bottom Action Buttons */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant={card.inCollection ? "destructive" : "outline"}
+                      onClick={() => handleAddToCollection(card.card_id, card.name)}
+                      className="pixel-button-small flex-1"
+                      disabled={isAddingToCollection || isRemovingFromCollection}
+                    >
+                      <Heart className={`h-3 w-3 ${card.inCollection ? 'fill-current' : ''}`} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={card.inWishlist ? "destructive" : "secondary"}
+                      onClick={() => handleAddToWishlist(card.card_id, card.name)}
+                      className="pixel-button-small flex-1"
+                      disabled={isAddingToWishlist || isRemovingFromWishlist}
+                    >
+                      <Star className={`h-3 w-3 ${card.inWishlist ? 'fill-current' : ''}`} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAddToCart(card.card_id)}
+                      className="pixel-button-small flex-1"
+                    >
+                      <ShoppingCart className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -418,9 +395,9 @@ const CardGrid = ({
       ) : (
         <div className="space-y-4">
           {filteredCards.map((card) => (
-            <Card key={card.card_id} className="pixel-card">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+            <Card key={card.card_id} className="pixel-card flex flex-col">
+              <CardContent className="p-4 flex flex-col flex-1">
+                <div className="flex items-center gap-4 flex-1">
                   <div className="w-20 h-28 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                     <img 
                       src={card.image_url || '/placeholder.svg'} 
@@ -454,33 +431,36 @@ const CardGrid = ({
                       ))}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddToCollection(card.card_id)}
-                      className="pixel-button-small"
-                      disabled={card.inCollection}
-                    >
-                      <Heart className={`h-4 w-4 ${card.inCollection ? 'fill-current' : ''}`} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleAddToWishlist(card.card_id)}
-                      className="pixel-button-small"
-                      disabled={card.inWishlist}
-                    >
-                      <Star className={`h-4 w-4 ${card.inWishlist ? 'fill-current' : ''}`} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleAddToCart(card.card_id)}
-                      className="pixel-button-small"
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  </div>
+                </div>
+                
+                {/* Bottom Action Buttons */}
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={card.inCollection ? "destructive" : "outline"}
+                    onClick={() => handleAddToCollection(card.card_id, card.name)}
+                    className="pixel-button-small flex-1"
+                    disabled={isAddingToCollection || isRemovingFromCollection}
+                  >
+                    <Heart className={`h-4 w-4 ${card.inCollection ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={card.inWishlist ? "destructive" : "secondary"}
+                    onClick={() => handleAddToWishlist(card.card_id, card.name)}
+                    className="pixel-button-small flex-1"
+                    disabled={isAddingToWishlist || isRemovingFromWishlist}
+                  >
+                    <Star className={`h-4 w-4 ${card.inWishlist ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAddToCart(card.card_id)}
+                    className="pixel-button-small flex-1"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>

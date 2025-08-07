@@ -1,33 +1,39 @@
+import { useIsCardInCollection } from "@/hooks/useCollectionData";
+import { useIsCardInWishlist } from "@/hooks/useWishlistData";
+import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
 import TradingCard from "./TradingCard";
+import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 
 interface CardWithWishlistProps {
-  card: {
-    card_id: string;
-    name: string;
-    set_name: string;
-    card_number?: string;
-    rarity?: string;
-    types?: string[];
-    image_url?: string;
-    description?: string;
-    language?: string;
-  };
-  isInWishlist: boolean;
-  onAddToCollection: (cardId: string, cardName: string, cardLanguage?: string) => void;
-  onAddToWishlist: (cardId: string, cardName: string, cardLanguage?: string) => void;
-  mapDatabaseRarityToComponent: (rarity: string) => "common" | "rare" | "epic" | "legendary";
+  card: any; // Card data from the database
+  hidePriceAndBuy?: boolean;
 }
 
-const CardWithWishlist = ({ 
-  card, 
-  isInWishlist,
-  onAddToCollection, 
-  onAddToWishlist, 
-  mapDatabaseRarityToComponent 
-}: CardWithWishlistProps) => {
+const CardWithWishlist = ({ card, hidePriceAndBuy = true }: CardWithWishlistProps) => {
+  const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
+  const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
+  
+  const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
+  const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
+
+  const handleAddToCollection = () => {
+    addToCollection({ 
+      cardId: card.card_id, 
+      cardName: card.name, 
+      cardLanguage: card.language 
+    });
+  };
+
+  const handleAddToWishlist = () => {
+    addToWishlist({ 
+      cardId: card.card_id, 
+      cardName: card.name, 
+      cardLanguage: card.language 
+    });
+  };
+
   return (
     <TradingCard
-      key={card.card_id}
       id={card.card_id}
       name={card.name || 'Unknown Card'}
       series="Pokemon TCG"
@@ -35,15 +41,14 @@ const CardWithWishlist = ({
       number={card.card_number || ''}
       rarity={mapDatabaseRarityToComponent(card.rarity || 'Common')}
       type={card.types?.[0] || 'Normal'}
-      price={0}
       image={card.image_url || '/placeholder.svg'}
-      inCollection={false}
+      inCollection={isInCollection}
       inWishlist={isInWishlist}
       description={card.description || ''}
-      hidePriceAndBuy={true}
+      hidePriceAndBuy={hidePriceAndBuy}
       cardData={card}
-      onAddToCollection={() => onAddToCollection(card.card_id, card.name || 'Unknown Card', card.language)}
-      onAddToWishlist={() => onAddToWishlist(card.card_id, card.name || 'Unknown Card', card.language)}
+      onAddToCollection={handleAddToCollection}
+      onAddToWishlist={handleAddToWishlist}
     />
   );
 };

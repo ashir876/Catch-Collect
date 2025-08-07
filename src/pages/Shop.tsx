@@ -276,15 +276,15 @@ const Shop = () => {
 
       {/* Cards Display */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredCards.map((card) => (
             <div key={card.id} className="relative group">
               <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 h-96 w-full">
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative aspect-[3/4] overflow-visible">
                   <img
                     src={card.image}
                     alt={card.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/placeholder.svg";
                     }}

@@ -5,13 +5,13 @@ import { Grid3X3, Star, TrendingUp, Users, Trophy, Package } from "lucide-react"
 import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
 import { useCardsData, useCardsCount } from "@/hooks/useCardsData";
 import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
+import { useUsersCount } from "@/hooks/useProfilesCount";
 import { useTranslation } from 'react-i18next';
 import SearchBar from "@/components/SearchBar";
 import UserStats from "@/components/user/UserStats";
 // import SocialFeed from "@/components/social/SocialFeed";
 import { useAuth } from "@/contexts/AuthContext";
-import TradingCard from "@/components/cards/TradingCard";
-import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
+import CardWithWishlist from "@/components/cards/CardWithWishlist";
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -27,6 +27,7 @@ const Home = () => {
   const { data: totalCardsCount = 0 } = useCardsCount({});
   const { data: totalSeriesCount = 0 } = useSeriesCount({});
   const { data: totalSetsCount = 0 } = useSetsCount({});
+  const { data: totalCollectorsCount = 0 } = useUsersCount();
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -112,7 +113,7 @@ const Home = () => {
             </div>
             <div className="pixel-card text-center p-6">
               <Users className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-              <div className="text-3xl font-bold mb-2">2,847</div>
+              <div className="text-3xl font-bold mb-2">{totalCollectorsCount || 0}</div>
               <p className="text-sm text-muted-foreground">{t('home.collectors')}</p>
             </div>
           </div>
@@ -205,30 +206,12 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-              {cardsData?.map((card) => (
-                <TradingCard
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {cardsData?.slice(0, 8).map((card) => (
+                <CardWithWishlist
                   key={card.card_id}
-                  id={card.card_id}
-                  name={card.name || 'Unknown Card'}
-                  series="Pokemon TCG"
-                  set={card.set_name || 'Unknown Set'}
-                  number={card.card_number || ''}
-                  rarity={mapDatabaseRarityToComponent(card.rarity || 'Common')}
-                  type={card.types?.[0] || 'Normal'}
-                  price={0}
-                  image={card.image_url || '/placeholder.svg'}
-                  inCollection={false}
-                  inWishlist={false}
-                  description={card.description || ''}
+                  card={card}
                   hidePriceAndBuy={true}
-                  cardData={card}
-                  onAddToCollection={() => {
-                    // Add to collection logic here
-                  }}
-                  onAddToWishlist={() => {
-                    // Add to wishlist logic here
-                  }}
                 />
               ))}
             </div>

@@ -59,3 +59,30 @@ export const useCollectionData = () => {
     enabled: !!user,
   });
 };
+
+// Hook to check if a specific card is in the user's collection
+export const useIsCardInCollection = (cardId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['collection-check', user?.id, cardId],
+    queryFn: async () => {
+      if (!user || !cardId) return false;
+
+      const { data, error } = await supabase
+        .from('card_collections')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('card_id', cardId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error checking collection:', error);
+        throw error;
+      }
+
+      return !!data;
+    },
+    enabled: !!user && !!cardId,
+  });
+};
