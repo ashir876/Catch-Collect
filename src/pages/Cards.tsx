@@ -19,6 +19,9 @@ import LanguageFilter from "@/components/LanguageFilter";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import CardDetailModal from "@/components/cards/CardDetailModal";
 import React from "react"; // Added missing import
+import { useIsCardInCollection } from "@/hooks/useCollectionData";
+import { useIsCardInWishlist } from "@/hooks/useWishlistData";
+import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
 
 const Cards = () => {
   const { t, i18n } = useTranslation();
@@ -38,6 +41,8 @@ const Cards = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
+  const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
@@ -133,6 +138,75 @@ const Cards = () => {
 
   // Use cards data directly since we're filtering by language at the database level
   const filteredCards = cardsData || [];
+
+  // Handler for adding to collection from list view
+  const handleAddToCollection = async (card) => {
+    if (!user) {
+      toast({
+        title: t('auth.loginRequired'),
+        description: t('auth.loginRequiredCollection'),
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('card_collections')
+        .insert({
+          user_id: user.id,
+          card_id: card.card_id,
+          language: card.language || 'en',
+        });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      toast({
+        title: t('messages.addedToCollection'),
+        description: `${card.name} ${t('messages.addedToCollection').toLowerCase()}.`,
+      });
+    } catch (error) {
+      console.error('Error adding to collection:', error);
+      toast({
+        title: t('messages.error'),
+        description: t('messages.collectionError'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handler for adding to wishlist from list view
+  const handleAddToWishlist = async (card) => {
+    if (!user) {
+      toast({
+        title: t('auth.loginRequired'),
+        description: t('auth.loginRequiredWishlist'),
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('card_wishlist')
+        .insert({
+          user_id: user.id,
+          card_id: card.card_id,
+          language: card.language || 'en',
+        });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
+      toast({
+        title: t('messages.addedToWishlist'),
+        description: `${card.name} ${t('messages.addedToWishlist').toLowerCase()}.`,
+      });
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      toast({
+        title: t('messages.error'),
+        description: t('messages.wishlistError'),
+        variant: "destructive",
+      });
+    }
+  };
 
   // Test function to check database connectivity
   const testDatabaseConnection = async () => {
@@ -305,70 +379,18 @@ const Cards = () => {
       ) : (
         <div className="space-y-2">
           {filteredCards.map((card) => (
-            <CardDetailModal key={`${card.card_id}-${card.language}`} card={card}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-3">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-20 h-28 flex-shrink-0">
-                      <img
-                        src={card.image_url || "/placeholder.svg"}
-                        alt={card.name}
-                        className="w-full h-full object-contain rounded-lg"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/placeholder.svg";
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm truncate">{card.name}</h3>
-                          <p className="text-muted-foreground text-xs">{card.set_name} • {card.card_number}</p>
-                          {card.rarity && (
-                            <div className="mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {card.rarity}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-1 ml-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Collection action will be handled by the modal
-                            }}
-                          >
-                            <Star className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Wishlist action will be handled by the modal
-                            }}
-                          >
-                            <Heart className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="secondary" className="text-xs">{card.language}</Badge>
-                        {card.hp && <Badge variant="outline" className="text-xs">HP: {card.hp}</Badge>}
-                        {card.types && card.types.length > 0 && (
-                          <Badge variant="outline" className="text-xs">{card.types[0]}</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </CardDetailModal>
+            <CardListItem
+              key={`${card.card_id}-${card.language}`}
+              card={card}
+              addToCollection={addToCollection}
+              removeFromCollection={removeFromCollection}
+              isAddingToCollection={isAddingToCollection}
+              isRemovingFromCollection={isRemovingFromCollection}
+              addToWishlist={addToWishlist}
+              removeFromWishlist={removeFromWishlist}
+              isAddingToWishlist={isAddingToWishlist}
+              isRemovingFromWishlist={isRemovingFromWishlist}
+            />
           ))}
         </div>
       )}
@@ -395,6 +417,101 @@ const Cards = () => {
         </div>
       )}
     </div>
+  );
+};
+
+// CardListItem component for list view
+const CardListItem = ({
+  card,
+  addToCollection,
+  removeFromCollection,
+  isAddingToCollection,
+  isRemovingFromCollection,
+  addToWishlist,
+  removeFromWishlist,
+  isAddingToWishlist,
+  isRemovingFromWishlist,
+}) => {
+  const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
+  const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
+
+  const handleCollectionClick = (e) => {
+    e.stopPropagation();
+    if (isInCollection) {
+      removeFromCollection({ cardId: card.card_id });
+    } else {
+      addToCollection({ cardId: card.card_id, cardName: card.name, cardLanguage: card.language });
+    }
+  };
+
+  const handleWishlistClick = (e) => {
+    e.stopPropagation();
+    if (isInWishlist) {
+      removeFromWishlist({ cardId: card.card_id });
+    } else {
+      addToWishlist({ cardId: card.card_id, cardName: card.name, cardLanguage: card.language });
+    }
+  };
+
+  return (
+    <CardDetailModal key={`${card.card_id}-${card.language}`} card={card}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+        <CardContent className="p-3">
+          <div className="flex gap-3 items-center">
+            <div className="w-20 h-28 flex-shrink-0">
+              <img
+                src={card.image_url || "/placeholder.svg"}
+                alt={card.name}
+                className="w-full h-full object-contain rounded-lg"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm truncate">{card.name}</h3>
+                  <p className="text-muted-foreground text-xs">{card.set_name} • {card.card_number}</p>
+                  {card.rarity && (
+                    <div className="mt-1">
+                      <Badge variant="secondary" className="text-xs" key={`${card.card_id}-${card.rarity}`}>{card.rarity}</Badge>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-1 ml-2">
+                  <Button
+                    variant={isInCollection ? "destructive" : "outline"}
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={handleCollectionClick}
+                    disabled={isAddingToCollection || isRemovingFromCollection}
+                  >
+                    <Star className={`h-3 w-3 ${isInCollection ? 'fill-white stroke-red-500' : ''}`} strokeWidth={2} />
+                  </Button>
+                  <Button
+                    variant={isInWishlist ? "destructive" : "outline"}
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={handleWishlistClick}
+                    disabled={isAddingToWishlist || isRemovingFromWishlist}
+                  >
+                    <Heart className={`h-3 w-3 ${isInWishlist ? 'fill-white stroke-pink-500' : ''}`} strokeWidth={2} />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Badge variant="secondary" className="text-xs" key={`${card.card_id}-${card.language}`}>{card.language}</Badge>
+                {card.hp && <Badge variant="outline" className="text-xs" key={`${card.card_id}-hp`}>HP: {card.hp}</Badge>}
+                {card.types && card.types.length > 0 && (
+                  <Badge variant="outline" className="text-xs" key={`${card.card_id}-${card.types[0]}`}>{card.types[0]}</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </CardDetailModal>
   );
 };
 

@@ -79,17 +79,24 @@ const Sets = () => {
 
 
   // Sort sets (client-side sorting since we can't sort in the database query easily)
-  const sortedSets = setsData?.sort((a, b) => {
+  const sortedSets = setsData?.slice().sort((a, b) => {
+    let primary = 0;
     switch (sortBy) {
       case "newest":
-        return new Date(b.release_date || 0).getTime() - new Date(a.release_date || 0).getTime();
+        primary = new Date(b.release_date || 0).getTime() - new Date(a.release_date || 0).getTime();
+        break;
       case "oldest":
-        return new Date(a.release_date || 0).getTime() - new Date(b.release_date || 0).getTime();
+        primary = new Date(a.release_date || 0).getTime() - new Date(b.release_date || 0).getTime();
+        break;
       case "name":
-        return (a.name || '').localeCompare(b.name || '');
+        primary = (a.name || '').localeCompare(b.name || '');
+        break;
       default:
-        return 0;
+        primary = 0;
     }
+    if (primary !== 0) return primary;
+    // Secondary sort by unique set_id
+    return (a.set_id || '').localeCompare(b.set_id || '');
   }) || [];
 
   const getCompletionPercentage = (owned: number, total: number) => {
