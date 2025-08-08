@@ -208,114 +208,57 @@ const Sets = () => {
 
       {/* Sets Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[...Array(12)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-3">
+            <Card key={i} className="border-4 border-black animate-pulse h-80 flex flex-col">
+              <div className="h-48 bg-muted flex-shrink-0"></div>
+              <CardHeader className="flex-1 p-4">
                 <div className="h-6 bg-muted rounded mb-2"></div>
                 <div className="h-4 bg-muted rounded"></div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="h-4 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded"></div>
-                </div>
-              </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedSets.map((set) => {
-            // Mock completion data for now - this would come from user's collection
-            const cardCount = set.total || 0;
-            const ownedCards = Math.floor(Math.random() * cardCount); // Mock data
-            const completionPercentage = getCompletionPercentage(ownedCards, cardCount);
-            const isComplete = ownedCards === cardCount && cardCount > 0;
-            
             return (
-              <Card key={set.set_id} className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-                {/* Set Logo/Image Section */}
-                {(set.logo_url || set.symbol_url) && (
-                  <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden border-b-2 border-gray-200">
-                    {set.logo_url ? (
-                      <img 
-                        src={set.logo_url} 
-                        alt={set.name || 'Set Logo'} 
-                        className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : set.symbol_url ? (
-                      <img 
-                        src={set.symbol_url} 
-                        alt={set.name || 'Set Symbol'} 
-                        className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : null}
-                  </div>
-                )}
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <Badge variant="secondary" className="mb-2">
-                        {set.series_name || t('sets.unknownSeries')}
-                      </Badge>
-                      <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">
-                        {set.name || t('sets.unknownSet')}
-                      </CardTitle>
+              <Card key={set.set_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
+                <div className="h-40 bg-white flex items-center justify-center p-3 overflow-hidden flex-shrink-0">
+                  {set.logo_url ? (
+                    <img
+                      src={set.logo_url}
+                      alt={set.name || 'Set Logo'}
+                      className="max-h-28 max-w-28 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : set.symbol_url ? (
+                    <img
+                      src={set.symbol_url}
+                      alt={set.name || 'Set Symbol'}
+                      className="max-h-28 max-w-28 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="text-black font-black text-2xl text-center group-hover:scale-110 transition-transform duration-300">
+                      {set.name}
                     </div>
-                    {isComplete && (
-                      <Badge className="bg-success/10 text-success border-success">
-                        {t('sets.complete')}
-                      </Badge>
-                    )}
+                  )}
+                </div>
+                <CardHeader className="bg-background flex-1 flex flex-col justify-center p-4">
+                  <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
+                    {set.name || t('sets.unknownSet')}
+                  </CardTitle>
+                  <CardDescription className="font-bold text-muted-foreground">
+                    ID: {set.set_id}
+                  </CardDescription>
+                  {set.release_date && (
+                    <div className="font-bold text-muted-foreground mt-1">
+                      {t('sets.release')}: {new Date(set.release_date).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div className="font-bold text-primary mt-2">
+                    {t('sets.cardCount')}: {set.total || 0}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Collection Progress */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t('sets.progress')}:</span>
-                        <span className="font-medium">
-                          {ownedCards}/{cardCount} ({completionPercentage}%)
-                        </span>
-                      </div>
-                      <Progress value={completionPercentage} className="h-2" />
-                    </div>
-
-                    {/* Set Info */}
-                    <div className="space-y-2">
-                      {set.release_date && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{t('sets.release')}:</span>
-                          <span className="font-medium">
-                            {new Date(set.release_date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t('sets.cardCount')}:</span>
-                        <span className="font-medium text-primary">
-                          {cardCount}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-2">
-                      <Link to={`/cards?set=${set.set_id}`} className="flex-1">
-                        <Button variant="outline" className="w-full" size="sm">
-                          <Package className="mr-2 h-4 w-4" />
-                          {t('sets.cards')}
-                        </Button>
-                      </Link>
-                      <Button className="flex-1" size="sm">
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        {t('sets.buySet')}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
               </Card>
             );
           })}
