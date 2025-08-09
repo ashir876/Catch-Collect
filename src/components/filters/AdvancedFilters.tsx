@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCollectionData } from "@/hooks/useCollectionData";
 import { useWishlistData } from "@/hooks/useWishlistData";
 import { useIllustratorsData } from "@/hooks/useIllustratorsData";
+import { useLanguagesData } from "@/hooks/useLanguagesData";
 
 interface AdvancedFiltersProps {
   searchTerm: string;
@@ -29,6 +30,21 @@ interface AdvancedFiltersProps {
   wishlistFilter: string;
   onWishlistChange: (value: string) => void;
   onReloadCollection: () => void;
+  // New filter props
+  categoryFilter?: string;
+  onCategoryChange?: (value: string) => void;
+  stageFilter?: string;
+  onStageChange?: (value: string) => void;
+  evolveFromFilter?: string;
+  onEvolveFromChange?: (value: string) => void;
+  retreatCostFilter?: string;
+  onRetreatCostChange?: (value: string) => void;
+  regulationMarkFilter?: string;
+  onRegulationMarkChange?: (value: string) => void;
+  formatLegalityFilter?: string;
+  onFormatLegalityChange?: (value: string) => void;
+  weaknessTypeFilter?: string;
+  onWeaknessTypeChange?: (value: string) => void;
 }
 
 const AdvancedFilters = ({
@@ -48,7 +64,22 @@ const AdvancedFilters = ({
   onCollectionChange,
   wishlistFilter,
   onWishlistChange,
-  onReloadCollection
+  onReloadCollection,
+  // New filter props with defaults
+  categoryFilter = "all",
+  onCategoryChange = () => {},
+  stageFilter = "all",
+  onStageChange = () => {},
+  evolveFromFilter = "all",
+  onEvolveFromChange = () => {},
+  retreatCostFilter = "all",
+  onRetreatCostChange = () => {},
+  regulationMarkFilter = "all",
+  onRegulationMarkChange = () => {},
+  formatLegalityFilter = "all",
+  onFormatLegalityChange = () => {},
+  weaknessTypeFilter = "all",
+  onWeaknessTypeChange = () => {}
 }: AdvancedFiltersProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -56,23 +87,93 @@ const AdvancedFilters = ({
   const { data: collectionData = [] } = useCollectionData();
   const { data: wishlistData = [] } = useWishlistData();
   const { data: illustrators = [] } = useIllustratorsData();
+  const { data: availableLanguages = [], isLoading: languagesLoading } = useLanguagesData();
 
   const rarities = [
-    'Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret',
     'Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret'
   ];
 
   const types = [
-    'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
-    'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
+    'Fire', 'Water', 'Lightning', 'Grass', 'Fighting', 'Psychic', 'Colorless', 
+    'Darkness', 'Metal', 'Dragon', 'Fairy'
   ];
 
+  const categories = [
+    { value: 'all', label: t('filters.allCategories') },
+    { value: 'Pokemon', label: 'Pokémon' },
+    { value: 'Trainer', label: 'Trainer' },
+    { value: 'Energy', label: 'Energy' }
+  ];
+
+  const stages = [
+    { value: 'all', label: t('filters.allStages') },
+    { value: 'Basic', label: 'Basic' },
+    { value: 'Stage1', label: 'Stage 1' },
+    { value: 'Stage2', label: 'Stage 2' }
+  ];
+
+  const retreatCosts = [
+    { value: 'all', label: t('filters.allRetreatCosts') },
+    { value: '0', label: '0' },
+    { value: '1', label: '1' },
+    { value: '2', label: '2' },
+    { value: '3', label: '3' },
+    { value: '4', label: '4+' }
+  ];
+
+  const regulationMarks = [
+    { value: 'all', label: t('filters.allRegulationMarks') },
+    { value: 'D', label: 'D' },
+    { value: 'E', label: 'E' },
+    { value: 'F', label: 'F' },
+    { value: 'G', label: 'G' },
+    { value: 'H', label: 'H' }
+  ];
+
+  const formatLegalities = [
+    { value: 'all', label: t('filters.allFormats') },
+    { value: 'standard', label: t('filters.standard') },
+    { value: 'expanded', label: t('filters.expanded') },
+    { value: 'legacy', label: t('filters.legacy') }
+  ];
+
+  const weaknessTypes = [
+    { value: 'all', label: t('filters.allWeaknessTypes') },
+    { value: 'Fire', label: 'Fire' },
+    { value: 'Water', label: 'Water' },
+    { value: 'Lightning', label: 'Lightning' },
+    { value: 'Grass', label: 'Grass' },
+    { value: 'Fighting', label: 'Fighting' },
+    { value: 'Psychic', label: 'Psychic' }
+  ];
+
+  // Create dynamic languages array from database data
   const languages = [
     { value: 'all', label: t('filters.allLanguages') },
-    { value: 'en', label: 'English' },
-    { value: 'de', label: 'Deutsch' },
-    { value: 'nl', label: 'Nederlands' }
+    ...availableLanguages.map(lang => ({
+      value: lang,
+      label: getLanguageDisplayName(lang)
+    }))
   ];
+
+  // Helper function to get proper display names for languages
+  function getLanguageDisplayName(langCode: string): string {
+    const languageNames: { [key: string]: string } = {
+      'en': 'English',
+      'de': 'Deutsch',
+      'fr': 'Français', 
+      'es': 'Español',
+      'it': 'Italiano',
+      'pt': 'Português',
+      'nl': 'Nederlands',
+      'ja': '日本語',
+      'ko': '한국어',
+      'zh': '中文',
+      'ru': 'Русский'
+    };
+    
+    return languageNames[langCode] || langCode.toUpperCase();
+  }
 
   const collectionStatuses = [
     { value: 'all', label: t('filters.allCards') },
@@ -103,14 +204,30 @@ const AdvancedFilters = ({
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">{t('filters.language')}:</span>
-          <Select value={languageFilter} onValueChange={onLanguageChange}>
+          <Select value={languageFilter} onValueChange={onLanguageChange} disabled={languagesLoading}>
             <SelectTrigger className="w-32 h-8 text-sm border border-gray-300 rounded-md">
-              <SelectValue />
+              <SelectValue placeholder={languagesLoading ? "Loading..." : undefined} />
             </SelectTrigger>
             <SelectContent>
               {languages.map((lang) => (
                 <SelectItem key={lang.value} value={lang.value}>
                   {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">{t('filters.category')}:</span>
+          <Select value={categoryFilter} onValueChange={onCategoryChange}>
+            <SelectTrigger className="w-32 h-8 text-sm border border-gray-300 rounded-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -193,7 +310,7 @@ const AdvancedFilters = ({
               <Button
                 variant={collectionFilter === 'in_collection' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => onCollectionChange('in_collection')}
+                onClick={() => onCollectionChange(collectionFilter === 'in_collection' ? 'all' : 'in_collection')}
                 className="h-7 px-3 text-xs"
               >
                 <Heart className="mr-1 h-3 w-3" />
@@ -202,7 +319,7 @@ const AdvancedFilters = ({
               <Button
                 variant={wishlistFilter === 'in_wishlist' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => onWishlistChange('in_wishlist')}
+                onClick={() => onWishlistChange(wishlistFilter === 'in_wishlist' ? 'all' : 'in_wishlist')}
                 className="h-7 px-3 text-xs"
               >
                 <Star className="mr-1 h-3 w-3" />
@@ -230,44 +347,100 @@ const AdvancedFilters = ({
       {/* Advanced Filters (Collapsible) */}
       {isExpanded && (
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                         <div>
-               <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.illustrator')}</label>
-               <Select value={illustratorFilter} onValueChange={onIllustratorChange}>
-                 <SelectTrigger className="border border-gray-300 rounded-md">
-                   <SelectValue placeholder={t('filters.selectIllustrator')} />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="all">{t('filters.allIllustrators')}</SelectItem>
-                   {illustrators.map((illustrator) => (
-                     <SelectItem key={illustrator} value={illustrator}>
-                       {illustrator}
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.productType')}</label>
-              <Select value="cards" disabled>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.illustrator')}</label>
+              <Select value={illustratorFilter} onValueChange={onIllustratorChange}>
                 <SelectTrigger className="border border-gray-300 rounded-md">
-                  <SelectValue placeholder={t('filters.selectProductType')} />
+                  <SelectValue placeholder={t('filters.selectIllustrator')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cards">{t('filters.singleCards')}</SelectItem>
+                  <SelectItem value="all">{t('filters.allIllustrators')}</SelectItem>
+                  {illustrators.map((illustrator) => (
+                    <SelectItem key={illustrator} value={illustrator}>
+                      {illustrator}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.series')}</label>
-              <Select value="all" disabled>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.stage')}</label>
+              <Select value={stageFilter} onValueChange={onStageChange}>
                 <SelectTrigger className="border border-gray-300 rounded-md">
-                  <SelectValue placeholder={t('filters.selectSeries')} />
+                  <SelectValue placeholder={t('filters.selectStage')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('filters.all')}</SelectItem>
+                  {stages.map((stage) => (
+                    <SelectItem key={stage.value} value={stage.value}>
+                      {stage.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.retreatCost')}</label>
+              <Select value={retreatCostFilter} onValueChange={onRetreatCostChange}>
+                <SelectTrigger className="border border-gray-300 rounded-md">
+                  <SelectValue placeholder={t('filters.selectRetreatCost')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {retreatCosts.map((cost) => (
+                    <SelectItem key={cost.value} value={cost.value}>
+                      {cost.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.regulationMark')}</label>
+              <Select value={regulationMarkFilter} onValueChange={onRegulationMarkChange}>
+                <SelectTrigger className="border border-gray-300 rounded-md">
+                  <SelectValue placeholder={t('filters.selectRegulationMark')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {regulationMarks.map((mark) => (
+                    <SelectItem key={mark.value} value={mark.value}>
+                      {mark.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.formatLegality')}</label>
+              <Select value={formatLegalityFilter} onValueChange={onFormatLegalityChange}>
+                <SelectTrigger className="border border-gray-300 rounded-md">
+                  <SelectValue placeholder={t('filters.selectFormat')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {formatLegalities.map((format) => (
+                    <SelectItem key={format.value} value={format.value}>
+                      {format.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('filters.weaknessType')}</label>
+              <Select value={weaknessTypeFilter} onValueChange={onWeaknessTypeChange}>
+                <SelectTrigger className="border border-gray-300 rounded-md">
+                  <SelectValue placeholder={t('filters.selectWeaknessType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {weaknessTypes.map((weakness) => (
+                    <SelectItem key={weakness.value} value={weakness.value}>
+                      {weakness.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

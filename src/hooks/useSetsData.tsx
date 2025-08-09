@@ -19,33 +19,44 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
     searchTerm 
   } = options;
 
+  // Create a simpler query key
+  const queryKey = [
+    'sets', 
+    language || 'all', 
+    seriesId || 'all', 
+    limit, 
+    offset, 
+    searchTerm || ''
+  ];
+
   return useQuery({
-    queryKey: ['sets', language, seriesId, limit, offset, searchTerm],
+    queryKey,
     staleTime: 0, // Always consider data stale to ensure fresh data
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
     queryFn: async () => {
-      
-
       
       let query = supabase
         .from('sets')
         .select('*')
         .order('name');
 
-      // Only filter by language if explicitly provided
-      if (language) {
+      // Filter by language if provided
+      if (language && language !== 'all') {
         query = query.eq('language', language);
       }
 
+      // Filter by series if provided
       if (seriesId) {
         query = query.eq('series_id', seriesId);
       }
 
+      // Filter by search term if provided
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }
 
+      // Apply pagination if limit is provided
       if (limit) {
         query = query.range(offset, offset + limit - 1);
       }
@@ -56,9 +67,6 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
         console.error('Error fetching sets:', error);
         throw error;
       }
-
-
-      
       return data;
     },
   });
@@ -68,27 +76,36 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
 export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> = {}) => {
   const { language, seriesId, searchTerm } = options;
 
+  // Create a simpler query key
+  const queryKey = [
+    'sets-count', 
+    language || 'all', 
+    seriesId || 'all', 
+    searchTerm || ''
+  ];
+
   return useQuery({
-    queryKey: ['sets-count', language, seriesId, searchTerm],
+    queryKey,
     staleTime: 0, // Always consider data stale to ensure fresh data
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
     queryFn: async () => {
     
-      
       let query = supabase
         .from('sets')
         .select('*', { count: 'exact', head: true });
 
-      // Only filter by language if explicitly provided
-      if (language) {
+      // Filter by language if provided
+      if (language && language !== 'all') {
         query = query.eq('language', language);
       }
 
+      // Filter by series if provided
       if (seriesId) {
         query = query.eq('series_id', seriesId);
       }
 
+      // Filter by search term if provided
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }
@@ -100,7 +117,6 @@ export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> 
         throw error;
       }
 
-      
       return count || 0;
     },
   });

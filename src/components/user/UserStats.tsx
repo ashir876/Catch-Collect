@@ -103,7 +103,15 @@ const UserStats = () => {
           .eq('user_id', user.id)
           .gte('created_at', thirtyDaysAgo.toISOString());
 
-        const completionRate = totalCards ? Math.round((collectionCount || 0) / totalCards * 100) : 0;
+        const rawPercentage = totalCards ? (collectionCount || 0) / totalCards * 100 : 0;
+        // If user has cards but percentage rounds to 0, show at least 0.1%
+        const completionRate = rawPercentage >= 1 
+          ? Math.round(rawPercentage) 
+          : collectionCount > 0 
+            ? Math.max(0.1, parseFloat(rawPercentage.toFixed(1)))
+            : 0;
+
+
 
         setStats({
           totalCards: totalCards || 0,
@@ -117,7 +125,7 @@ const UserStats = () => {
           recentAdditions: recentAdditions || 0
         });
       } catch (error) {
-        console.error('Error fetching user stats:', error);
+
       } finally {
         setLoading(false);
       }
@@ -176,10 +184,7 @@ const UserStats = () => {
               <Progress value={stats.completionRate} className="h-3" />
             </div>
             <p className="text-sm text-muted-foreground">
-              {t('stats.completionDescription', { 
-                collected: stats.collectionCards, 
-                total: stats.totalCards 
-              })}
+              You have collected {stats.collectionCards} out of {stats.totalCards} cards
             </p>
           </div>
         </CardContent>
@@ -282,7 +287,7 @@ const UserStats = () => {
                 <span>{t('stats.collectionProgress')}</span>
                 <span>{stats.collectionCards}/{stats.totalCards}</span>
               </div>
-              <Progress value={(stats.collectionCards / stats.totalCards) * 100} className="h-2" />
+              <Progress value={stats.completionRate} className="h-2" />
             </div>
             <div className="text-xs text-muted-foreground">
               {t('stats.progressDescription')}
@@ -294,4 +299,4 @@ const UserStats = () => {
   );
 };
 
-export default UserStats; 
+export default UserStats;

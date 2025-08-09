@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { useLanguagesData } from '@/hooks/useLanguagesData';
+import { useSeriesLanguagesData } from '@/hooks/useSeriesLanguagesData';
 
-interface LanguageFilterProps {
+interface SeriesLanguageFilterProps {
   selectedLanguage: string;
   onLanguageChange: (language: string) => void;
   className?: string;
 }
 
-const LanguageFilter = ({ selectedLanguage, onLanguageChange, className = '' }: LanguageFilterProps) => {
+const SeriesLanguageFilter = ({ selectedLanguage, onLanguageChange, className = '' }: SeriesLanguageFilterProps) => {
   const { t } = useTranslation();
-  const { data: availableLanguages = [], isLoading: languagesLoading } = useLanguagesData();
+  const { data: availableLanguages = [], isLoading: languagesLoading } = useSeriesLanguagesData();
 
   // Helper function to get language display names
   function getLanguageDisplayName(langCode: string): { label: string, name: string } {
@@ -71,13 +71,15 @@ const LanguageFilter = ({ selectedLanguage, onLanguageChange, className = '' }: 
               }
               transition-all duration-100
             `}
+            title={language.name}
           >
             {language.label}
           </Button>
         ))}
       </div>
+
     </div>
   );
 };
 
-export default LanguageFilter; 
+export default SeriesLanguageFilter;

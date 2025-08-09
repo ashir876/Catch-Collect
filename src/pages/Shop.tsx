@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { Search, ShoppingCart, Filter, Grid3X3, List } from "lucide-react";
+import { Search, ShoppingCart, Filter, Grid3X3, List, Package, Star, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useCartActions } from "@/hooks/useCartActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { useCardsData } from "@/hooks/useCardsData";
+import { useSetsData } from "@/hooks/useSetsData";
+import { useSeriesData } from "@/hooks/useSeriesData";
 
 // Mock shop data with placeholder images
 const shopCards = [
@@ -80,6 +84,7 @@ const shopCards = [
 
 const Shop = () => {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("cards");
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");
   const [rarityFilter, setRarityFilter] = useState("all");
@@ -151,19 +156,130 @@ const Shop = () => {
   };
 
   return (
-          <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
-            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
-              {t('shop.title')}
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
-            {t('shop.subtitle')}
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+          <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+            {t('shop.title')}
+          </span>
+        </h1>
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
+          {t('shop.subtitle')}
+        </p>
+      </div>
 
+      {/* Tabs for different shop categories */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="cards" className="flex items-center gap-2">
+            <Grid3X3 className="h-4 w-4" />
+            {t('shop.shopFromCards')}
+          </TabsTrigger>
+          <TabsTrigger value="sets" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            {t('shop.shopFromSets')}
+          </TabsTrigger>
+          <TabsTrigger value="series" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            {t('shop.shopFromSeries')}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Shop from Cards Tab */}
+        <TabsContent value="cards">
+          <ShopFromCards />
+        </TabsContent>
+
+        {/* Shop from Sets Tab */}
+        <TabsContent value="sets">
+          <ShopFromSets />
+        </TabsContent>
+
+        {/* Shop from Series Tab */}
+        <TabsContent value="series">
+          <ShopFromSeries />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+// Component for shopping individual cards
+const ShopFromCards = () => {
+  const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [rarityFilter, setRarityFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { addToCart, isLoading } = useCartActions();
+
+  let filteredCards = shopCards.filter(card => {
+    const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
+    
+    let matchesPrice = true;
+    switch (priceFilter) {
+      case "under25":
+        matchesPrice = card.price < 25;
+        break;
+      case "25to50":
+        matchesPrice = card.price >= 25 && card.price <= 50;
+        break;
+      case "50to100":
+        matchesPrice = card.price >= 50 && card.price <= 100;
+        break;
+      case "over100":
+        matchesPrice = card.price > 100;
+        break;
+    }
+    
+    return matchesSearch && matchesRarity && matchesPrice;
+  });
+
+  // Sort cards
+  filteredCards = filteredCards.sort((a, b) => {
+    switch (sortBy) {
+      case "price-low":
+        return a.price - b.price;
+      case "price-high":
+        return b.price - a.price;
+      case "name":
+        return a.name.localeCompare(b.name);
+      case "rarity":
+        const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+        return rarityOrder[b.rarity] - rarityOrder[a.rarity];
+      default:
+        return 0;
+    }
+  });
+
+  const handleAddToCart = async (card: typeof shopCards[0]) => {
+    if (!user) {
+      toast({
+        title: t('auth.loginRequired'),
+        description: t('auth.loginRequiredCart'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await addToCart({
+        article_number: card.id,
+        price: card.price,
+        quantity: 1
+      });
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
+  return (
+    <div>
       {/* Search and Filters */}
       <div className="space-y-4 mb-8">
         <div className="flex flex-col lg:flex-row gap-4">
@@ -404,6 +520,291 @@ const Shop = () => {
           <h3 className="text-lg font-medium mb-2">{t('shop.noCardsFound')}</h3>
           <p className="text-muted-foreground">
             {t('shop.noCardsSubtitle')}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Component for shopping complete sets
+const ShopFromSets = () => {
+  const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("all");
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { addToCart, isLoading } = useCartActions();
+
+  // Mock sets data for now - in a real app this would use the useSetsData hook
+  const { data: setsData = [], isLoading: setsLoading } = useSetsData({
+    language: languageFilter === "all" ? undefined : languageFilter,
+    searchTerm: searchTerm || undefined,
+    limit: 12,
+    offset: 0
+  });
+
+  const handleAddSetToCart = async (set: any) => {
+    if (!user) {
+      toast({
+        title: t('auth.loginRequired'),
+        description: t('auth.loginRequiredCart'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Mock price for complete set - in real app this would come from the database
+      const setPrice = (set.total || 50) * 2.99; // Estimated price per card
+      await addToCart({
+        article_number: `set-${set.set_id}`,
+        price: setPrice,
+        quantity: 1
+      });
+      toast({
+        title: t('shop.addedToCart'),
+        description: `${set.name} ${t('shop.setAddedToCart')}`,
+      });
+    } catch (error) {
+      console.error('Error adding set to cart:', error);
+    }
+  };
+
+  return (
+    <div>
+      {/* Search */}
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
+            <Input
+              placeholder={t('sets.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 pr-4 py-3 text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Sets Grid */}
+      {setsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <Card key={i} className="border-4 border-black animate-pulse h-96">
+              <div className="h-48 bg-muted"></div>
+              <CardHeader className="p-4">
+                <div className="h-6 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded"></div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {setsData.map((set) => {
+            const setPrice = (set.total || 50) * 2.99;
+            return (
+              <Card key={set.set_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
+                <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
+                  {set.logo_url ? (
+                    <img
+                      src={set.logo_url}
+                      alt={set.name || 'Set Logo'}
+                      className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="text-black font-black text-xl text-center">
+                      {set.name}
+                    </div>
+                  )}
+                  
+                  {/* Overlay with buy button */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <Button 
+                      onClick={() => handleAddSetToCart(set)}
+                      disabled={isLoading}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      {t('shop.buyCompleteSet')}
+                    </Button>
+                  </div>
+                </div>
+                
+                <CardHeader className="bg-background flex-1 flex flex-col justify-between p-4">
+                  <div>
+                    <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
+                      {set.name || t('sets.unknownSet')}
+                    </CardTitle>
+                    <CardDescription className="font-bold text-muted-foreground">
+                      {t('sets.cardCount')}: {set.total || 0}
+                    </CardDescription>
+                  </div>
+                  <div className="mt-4">
+                    <div className="text-2xl font-bold text-green-600">
+                      CHF {setPrice.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('shop.completeSet')}
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!setsLoading && setsData.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">{t('sets.noSetsFound')}</h3>
+          <p className="text-muted-foreground">
+            {t('sets.noSetsFoundSubtitle')}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Component for shopping complete series
+const ShopFromSeries = () => {
+  const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("all");
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { addToCart, isLoading } = useCartActions();
+
+  const { data: seriesData = [], isLoading: seriesLoading } = useSeriesData({
+    language: languageFilter === "all" ? undefined : languageFilter,
+    searchTerm: searchTerm || undefined,
+    limit: 12,
+    offset: 0
+  });
+
+  const handleAddSeriesToCart = async (series: any) => {
+    if (!user) {
+      toast({
+        title: t('auth.loginRequired'),
+        description: t('auth.loginRequiredCart'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Mock price for complete series - in real app this would come from the database
+      const seriesPrice = 299.99; // Estimated price for complete series
+      await addToCart({
+        article_number: `series-${series.series_id}`,
+        price: seriesPrice,
+        quantity: 1
+      });
+      toast({
+        title: t('shop.addedToCart'),
+        description: `${series.series_name} ${t('shop.seriesAddedToCart')}`,
+      });
+    } catch (error) {
+      console.error('Error adding series to cart:', error);
+    }
+  };
+
+  return (
+    <div>
+      {/* Search */}
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
+            <Input
+              placeholder={t('series.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 pr-4 py-3 text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Series Grid */}
+      {seriesLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <Card key={i} className="border-4 border-black animate-pulse h-96">
+              <div className="h-48 bg-muted"></div>
+              <CardHeader className="p-4">
+                <div className="h-6 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded"></div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {seriesData.map((series) => (
+            <Card key={series.series_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
+              <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
+                {series.logo_url ? (
+                  <img 
+                    src={series.logo_url} 
+                    alt={series.series_name || 'Series'} 
+                    className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="text-black font-black text-xl text-center">
+                    <Star className="h-16 w-16 mx-auto mb-2" />
+                    {series.series_name}
+                  </div>
+                )}
+                
+                {/* Overlay with buy button */}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <Button 
+                    onClick={() => handleAddSeriesToCart(series)}
+                    disabled={isLoading}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    {t('shop.buyCompleteSeries')}
+                  </Button>
+                </div>
+              </div>
+              
+              <CardHeader className="bg-background flex-1 flex flex-col justify-between p-4">
+                <div>
+                  <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
+                    {series.series_name}
+                  </CardTitle>
+                  <CardDescription className="font-bold text-muted-foreground">
+                    ID: {series.series_id}
+                  </CardDescription>
+                </div>
+                <div className="mt-4">
+                  <div className="text-2xl font-bold text-purple-600">
+                    CHF 299.99
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {t('shop.completeSeries')}
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!seriesLoading && seriesData.length === 0 && (
+        <div className="text-center py-12">
+          <Star className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">{t('series.noSeriesFound')}</h3>
+          <p className="text-muted-foreground">
+            {t('series.noSeriesSubtitle')}
           </p>
         </div>
       )}

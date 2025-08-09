@@ -13,6 +13,7 @@ import UserStats from "@/components/user/UserStats";
 import { useAuth } from "@/contexts/AuthContext";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
 
+
 const Home = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();

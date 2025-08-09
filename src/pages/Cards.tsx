@@ -35,6 +35,14 @@ const Cards = () => {
   const [illustratorFilter, setIllustratorFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [wishlistFilter, setWishlistFilter] = useState("all");
+  // New filter states
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [evolveFromFilter, setEvolveFromFilter] = useState("all");
+  const [retreatCostFilter, setRetreatCostFilter] = useState("all");
+  const [regulationMarkFilter, setRegulationMarkFilter] = useState("all");
+  const [formatLegalityFilter, setFormatLegalityFilter] = useState("all");
+  const [weaknessTypeFilter, setWeaknessTypeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50); // Show 50 items per page for more compact view
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -61,7 +69,15 @@ const Cards = () => {
     illustrator: illustratorFilter === "all" ? undefined : illustratorFilter,
     collectionFilter: collectionFilter === "all" ? undefined : collectionFilter,
     wishlistFilter: wishlistFilter === "all" ? undefined : wishlistFilter,
-    userId: user?.id
+    userId: user?.id,
+    // New filters
+    category: categoryFilter === "all" ? undefined : categoryFilter,
+    stage: stageFilter === "all" ? undefined : stageFilter,
+    evolveFrom: evolveFromFilter === "all" ? undefined : evolveFromFilter,
+    retreatCost: retreatCostFilter === "all" ? undefined : retreatCostFilter,
+    regulationMark: regulationMarkFilter === "all" ? undefined : regulationMarkFilter,
+    formatLegality: formatLegalityFilter === "all" ? undefined : formatLegalityFilter,
+    weaknessType: weaknessTypeFilter === "all" ? undefined : weaknessTypeFilter
   });
 
   // Fetch total count for pagination with all filters
@@ -76,7 +92,15 @@ const Cards = () => {
     illustrator: illustratorFilter === "all" ? undefined : illustratorFilter,
     collectionFilter: collectionFilter === "all" ? undefined : collectionFilter,
     wishlistFilter: wishlistFilter === "all" ? undefined : wishlistFilter,
-    userId: user?.id
+    userId: user?.id,
+    // New filters
+    category: categoryFilter === "all" ? undefined : categoryFilter,
+    stage: stageFilter === "all" ? undefined : stageFilter,
+    evolveFrom: evolveFromFilter === "all" ? undefined : evolveFromFilter,
+    retreatCost: retreatCostFilter === "all" ? undefined : retreatCostFilter,
+    regulationMark: regulationMarkFilter === "all" ? undefined : regulationMarkFilter,
+    formatLegality: formatLegalityFilter === "all" ? undefined : formatLegalityFilter,
+    weaknessType: weaknessTypeFilter === "all" ? undefined : weaknessTypeFilter
   });
 
 
@@ -122,6 +146,42 @@ const Cards = () => {
 
   const handleWishlistFilterChange = (newWishlistFilter: string) => {
     setWishlistFilter(newWishlistFilter);
+    setCurrentPage(1);
+  };
+
+  // New filter change handlers
+  const handleCategoryFilterChange = (newCategoryFilter: string) => {
+    setCategoryFilter(newCategoryFilter);
+    setCurrentPage(1);
+  };
+
+  const handleStageFilterChange = (newStageFilter: string) => {
+    setStageFilter(newStageFilter);
+    setCurrentPage(1);
+  };
+
+  const handleEvolveFromFilterChange = (newEvolveFromFilter: string) => {
+    setEvolveFromFilter(newEvolveFromFilter);
+    setCurrentPage(1);
+  };
+
+  const handleRetreatCostFilterChange = (newRetreatCostFilter: string) => {
+    setRetreatCostFilter(newRetreatCostFilter);
+    setCurrentPage(1);
+  };
+
+  const handleRegulationMarkFilterChange = (newRegulationMarkFilter: string) => {
+    setRegulationMarkFilter(newRegulationMarkFilter);
+    setCurrentPage(1);
+  };
+
+  const handleFormatLegalityFilterChange = (newFormatLegalityFilter: string) => {
+    setFormatLegalityFilter(newFormatLegalityFilter);
+    setCurrentPage(1);
+  };
+
+  const handleWeaknessTypeFilterChange = (newWeaknessTypeFilter: string) => {
+    setWeaknessTypeFilter(newWeaknessTypeFilter);
     setCurrentPage(1);
   };
 
@@ -295,6 +355,21 @@ const Cards = () => {
          wishlistFilter={wishlistFilter}
          onWishlistChange={handleWishlistFilterChange}
          onReloadCollection={handleReloadCollection}
+         // New filter props
+         categoryFilter={categoryFilter}
+         onCategoryChange={handleCategoryFilterChange}
+         stageFilter={stageFilter}
+         onStageChange={handleStageFilterChange}
+         evolveFromFilter={evolveFromFilter}
+         onEvolveFromChange={handleEvolveFromFilterChange}
+         retreatCostFilter={retreatCostFilter}
+         onRetreatCostChange={handleRetreatCostFilterChange}
+         regulationMarkFilter={regulationMarkFilter}
+         onRegulationMarkChange={handleRegulationMarkFilterChange}
+         formatLegalityFilter={formatLegalityFilter}
+         onFormatLegalityChange={handleFormatLegalityFilterChange}
+         weaknessTypeFilter={weaknessTypeFilter}
+         onWeaknessTypeChange={handleWeaknessTypeFilterChange}
        />
 
       {/* View Mode Toggle */}

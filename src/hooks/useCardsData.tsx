@@ -16,6 +16,14 @@ export interface CardsDataOptions {
   collectionFilter?: string;
   wishlistFilter?: string;
   userId?: string;
+  // New filter options
+  category?: string;
+  stage?: string;
+  evolveFrom?: string;
+  retreatCost?: string;
+  regulationMark?: string;
+  formatLegality?: string;
+  weaknessType?: string;
 }
 
 export const useCardsData = (options: CardsDataOptions = {}) => {
@@ -32,11 +40,19 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
     illustrator,
     collectionFilter,
     wishlistFilter,
-    userId
+    userId,
+    // New filter options
+    category,
+    stage,
+    evolveFrom,
+    retreatCost,
+    regulationMark,
+    formatLegality,
+    weaknessType
   } = options;
 
   return useQuery({
-    queryKey: ['cards', language, setId, limit, offset, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId],
+    queryKey: ['cards', language, setId, limit, offset, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId, category, stage, evolveFrom, retreatCost, regulationMark, formatLegality, weaknessType],
     queryFn: async () => {
       let query = supabase
         .from('cards')
@@ -74,6 +90,45 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
 
       if (illustrator && illustrator !== 'all') {
         query = query.eq('illustrator', illustrator);
+      }
+
+      // New filter implementations
+      if (category && category !== 'all') {
+        query = query.eq('category', category);
+      }
+
+      if (stage && stage !== 'all') {
+        query = query.eq('stage', stage);
+      }
+
+      if (evolveFrom && evolveFrom !== 'all') {
+        query = query.eq('evolvefrom', evolveFrom);
+      }
+
+      if (retreatCost && retreatCost !== 'all') {
+        if (retreatCost === '4') {
+          query = query.gte('retreat', 4);
+        } else {
+          query = query.eq('retreat', parseInt(retreatCost));
+        }
+      }
+
+      if (regulationMark && regulationMark !== 'all') {
+        query = query.eq('regulationmark', regulationMark);
+      }
+
+      if (formatLegality && formatLegality !== 'all') {
+        // Handle the JSON structure of legal field
+        if (formatLegality === 'standard') {
+          query = query.contains('legal', { standard: true });
+        } else if (formatLegality === 'expanded') {
+          query = query.contains('legal', { expanded: true });
+        }
+      }
+
+      if (weaknessType && weaknessType !== 'all') {
+        // Handle weakness type filtering (JSON array field)
+        query = query.contains('weaknesses', [{ type: weaknessType }]);
       }
 
       // Collection and wishlist filters require additional queries
@@ -140,7 +195,7 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching cards:', error);
+        console.error('❌ Error fetching cards:', error);
         throw error;
       }
 
@@ -151,10 +206,10 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
 
 // Hook to get total count of cards for pagination
 export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'> = {}) => {
-  const { language, setId, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId } = options;
+  const { language, setId, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId, category, stage, evolveFrom, retreatCost, regulationMark, formatLegality, weaknessType } = options;
 
   return useQuery({
-    queryKey: ['cards-count', language, setId, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId],
+    queryKey: ['cards-count', language, setId, searchTerm, rarity, type, hpMin, hpMax, illustrator, collectionFilter, wishlistFilter, userId, category, stage, evolveFrom, retreatCost, regulationMark, formatLegality, weaknessType],
     queryFn: async () => {
       let query = supabase
         .from('cards')
@@ -191,6 +246,45 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
 
       if (illustrator && illustrator !== 'all') {
         query = query.eq('illustrator', illustrator);
+      }
+
+      // New filter implementations
+      if (category && category !== 'all') {
+        query = query.eq('category', category);
+      }
+
+      if (stage && stage !== 'all') {
+        query = query.eq('stage', stage);
+      }
+
+      if (evolveFrom && evolveFrom !== 'all') {
+        query = query.eq('evolvefrom', evolveFrom);
+      }
+
+      if (retreatCost && retreatCost !== 'all') {
+        if (retreatCost === '4') {
+          query = query.gte('retreat', 4);
+        } else {
+          query = query.eq('retreat', parseInt(retreatCost));
+        }
+      }
+
+      if (regulationMark && regulationMark !== 'all') {
+        query = query.eq('regulationmark', regulationMark);
+      }
+
+      if (formatLegality && formatLegality !== 'all') {
+        // Handle the JSON structure of legal field
+        if (formatLegality === 'standard') {
+          query = query.contains('legal', { standard: true });
+        } else if (formatLegality === 'expanded') {
+          query = query.contains('legal', { expanded: true });
+        }
+      }
+
+      if (weaknessType && weaknessType !== 'all') {
+        // Handle weakness type filtering (JSON array field)
+        query = query.contains('weaknesses', [{ type: weaknessType }]);
       }
 
       // Collection and wishlist filters require additional queries
@@ -253,7 +347,7 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
       const { count, error } = await query;
 
       if (error) {
-        console.error('Error fetching cards count:', error);
+        console.error('❌ Error fetching cards count:', error);
         throw error;
       }
 

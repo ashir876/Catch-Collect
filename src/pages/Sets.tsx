@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Search, Package, TrendingUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +12,13 @@ import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
 import { useSeriesData } from "@/hooks/useSeriesData";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
-import LanguageFilter from "@/components/LanguageFilter";
+import { useQueryClient } from "@tanstack/react-query";
+import SetsLanguageFilter from "@/components/SetsLanguageFilter";
 
 const Sets = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const seriesFilter = searchParams.get("series");
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,25 +27,32 @@ const Sets = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
 
-  // Fetch series data for filter
-  const { data: seriesData = [] } = useSeriesData({ language: 'de' });
+  // Fetch series data for filter (filtered by current language)
+  const { data: seriesData = [] } = useSeriesData({ 
+    language: languageFilter
+  });
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch sets data with pagination and language filter
-  const { data: setsData, isLoading, error } = useSetsData({
+  // Prepare API parameters
+  const apiParams = {
     seriesId: seriesFilter || undefined,
-    language: languageFilter === "all" ? undefined : languageFilter,
+    language: languageFilter,
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
-  });
+  };
 
-  // Fetch total count for pagination with language filter
+
+
+  // Fetch sets data with pagination
+  const { data: setsData, isLoading, error } = useSetsData(apiParams);
+
+  // Fetch total count for pagination
   const { data: totalCount = 0 } = useSetsCount({
     seriesId: seriesFilter || undefined,
-    language: languageFilter === "all" ? undefined : languageFilter,
+    language: languageFilter,
     searchTerm: searchTerm || undefined
   });
 
@@ -58,6 +68,19 @@ const Sets = () => {
   const handleLanguageFilterChange = (newLanguageFilter: string) => {
     setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
+    
+    // Invalidate cache to ensure fresh data for sets, series, and language data
+    // Use predicate to invalidate all related queries
+    queryClient.invalidateQueries({ 
+      predicate: (query) => query.queryKey[0] === 'sets' 
+    });
+    queryClient.invalidateQueries({ 
+      predicate: (query) => query.queryKey[0] === 'sets-count' 
+    });
+    queryClient.invalidateQueries({ 
+      predicate: (query) => query.queryKey[0] === 'series' 
+    });
+    queryClient.invalidateQueries({ queryKey: ['available-sets-languages'] });
   };
 
   const handleSortChange = (newSortBy: string) => {
@@ -76,7 +99,10 @@ const Sets = () => {
     setCurrentPage(1);
   };
 
-
+  // Reset page when language filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [languageFilter]);
 
   // Sort sets (client-side sorting since we can't sort in the database query easily)
   const sortedSets = setsData?.slice().sort((a, b) => {
@@ -115,48 +141,71 @@ const Sets = () => {
   }
 
   return (
-          <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
-            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
-              {t('sets.title')}
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
-            {t('sets.subtitle')}
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+          <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+            {t('sets.title')}
+          </span>
+        </h1>
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
+          {t('sets.subtitle')}
+        </p>
+      </div>
+
+      {/* Language Filter */}
+      <div className="mb-8">
+        <SetsLanguageFilter
+          selectedLanguage={languageFilter}
+          onLanguageChange={handleLanguageFilterChange}
+          className="mb-4"
+        />
+      </div>
 
       {/* Series Filter */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">
           {t('sets.filterBySeries')}
         </h3>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={!seriesFilter ? "default" : "outline"}
-            onClick={() => handleSeriesFilterChange(null)}
-            size="sm"
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-          >
-            {t('common.all')}
-          </Button>
-          {seriesData.map((series) => (
-            <Button
-              key={series.series_id}
-              variant={seriesFilter === series.series_id ? "default" : "outline"}
-              onClick={() => handleSeriesFilterChange(series.series_id)}
-              size="sm"
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              {series.series_name}
-            </Button>
-          ))}
-        </div>
+        <Select 
+          value={seriesFilter || "all"} 
+          onValueChange={(value) => handleSeriesFilterChange(value === "all" ? null : value)}
+        >
+          <SelectTrigger className="w-full max-w-md bg-white border-2 border-gray-300 hover:border-gray-400 focus:border-blue-500 px-4 py-3 text-left">
+            <SelectValue>
+              {seriesFilter 
+                ? seriesData.find(s => s.series_id === seriesFilter)?.series_name || seriesFilter
+                : t('common.all')
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="max-h-60 overflow-y-auto">
+            <SelectItem value="all" className="py-2 px-4 hover:bg-gray-100">
+              {t('common.all')}
+            </SelectItem>
+            {seriesData
+              .filter((series, index, self) => 
+                index === self.findIndex(s => s.series_id === series.series_id)
+              )
+              .filter((series) => 
+                !seriesFilter || series.series_id !== seriesFilter
+              )
+              .sort((a, b) => a.series_name.localeCompare(b.series_name))
+              .map((series) => (
+                <SelectItem 
+                  key={series.series_id} 
+                  value={series.series_id}
+                  className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+                >
+                  <span className="block truncate">{series.series_name}</span>
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Search, Filters and Sort */}
+      {/* Search and Sort */}
       <div className="space-y-4 mb-8">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -168,37 +217,7 @@ const Sets = () => {
               className="pl-12 pr-4 py-3 text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
             />
           </div>
-          {/* <div className="flex gap-2">
-            <Button
-              variant={sortBy === "newest" ? "default" : "outline"}
-              onClick={() => handleSortChange("newest")}
-              size="sm"
-            >
-              {t('sets.newest')}
-            </Button>
-            <Button
-              variant={sortBy === "oldest" ? "default" : "outline"}
-              onClick={() => handleSortChange("oldest")}
-              size="sm"
-            >
-              {t('sets.oldest')}
-            </Button>
-            <Button
-              variant={sortBy === "name" ? "default" : "outline"}
-              onClick={() => handleSortChange("name")}
-              size="sm"
-            >
-              {t('sets.name')}
-            </Button>
-          </div> */}
         </div>
-        
-        {/* Language Filter */}
-        <LanguageFilter
-          selectedLanguage={languageFilter}
-          onLanguageChange={handleLanguageFilterChange}
-          className="mb-4"
-        />
       </div>
 
       {/* Pagination Info */}
@@ -228,9 +247,11 @@ const Sets = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedSets.map((set) => {
+          {sortedSets.map((set, index) => {
+            // Create unique key combining set_id and language to handle duplicates
+            const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
-              <Card key={set.set_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
+              <Card key={uniqueKey} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
                 <div className="h-40 bg-white flex items-center justify-center p-3 overflow-hidden flex-shrink-0">
                   {set.logo_url ? (
                     <img

@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
-import LanguageFilter from "@/components/LanguageFilter";
+import { useQueryClient } from "@tanstack/react-query";
+import SeriesLanguageFilter from "@/components/SeriesLanguageFilter";
 
 const Series = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,19 +22,26 @@ const Series = () => {
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch series data with pagination and language filter
-  const { data: seriesData, isLoading, error } = useSeriesData({
-    language: languageFilter === "all" ? undefined : languageFilter,
+  // Prepare API parameters
+  const apiParams = {
+    language: languageFilter,
     limit: itemsPerPage,
     offset,
     searchTerm: searchTerm || undefined
-  });
+  };
 
-  // Fetch total count for pagination with language filter
+
+
+  // Fetch series data with pagination
+  const { data: seriesData, isLoading, error } = useSeriesData(apiParams);
+
+  // Fetch total count for pagination
   const { data: totalCount = 0 } = useSeriesCount({
-    language: languageFilter === "all" ? undefined : languageFilter,
+    language: languageFilter,
     searchTerm: searchTerm || undefined
   });
+
+
 
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -46,7 +55,22 @@ const Series = () => {
   const handleLanguageFilterChange = (newLanguageFilter: string) => {
     setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
+    
+    // Invalidate cache to ensure fresh data for both series and series languages
+    // Use predicate to invalidate all series-related queries
+    queryClient.invalidateQueries({ 
+      predicate: (query) => query.queryKey[0] === 'series' 
+    });
+    queryClient.invalidateQueries({ 
+      predicate: (query) => query.queryKey[0] === 'series-count' 
+    });
+    queryClient.invalidateQueries({ queryKey: ['available-series-languages'] });
   };
+
+  // Reset page when language filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [languageFilter]);
 
   if (error) {
     return (
@@ -73,7 +97,18 @@ const Series = () => {
           </p>
         </div>
 
-        {/* Search and Filters */}
+        {/* Language Filter */}
+        <div className="mb-8">
+          <SeriesLanguageFilter
+            selectedLanguage={languageFilter}
+            onLanguageChange={handleLanguageFilterChange}
+            className="mb-4"
+          />
+          
+
+        </div>
+
+        {/* Search */}
         <div className="max-w-md mx-auto mb-12 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -84,15 +119,6 @@ const Series = () => {
               className="pl-10 border-2 border-black font-bold"
             />
           </div>
-        </div>
-        
-        {/* Language Filter - Full width on mobile */}
-        <div className="mb-12">
-          <LanguageFilter
-            selectedLanguage={languageFilter}
-            onLanguageChange={handleLanguageFilterChange}
-            className=""
-          />
         </div>
 
         {/* Pagination Info */}
@@ -122,10 +148,12 @@ const Series = () => {
           </div>
         ) : seriesData && seriesData.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {seriesData.map((series) => {
-              const linkUrl = `/sets?series=${series.series_id}${languageFilter !== "all" ? `&language=${languageFilter}` : ""}`;
+            {seriesData.map((series, index) => {
+              const linkUrl = `/sets?series=${series.series_id}&language=${languageFilter}`;
+              // Create unique key combining series_id and language to handle duplicates
+              const uniqueKey = `${series.series_id}-${series.language || 'unknown'}-${index}`;
               return (
-                <Link key={series.series_id} to={linkUrl}>
+                <Link key={uniqueKey} to={linkUrl}>
                   <Card className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
                     <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
                       {series.logo_url ? (

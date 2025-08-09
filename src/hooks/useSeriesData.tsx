@@ -17,25 +17,40 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
     searchTerm 
   } = options;
 
+  // Create a simpler query key
+  const queryKey = [
+    'series', 
+    language || 'all', 
+    limit, 
+    offset, 
+    searchTerm || ''
+  ];
+  
+
+
   return useQuery({
-    queryKey: ['series', language, limit, offset, searchTerm],
+    queryKey,
+    staleTime: 0, // Always consider data stale to ensure fresh data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     queryFn: async () => {
-    
       
       let query = supabase
         .from('series')
         .select('*')
         .order('series_name');
 
-      // Only filter by language if explicitly provided
-      if (language) {
+      // Filter by language if provided
+      if (language && language !== 'all') {
         query = query.eq('language', language);
       }
 
+      // Filter by search term if provided
       if (searchTerm) {
         query = query.ilike('series_name', `%${searchTerm}%`);
       }
 
+      // Apply pagination if limit is provided
       if (limit) {
         query = query.range(offset, offset + limit - 1);
       }
@@ -46,8 +61,6 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
         console.error('Error fetching series:', error);
         throw error;
       }
-
-      
       return data;
     },
   });
@@ -57,20 +70,30 @@ export const useSeriesData = (options: SeriesDataOptions = {}) => {
 export const useSeriesCount = (options: Omit<SeriesDataOptions, 'limit' | 'offset'> = {}) => {
   const { language, searchTerm } = options;
 
+  // Create a simpler query key
+  const queryKey = [
+    'series-count', 
+    language || 'all', 
+    searchTerm || ''
+  ];
+
   return useQuery({
-    queryKey: ['series-count', language, searchTerm],
+    queryKey,
+    staleTime: 0, // Always consider data stale to ensure fresh data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     queryFn: async () => {
     
-      
       let query = supabase
         .from('series')
         .select('*', { count: 'exact', head: true });
 
-      // Only filter by language if explicitly provided
-      if (language) {
+      // Filter by language if provided
+      if (language && language !== 'all') {
         query = query.eq('language', language);
       }
 
+      // Filter by search term if provided
       if (searchTerm) {
         query = query.ilike('series_name', `%${searchTerm}%`);
       }
@@ -82,7 +105,6 @@ export const useSeriesCount = (options: Omit<SeriesDataOptions, 'limit' | 'offse
         throw error;
       }
 
-      
       return count || 0;
     },
   });
