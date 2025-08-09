@@ -18,7 +18,10 @@ import {
   LogOut,
   Shield,
   BookOpen,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  Download,
+  Truck
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -186,6 +189,38 @@ const Navigation = () => {
                           <Settings className="w-4 h-4 mr-2" />
                           <span>{t('navigation.settings')}</span>
                         </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator className="pixel-dropdown-separator" />
+                      
+                      {/* Orders section */}
+                      <DropdownMenuItem asChild className="pixel-dropdown-item">
+                        <Link to="/orders" className="w-full">
+                          <Package className="w-4 h-4 mr-2" />
+                          <span>{t('orders.seeAllOrders', 'See all orders')}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem 
+                        className="pixel-dropdown-item cursor-pointer"
+                        onClick={() => {
+                          // Handle invoice download - could open a modal or redirect
+                          window.location.href = '/orders?action=invoices';
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        <span>{t('orders.openDownloadInvoices', 'Open / Download invoices')}</span>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem 
+                        className="pixel-dropdown-item cursor-pointer"
+                        onClick={() => {
+                          // Handle delivery notes
+                          window.location.href = '/orders?action=delivery-notes';
+                        }}
+                      >
+                        <Truck className="w-4 h-4 mr-2" />
+                        <span>{t('orders.seeDeliveryNotes', 'See delivery notes')}</span>
                       </DropdownMenuItem>
                       
                       {/* Admin section if applicable */}
