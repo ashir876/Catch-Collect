@@ -1,15 +1,14 @@
 
 import { Link } from "react-router-dom";
-import { Grid3X3, Search } from "lucide-react";
+import { Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient } from "@tanstack/react-query";
-import SeriesLanguageFilter from "@/components/SeriesLanguageFilter";
+import SeriesFilters from "@/components/filters/SeriesFilters";
 
 const Series = () => {
   const { t } = useTranslation();
@@ -18,6 +17,7 @@ const Series = () => {
   const [languageFilter, setLanguageFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
@@ -74,9 +74,9 @@ const Series = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl font-black mb-4">{t('series.loadError')}</h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-semibold mb-4">{t('series.loadError')}</h2>
           <p className="text-muted-foreground">{t('series.loadErrorSubtitle')}</p>
         </div>
       </div>
@@ -84,11 +84,11 @@ const Series = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="container mx-auto">
+    <div className="container mx-auto px-4 py-8">
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
-            <span className="bg-primary text-primary-foreground px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
               {t('series.title')}
             </span>
           </h1>
@@ -97,33 +97,41 @@ const Series = () => {
           </p>
         </div>
 
-        {/* Language Filter */}
-        <div className="mb-8">
-          <SeriesLanguageFilter
-            selectedLanguage={languageFilter}
-            onLanguageChange={handleLanguageFilterChange}
-            className="mb-4"
-          />
-          
+        {/* Search and Filters */}
+        <SeriesFilters
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          languageFilter={languageFilter}
+          onLanguageChange={handleLanguageFilterChange}
+        />
 
-        </div>
-
-        {/* Search */}
-        <div className="max-w-md mx-auto mb-12 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('series.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10 border-2 border-black font-bold"
-            />
+        {/* View Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="flex border-2 border-black rounded-lg overflow-hidden">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="pixel-button-small rounded-none"
+            >
+              <Grid3X3 className="h-4 w-4 mr-2" />
+              {t('series.gridView', 'Grid')}
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="pixel-button-small rounded-none"
+            >
+              <List className="h-4 w-4 mr-2" />
+              {t('series.listView', 'List')}
+            </Button>
           </div>
         </div>
 
         {/* Pagination Info */}
         {totalCount > 0 && (
-          <div className="mb-6 text-center">
+          <div className="mb-4">
             <PaginationInfo
               currentPage={currentPage}
               totalPages={totalPages}
@@ -133,55 +141,108 @@ const Series = () => {
           </div>
         )}
 
-        {/* Series Grid */}
+        {/* Series Grid/List */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(12)].map((_, i) => (
-              <Card key={i} className="border-4 border-black animate-pulse h-80 flex flex-col">
-                <div className="h-48 bg-muted flex-shrink-0"></div>
-                <CardHeader className="flex-1 p-4">
-                  <div className="h-6 bg-muted rounded mb-2"></div>
-                  <div className="h-4 bg-muted rounded"></div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        ) : seriesData && seriesData.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {seriesData.map((series, index) => {
-              const linkUrl = `/sets?series=${series.series_id}&language=${languageFilter}`;
-              // Create unique key combining series_id and language to handle duplicates
-              const uniqueKey = `${series.series_id}-${series.language || 'unknown'}-${index}`;
-              return (
-                <Link key={uniqueKey} to={linkUrl}>
-                  <Card className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
-                    <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
-                      {series.logo_url ? (
-                        <img 
-                          src={series.logo_url} 
-                          alt={series.series_name || 'Series'} 
-                          className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="text-white font-black text-2xl text-center group-hover:scale-110 transition-transform duration-300">
-                          <Grid3X3 className="h-16 w-16 mx-auto mb-2" />
-                          {series.series_name}
-                        </div>
-                      )}
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(12)].map((_, i) => (
+                <Card key={i} className="border-4 border-black animate-pulse h-80 flex flex-col">
+                  <div className="h-48 bg-muted flex-shrink-0"></div>
+                  <CardHeader className="flex-1 p-4">
+                    <div className="h-6 bg-muted rounded mb-2"></div>
+                    <div className="h-4 bg-muted rounded"></div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {[...Array(12)].map((_, i) => (
+                <Card key={i} className="border-4 border-black animate-pulse">
+                  <div className="flex items-center p-4 gap-4">
+                    <div className="w-16 h-16 bg-muted rounded flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <div className="h-6 bg-muted rounded mb-2"></div>
+                      <div className="h-4 bg-muted rounded w-1/3"></div>
                     </div>
-                    <CardHeader className="bg-background flex-1 flex flex-col justify-center p-4">
-                      <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
-                        {series.series_name}
-                      </CardTitle>
-                      <CardDescription className="font-bold text-muted-foreground">
-                        ID: {series.series_id}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )
+        ) : seriesData && seriesData.length > 0 ? (
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {seriesData.map((series, index) => {
+                const linkUrl = `/sets?series=${series.series_id}&language=${languageFilter}`;
+                // Create unique key combining series_id and language to handle duplicates
+                const uniqueKey = `${series.series_id}-${series.language || 'unknown'}-${index}`;
+                return (
+                  <Link key={uniqueKey} to={linkUrl}>
+                    <Card className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
+                      <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
+                        {series.logo_url ? (
+                          <img 
+                            src={series.logo_url} 
+                            alt={series.series_name || 'Series'} 
+                            className="max-h-full max-w-full object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="text-white font-black text-2xl text-center group-hover:scale-110 transition-transform duration-300">
+                            <Grid3X3 className="h-16 w-16 mx-auto mb-2" />
+                            {series.series_name}
+                          </div>
+                        )}
+                      </div>
+                      <CardHeader className="bg-background flex-1 flex flex-col justify-center p-4">
+                        <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
+                          {series.series_name}
+                        </CardTitle>
+                        <CardDescription className="font-bold text-muted-foreground">
+                          ID: {series.series_id}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {seriesData.map((series, index) => {
+                const linkUrl = `/sets?series=${series.series_id}&language=${languageFilter}`;
+                // Create unique key combining series_id and language to handle duplicates
+                const uniqueKey = `${series.series_id}-${series.language || 'unknown'}-${index}`;
+                return (
+                  <Link key={uniqueKey} to={linkUrl}>
+                    <Card className="border-4 border-black hover:scale-[1.02] transition-all duration-300 hover:shadow-xl cursor-pointer group">
+                      <div className="flex items-center p-4 gap-4">
+                        <div className="w-16 h-16 bg-white flex items-center justify-center rounded overflow-hidden flex-shrink-0 border-2 border-black">
+                          {series.logo_url ? (
+                            <img 
+                              src={series.logo_url} 
+                              alt={series.series_name || 'Series'} 
+                              className="max-h-14 max-w-14 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                            />
+                          ) : (
+                            <Grid3X3 className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-black text-lg uppercase tracking-wide truncate">
+                            {series.series_name}
+                          </h3>
+                          <p className="font-bold text-muted-foreground text-sm">
+                            ID: {series.series_id}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )
         ) : (
           <div className="text-center py-12">
             <Grid3X3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -223,7 +284,6 @@ const Series = () => {
             </Card>
           </div>
         )}
-      </div>
     </div>
   );
 };

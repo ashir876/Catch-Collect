@@ -52,7 +52,19 @@
     "loadError": "Fout bij het laden van sets",
     "loadErrorSubtitle": "Er is een fout opgetreden bij het laden van de sets.",
     "noSetsFound": "Geen sets gevonden",
-    "noSetsSubtitle": "Probeer een andere serie te selecteren."
+    "noSetsSubtitle": "Probeer een andere serie te selecteren.",
+    "searchPlaceholder": "Zoek naar sets...",
+    "filterBySeries": "Filter op serie:",
+    "release": "Uitgegeven",
+    "cardCount": "Kaarten",
+    "unknownSet": "Onbekende Set",
+    "sortBy": "Sorteren op",
+    "sortByNewest": "Nieuwste eerst",
+    "sortByOldest": "Oudste eerst",
+    "sortByName": "Naam A-Z",
+    "advancedLanguageFilter": "Taal",
+    "advancedSeriesFilter": "Serie",
+    "advancedSortFilter": "Sorteervolgorde"
   },
   "cards": {
     "title": "Kaarten",

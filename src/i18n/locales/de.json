@@ -181,7 +181,17 @@
     "loadErrorSubtitle": "Die Sets konnten nicht geladen werden.",
     "viewCards": "Karten anzeigen",
     "releaseDate": "Erscheinungsdatum",
-    "totalCards": "Gesamte Karten"
+    "totalCards": "Gesamte Karten",
+    "release": "Veröffentlicht",
+    "cardCount": "Karten",
+    "unknownSet": "Unbekanntes Set",
+    "sortBy": "Sortieren nach",
+    "sortByNewest": "Neueste zuerst",
+    "sortByOldest": "Älteste zuerst",
+    "sortByName": "Name A-Z",
+    "advancedLanguageFilter": "Sprache",
+    "advancedSeriesFilter": "Serie",
+    "advancedSortFilter": "Sortierreihenfolge"
   },
   "collection": {
     "title": "Meine Sammlung",

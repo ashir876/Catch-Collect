@@ -69,7 +69,19 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
       }
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%`);
+        // Enhanced search logic to support specific card number patterns and cross-language search
+        const cardNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+        const cardNumberMatch = searchTerm.match(cardNumberPattern);
+        
+        if (cardNumberMatch) {
+          // Specific card number search - search by name and card number combination
+          const cardName = cardNumberMatch[1].trim();
+          const cardNumber = cardNumberMatch[2].trim();
+          query = query.ilike('name', `%${cardName}%`).ilike('card_number', `%${cardNumber}%`);
+        } else {
+          // Enhanced multi-field search including localid for better cross-language support
+          query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%,localid.ilike.%${searchTerm}%`);
+        }
       }
 
       if (rarity && rarity !== 'all') {
@@ -225,7 +237,19 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
       }
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%`);
+        // Enhanced search logic to support specific card number patterns and cross-language search
+        const cardNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+        const cardNumberMatch = searchTerm.match(cardNumberPattern);
+        
+        if (cardNumberMatch) {
+          // Specific card number search - search by name and card number combination
+          const cardName = cardNumberMatch[1].trim();
+          const cardNumber = cardNumberMatch[2].trim();
+          query = query.ilike('name', `%${cardName}%`).ilike('card_number', `%${cardNumber}%`);
+        } else {
+          // Enhanced multi-field search including localid for better cross-language support
+          query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%,localid.ilike.%${searchTerm}%`);
+        }
       }
 
       if (rarity && rarity !== 'all') {

@@ -43,6 +43,7 @@ const Cards = () => {
   const [regulationMarkFilter, setRegulationMarkFilter] = useState("all");
   const [formatLegalityFilter, setFormatLegalityFilter] = useState("all");
   const [weaknessTypeFilter, setWeaknessTypeFilter] = useState("all");
+  const [setsFilter, setSetsFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50); // Show 50 items per page for more compact view
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -57,7 +58,7 @@ const Cards = () => {
 
   // Fetch cards data with all filters
   const { data: cardsData, isLoading, error } = useCardsData({
-    setId: setFilter || undefined,
+    setId: (setFilter || (setsFilter !== "all" ? setsFilter : undefined)) || undefined,
     language: languageFilter === "all" ? undefined : languageFilter,
     limit: itemsPerPage,
     offset,
@@ -82,7 +83,7 @@ const Cards = () => {
 
   // Fetch total count for pagination with all filters
   const { data: totalCount = 0 } = useCardsCount({
-    setId: setFilter || undefined,
+    setId: (setFilter || (setsFilter !== "all" ? setsFilter : undefined)) || undefined,
     language: languageFilter === "all" ? undefined : languageFilter,
     searchTerm: searchTerm || undefined,
     rarity: rarityFilter === "all" ? undefined : rarityFilter,
@@ -182,6 +183,11 @@ const Cards = () => {
 
   const handleWeaknessTypeFilterChange = (newWeaknessTypeFilter: string) => {
     setWeaknessTypeFilter(newWeaknessTypeFilter);
+    setCurrentPage(1);
+  };
+
+  const handleSetsFilterChange = (newSetsFilter: string) => {
+    setSetsFilter(newSetsFilter);
     setCurrentPage(1);
   };
 
@@ -370,6 +376,8 @@ const Cards = () => {
          onFormatLegalityChange={handleFormatLegalityFilterChange}
          weaknessTypeFilter={weaknessTypeFilter}
          onWeaknessTypeChange={handleWeaknessTypeFilterChange}
+         setsFilter={setsFilter}
+         onSetsChange={handleSetsFilterChange}
        />
 
       {/* View Mode Toggle */}
@@ -404,12 +412,7 @@ const Cards = () => {
         </div>
       )}
 
-      {/* Results Summary */}
-      <div className="mb-6">
-        <p className="text-muted-foreground">
-          {isLoading ? t('cards.loading') : `${filteredCards.length} ${filteredCards.length !== 1 ? t('cards.cards') : t('cards.card')} ${t('cards.found')}`}
-        </p>
-      </div>
+
 
       {/* Cards Display */}
       {isLoading ? (

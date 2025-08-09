@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Search, Package, TrendingUp, Calendar } from "lucide-react";
+import { Search, Package, TrendingUp, Calendar, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { useSeriesData } from "@/hooks/useSeriesData";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient } from "@tanstack/react-query";
-import SetsLanguageFilter from "@/components/SetsLanguageFilter";
+import SetsFilters from "@/components/filters/SetsFilters";
 
 const Sets = () => {
   const { t } = useTranslation();
@@ -26,11 +26,9 @@ const Sets = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Fetch series data for filter (filtered by current language)
-  const { data: seriesData = [] } = useSeriesData({ 
-    language: languageFilter
-  });
+
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
@@ -154,69 +152,39 @@ const Sets = () => {
         </p>
       </div>
 
-      {/* Language Filter */}
-      <div className="mb-8">
-        <SetsLanguageFilter
-          selectedLanguage={languageFilter}
-          onLanguageChange={handleLanguageFilterChange}
-          className="mb-4"
-        />
-      </div>
+      {/* Search and Filters */}
+      <SetsFilters
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        languageFilter={languageFilter}
+        onLanguageChange={handleLanguageFilterChange}
+        seriesFilter={seriesFilter}
+        onSeriesFilterChange={handleSeriesFilterChange}
+        sortBy={sortBy}
+        onSortChange={handleSortChange}
+      />
 
-      {/* Series Filter */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">
-          {t('sets.filterBySeries')}
-        </h3>
-        <Select 
-          value={seriesFilter || "all"} 
-          onValueChange={(value) => handleSeriesFilterChange(value === "all" ? null : value)}
-        >
-          <SelectTrigger className="w-full max-w-md bg-white border-2 border-gray-300 hover:border-gray-400 focus:border-blue-500 px-4 py-3 text-left">
-            <SelectValue>
-              {seriesFilter 
-                ? seriesData.find(s => s.series_id === seriesFilter)?.series_name || seriesFilter
-                : t('common.all')
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="max-h-60 overflow-y-auto">
-            <SelectItem value="all" className="py-2 px-4 hover:bg-gray-100">
-              {t('common.all')}
-            </SelectItem>
-            {seriesData
-              .filter((series, index, self) => 
-                index === self.findIndex(s => s.series_id === series.series_id)
-              )
-              .filter((series) => 
-                !seriesFilter || series.series_id !== seriesFilter
-              )
-              .sort((a, b) => a.series_name.localeCompare(b.series_name))
-              .map((series) => (
-                <SelectItem 
-                  key={series.series_id} 
-                  value={series.series_id}
-                  className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
-                >
-                  <span className="block truncate">{series.series_name}</span>
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Search and Sort */}
-      <div className="space-y-4 mb-8">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
-            <Input
-              placeholder={t('sets.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-12 pr-4 py-3 text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
-            />
-          </div>
+      {/* View Toggle */}
+      <div className="flex justify-center mb-6">
+        <div className="flex border-2 border-black rounded-lg overflow-hidden">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className="pixel-button-small rounded-none"
+          >
+            <Grid3X3 className="h-4 w-4 mr-2" />
+            {t('sets.gridView', 'Grid')}
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+            className="pixel-button-small rounded-none"
+          >
+            <List className="h-4 w-4 mr-2" />
+            {t('sets.listView', 'List')}
+          </Button>
         </div>
       </div>
 
@@ -232,38 +200,59 @@ const Sets = () => {
         </div>
       )}
 
-      {/* Sets Grid */}
+      {/* Sets Grid/List */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[...Array(12)].map((_, i) => (
-            <Card key={i} className="border-4 border-black animate-pulse h-80 flex flex-col">
-              <div className="h-48 bg-muted flex-shrink-0"></div>
-              <CardHeader className="flex-1 p-4">
-                <div className="h-6 bg-muted rounded mb-2"></div>
-                <div className="h-4 bg-muted rounded"></div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      ) : (
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(12)].map((_, i) => (
+              <Card key={i} className="border-4 border-black animate-pulse h-96 flex flex-col overflow-hidden">
+                <div className="h-56 bg-muted flex-shrink-0"></div>
+                <CardHeader className="flex-1 p-4 overflow-hidden">
+                  <div className="space-y-1">
+                    <div className="h-6 bg-muted rounded"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-4 bg-muted rounded w-2/3"></div>
+                  </div>
+                  <div className="h-4 bg-muted rounded w-1/2 mt-auto"></div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {[...Array(12)].map((_, i) => (
+              <Card key={i} className="border-4 border-black animate-pulse">
+                <div className="flex items-center p-4 gap-4">
+                  <div className="w-16 h-16 bg-muted rounded flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <div className="h-6 bg-muted rounded mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-1/3"></div>
+                  </div>
+                  <div className="w-24 h-4 bg-muted rounded"></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedSets.map((set, index) => {
             // Create unique key combining set_id and language to handle duplicates
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
-              <Card key={uniqueKey} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-80 flex flex-col">
-                <div className="h-40 bg-white flex items-center justify-center p-3 overflow-hidden flex-shrink-0">
+              <Card key={uniqueKey} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-96 flex flex-col overflow-hidden">
+                <div className="h-56 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
                   {set.logo_url ? (
                     <img
                       src={set.logo_url}
                       alt={set.name || 'Set Logo'}
-                      className="max-h-28 max-w-28 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                      className="max-h-40 max-w-40 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : set.symbol_url ? (
                     <img
                       src={set.symbol_url}
                       alt={set.name || 'Set Symbol'}
-                      className="max-h-28 max-w-28 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                      className="max-h-40 max-w-40 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (
                     <div className="text-black font-black text-2xl text-center group-hover:scale-110 transition-transform duration-300">
@@ -271,22 +260,75 @@ const Sets = () => {
                     </div>
                   )}
                 </div>
-                <CardHeader className="bg-background flex-1 flex flex-col justify-center p-4">
-                  <CardTitle className="font-black text-lg uppercase tracking-wide line-clamp-2">
-                    {set.name || t('sets.unknownSet')}
-                  </CardTitle>
-                  <CardDescription className="font-bold text-muted-foreground">
-                    ID: {set.set_id}
-                  </CardDescription>
-                  {set.release_date && (
-                    <div className="font-bold text-muted-foreground mt-1">
-                      {t('sets.release')}: {new Date(set.release_date).toLocaleDateString()}
-                    </div>
-                  )}
-                  <div className="font-bold text-primary mt-2">
+                <CardHeader className="bg-background flex-1 flex flex-col justify-between p-4 min-h-0 overflow-hidden">
+                  <div className="space-y-1 overflow-hidden">
+                    <CardTitle className="font-black text-base uppercase tracking-wide line-clamp-2 break-words">
+                      {set.name || t('sets.unknownSet')}
+                    </CardTitle>
+                    <CardDescription className="font-bold text-muted-foreground text-sm truncate">
+                      ID: {set.set_id}
+                    </CardDescription>
+                    {set.release_date && (
+                      <div className="font-bold text-muted-foreground text-sm truncate">
+                        {t('sets.release')}: {new Date(set.release_date).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="font-bold text-primary text-sm mt-auto flex-shrink-0">
                     {t('sets.cardCount')}: {set.total || 0}
                   </div>
                 </CardHeader>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {sortedSets.map((set, index) => {
+            // Create unique key combining set_id and language to handle duplicates
+            const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
+            return (
+              <Card key={uniqueKey} className="border-4 border-black hover:scale-[1.02] transition-all duration-300 hover:shadow-xl cursor-pointer group">
+                <div className="flex items-center p-4 gap-4">
+                  <div className="w-16 h-16 bg-white flex items-center justify-center rounded overflow-hidden flex-shrink-0 border-2 border-black">
+                    {set.logo_url ? (
+                      <img
+                        src={set.logo_url}
+                        alt={set.name || 'Set Logo'}
+                        className="max-h-14 max-w-14 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : set.symbol_url ? (
+                      <img
+                        src={set.symbol_url}
+                        alt={set.name || 'Set Symbol'}
+                        className="max-h-14 max-w-14 object-contain pixelated group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-lg uppercase tracking-wide truncate">
+                      {set.name || t('sets.unknownSet')}
+                    </h3>
+                    <p className="font-bold text-muted-foreground text-sm">
+                      ID: {set.set_id}
+                    </p>
+                    {set.release_date && (
+                      <p className="font-bold text-muted-foreground text-sm">
+                        {t('sets.release')}: {new Date(set.release_date).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-black text-lg text-primary">
+                      {set.total || 0}
+                    </div>
+                    <div className="font-bold text-muted-foreground text-sm uppercase">
+                      {t('sets.cards', 'Cards')}
+                    </div>
+                  </div>
+                </div>
               </Card>
             );
           })}

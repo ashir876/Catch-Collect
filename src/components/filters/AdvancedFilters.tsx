@@ -11,6 +11,7 @@ import { useCollectionData } from "@/hooks/useCollectionData";
 import { useWishlistData } from "@/hooks/useWishlistData";
 import { useIllustratorsData } from "@/hooks/useIllustratorsData";
 import { useLanguagesData } from "@/hooks/useLanguagesData";
+import { useSetsData } from "@/hooks/useSetsData";
 
 interface AdvancedFiltersProps {
   searchTerm: string;
@@ -45,6 +46,8 @@ interface AdvancedFiltersProps {
   onFormatLegalityChange?: (value: string) => void;
   weaknessTypeFilter?: string;
   onWeaknessTypeChange?: (value: string) => void;
+  setsFilter?: string;
+  onSetsChange?: (value: string) => void;
 }
 
 const AdvancedFilters = ({
@@ -79,7 +82,9 @@ const AdvancedFilters = ({
   formatLegalityFilter = "all",
   onFormatLegalityChange = () => {},
   weaknessTypeFilter = "all",
-  onWeaknessTypeChange = () => {}
+  onWeaknessTypeChange = () => {},
+  setsFilter = "all",
+  onSetsChange = () => {}
 }: AdvancedFiltersProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -88,6 +93,7 @@ const AdvancedFilters = ({
   const { data: wishlistData = [] } = useWishlistData();
   const { data: illustrators = [] } = useIllustratorsData();
   const { data: availableLanguages = [], isLoading: languagesLoading } = useLanguagesData();
+  const { data: setsData = [] } = useSetsData({ limit: 1000 }); // Get all sets for filter
 
   const rarities = [
     'Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret'
@@ -154,6 +160,22 @@ const AdvancedFilters = ({
       value: lang,
       label: getLanguageDisplayName(lang)
     }))
+  ];
+
+  // Create dynamic sets array from database data - ensure uniqueness by set_id
+  const uniqueSetsMap = new Map();
+  setsData.forEach(set => {
+    if (!uniqueSetsMap.has(set.set_id)) {
+      uniqueSetsMap.set(set.set_id, {
+        value: set.set_id,
+        label: set.name || set.set_id
+      });
+    }
+  });
+  
+  const sets = [
+    { value: 'all', label: t('filters.allSets', 'All Sets') },
+    ...Array.from(uniqueSetsMap.values()).sort((a, b) => a.label.localeCompare(b.label))
   ];
 
   // Helper function to get proper display names for languages
@@ -262,6 +284,22 @@ const AdvancedFilters = ({
               {types.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">{t('filters.set', 'Set')}:</span>
+          <Select value={setsFilter} onValueChange={onSetsChange}>
+            <SelectTrigger className="w-48 h-8 text-sm border border-gray-300 rounded-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sets.map((set) => (
+                <SelectItem key={set.value} value={set.value}>
+                  {set.label}
                 </SelectItem>
               ))}
             </SelectContent>

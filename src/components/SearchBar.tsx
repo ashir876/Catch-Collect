@@ -59,22 +59,49 @@ const SearchBar = () => {
       try {
         const searchResults: SearchResult[] = [];
 
-        // Search cards
+        // Search cards with enhanced logic
         if (activeFilters.includes('card') || activeFilters.length === 0) {
-          const { data: cards } = await supabase
-            .from('cards')
-            .select('card_id, name, image_url, rarity, set_name')
-            .ilike('name', `%${query}%`)
-            .limit(5);
+          // Check if query looks like a specific card number pattern (e.g., "Pichu 22/165")
+          const cardNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+          const cardNumberMatch = query.match(cardNumberPattern);
+          
+          let cardQuery;
+          
+          if (cardNumberMatch) {
+            // Specific card number search - search by name and card number combination
+            const cardName = cardNumberMatch[1].trim();
+            const cardNumber = cardNumberMatch[2].trim();
+            
+            cardQuery = supabase
+              .from('cards')
+              .select('card_id, name, image_url, rarity, set_name, card_number, localid, card_count_official')
+              .ilike('name', `%${cardName}%`)
+              .ilike('card_number', `%${cardNumber}%`)
+              .limit(3); // More specific search, fewer results needed
+          } else {
+            // Enhanced multi-language and multi-field search
+            cardQuery = supabase
+              .from('cards')
+              .select('card_id, name, image_url, rarity, set_name, card_number, localid, card_count_official')
+              .or(`name.ilike.%${query}%,card_number.ilike.%${query}%,localid.ilike.%${query}%`)
+              .limit(8); // More results for general search to show cross-language matches
+          }
+
+          const { data: cards } = await cardQuery;
 
           if (cards) {
+            // For general searches, also try to find cross-language matches
+            // This would ideally use a more sophisticated approach with a translation table
+            // but for now we'll rely on the existing data structure
+            
             searchResults.push(...cards.map(card => ({
               type: 'card' as const,
               id: card.card_id,
               name: card.name,
               image_url: card.image_url,
               rarity: card.rarity,
-              set_name: card.set_name
+              set_name: card.set_name,
+              description: card.card_number ? `#${card.card_number}${card.localid && card.card_count_official ? ` (${card.localid}/${card.card_count_official})` : ''}` : undefined
             })));
           }
         }
@@ -253,6 +280,11 @@ const SearchBar = () => {
                         {result.set_name && (
                           <span className="text-xs text-muted-foreground truncate">
                             {result.set_name}
+                          </span>
+                        )}
+                        {result.description && (
+                          <span className="text-xs text-muted-foreground truncate">
+                            {result.description}
                           </span>
                         )}
                       </div>

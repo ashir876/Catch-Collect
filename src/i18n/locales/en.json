@@ -300,7 +300,17 @@
     "loadErrorSubtitle": "The sets could not be loaded.",
     "viewCards": "View Cards",
     "releaseDate": "Release Date",
-    "totalCards": "Total Cards"
+    "totalCards": "Total Cards",
+    "release": "Released",
+    "cardCount": "Cards",
+    "unknownSet": "Unknown Set",
+    "sortBy": "Sort By",
+    "sortByNewest": "Newest First",
+    "sortByOldest": "Oldest First", 
+    "sortByName": "Name A-Z",
+    "advancedLanguageFilter": "Language",
+    "advancedSeriesFilter": "Series",
+    "advancedSortFilter": "Sort Order"
   },
   "collection": {
     "title": "My Collection",
