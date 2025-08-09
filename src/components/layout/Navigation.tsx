@@ -17,8 +17,17 @@ import {
   LogIn,
   LogOut,
   Shield,
-  BookOpen
+  BookOpen,
+  ChevronDown
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
@@ -115,33 +124,95 @@ const Navigation = () => {
             <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {user ? (
                 <>
-                  {desktopIconItems.map((item) => (
-                    <Link key={item.path} to={item.path}>
-                      <div className="pixel-nav-item-small">
-                        <item.icon className="w-3 h-3 lg:w-4 lg:h-4" />
-                        {item.badge && (
-                          <span className="pixel-badge-small">
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                  {/* Admin navigation items */}
-                  {adminNavItems.map((item) => (
-                    <Link key={item.path} to={item.path}>
-                      <div className={isActive(item.path) ? "pixel-nav-item-admin-active" : "pixel-nav-item-admin"}>
-                        <item.icon className="w-3 h-3 lg:w-4 lg:h-4" />
-                      </div>
-                    </Link>
-                  ))}
-                  <Button 
-                    onClick={handleSignOut}
-                    variant="outline"
-                    className="bg-red-500 hover:bg-red-600 text-white border-2 border-black px-2 lg:px-3 py-1 lg:py-2 font-black uppercase text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all duration-100"
-                  >
-                    <LogOut className="w-3 h-3 lg:w-4 lg:h-4" />
-                  </Button>
+                  {/* Quick access cart and wishlist with badges */}
+                  <Link to="/cart">
+                    <div className="pixel-nav-item-small">
+                      <ShoppingCart className="w-3 h-3 lg:w-4 lg:h-4" />
+                      {cartCount > 0 && (
+                        <span className="pixel-badge-small">
+                          {cartCount}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                  <Link to="/wishlist">
+                    <div className="pixel-nav-item-small">
+                      <Heart className="w-3 h-3 lg:w-4 lg:h-4" />
+                      {wishlistCount > 0 && (
+                        <span className="pixel-badge-small">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                  
+                  {/* User Dropdown Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="pixel-nav-item flex items-center space-x-1 lg:space-x-2"
+                      >
+                        <User className="w-3 h-3 lg:w-4 lg:h-4" />
+                        <span className="text-xs lg:text-sm font-black">{user.email?.split('@')[0] || 'USER'}</span>
+                        <ChevronDown className="w-2 h-2 lg:w-3 lg:h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-48 pixel-dropdown-content"
+                    >
+                      <DropdownMenuLabel className="pixel-dropdown-label">
+                        {t('navigation.user')}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator className="pixel-dropdown-separator" />
+                      
+                      <DropdownMenuItem asChild className="pixel-dropdown-item">
+                        <Link to="/profile" className="w-full">
+                          <User className="w-4 h-4 mr-2" />
+                          <span>{t('navigation.profile')}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild className="pixel-dropdown-item">
+                        <Link to="/collection" className="w-full">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          <span>{t('navigation.collection')}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuItem asChild className="pixel-dropdown-item">
+                        <Link to="/settings" className="w-full">
+                          <Settings className="w-4 h-4 mr-2" />
+                          <span>{t('navigation.settings')}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      {/* Admin section if applicable */}
+                      {adminNavItems.length > 0 && (
+                        <>
+                          <DropdownMenuSeparator className="pixel-dropdown-separator" />
+                          {adminNavItems.map((item) => (
+                            <DropdownMenuItem key={item.path} asChild className="pixel-dropdown-item text-red-600 hover:text-white hover:bg-red-600">
+                              <Link to={item.path} className="w-full">
+                                <item.icon className="w-4 h-4 mr-2" />
+                                <span>{item.label}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </>
+                      )}
+                      
+                      <DropdownMenuSeparator className="pixel-dropdown-separator" />
+                      <DropdownMenuItem 
+                        onClick={handleSignOut}
+                        className="pixel-dropdown-item text-red-600 hover:text-white hover:bg-red-600 cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        <span>{t('navigation.signOut')}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
                 <Link to="/auth">

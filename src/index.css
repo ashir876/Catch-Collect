@@ -536,3 +536,30 @@ nav {
   position: fixed;
   z-index: 1001;
 }
+
+/* Pixel art dropdown menu styling */
+.pixel-dropdown-content {
+  @apply border-4 border-black bg-background shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-0;
+  border-radius: 0 !important;
+}
+
+.pixel-dropdown-item {
+  @apply px-3 py-2 border-b-2 border-gray-200 font-black uppercase text-xs transition-colors duration-100 flex items-center;
+  border-radius: 0 !important;
+}
+
+.pixel-dropdown-item:hover {
+  @apply bg-primary text-primary-foreground;
+}
+
+.pixel-dropdown-item:last-child {
+  @apply border-b-0;
+}
+
+.pixel-dropdown-label {
+  @apply px-3 py-2 font-black uppercase text-xs tracking-wide bg-muted border-b-2 border-black;
+}
+
+.pixel-dropdown-separator {
+  @apply bg-black h-1 border-0;
+}
