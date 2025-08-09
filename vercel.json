@@ -1,37 +1,5 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "cache-control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "headers": [
-        {
-          "key": "cache-control",
-          "value": "public, max-age=31536000"
-        }
-      ]
-    }
-  ],
-  "functions": {
-    "app/api/**": {
-      "runtime": "@vercel/node"
-    }
-  }
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
