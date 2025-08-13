@@ -61,6 +61,11 @@ interface TradingCardProps {
   getPriorityColor?: () => "default" | "secondary" | "destructive";
   // Full card data for modal
   cardData?: CardData;
+  myPrice?: number;
+  marketPrice?: number;
+  marketSource?: string;
+  marketCurrency?: string;
+  marketRecordedAt?: string;
 }
 
 const rarityConfig = {
@@ -143,6 +148,11 @@ const TradingCard = ({
   getPriorityColor,
   // Full card data for modal
   cardData,
+  myPrice,
+  marketPrice,
+  marketSource,
+  marketCurrency,
+  marketRecordedAt,
 }: TradingCardProps) => {
   const { t } = useTranslation();
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
@@ -244,6 +254,42 @@ const TradingCard = ({
 
 
         </div>
+
+        {/* Price Comparison Section - Only show if hidePriceAndBuy is false */}
+        {!hidePriceAndBuy && (
+          <>
+            {typeof myPrice === 'number' && typeof marketPrice === 'number' && (
+              <div className="mt-2">
+                <div className="flex justify-between text-xs">
+                  <span>Your Price</span>
+                  <span>{myPrice} {marketCurrency || 'CHF'}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span>Market Price{marketSource ? ` (${marketSource})` : ''}</span>
+                  <span>{marketPrice} {marketCurrency || 'USD'}</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded my-1">
+                  <div
+                    className="h-2 bg-blue-500 rounded"
+                    style={{ width: `${Math.min((myPrice / marketPrice) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {myPrice > marketPrice
+                    ? `+${(myPrice - marketPrice).toFixed(2)} above market`
+                    : `-${(marketPrice - myPrice).toFixed(2)} below market`}
+                </div>
+                {marketRecordedAt && (
+                  <div className="text-[10px] text-muted-foreground mt-1">Market price as of {new Date(marketRecordedAt).toLocaleDateString()}</div>
+                )}
+              </div>
+            )}
+            {/* If either price is missing, show a fallback */}
+            {((typeof myPrice !== 'number' || typeof marketPrice !== 'number') && (
+              <div className="mt-2 text-xs text-muted-foreground">Price data unavailable</div>
+            ))}
+          </>
+        )}
 
         {/* Bottom Action Buttons */}
         <div className="mt-4 space-y-2">

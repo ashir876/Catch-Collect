@@ -14,6 +14,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient } from "@tanstack/react-query";
+import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
+import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 
 // Map priority number to text
 const getPriorityText = (priority: number, t: any) => {
@@ -277,6 +279,36 @@ const Wishlist = () => {
         </Card>
       </div>
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        {/* Collection Value Trends */}
+        <Card className="min-h-[500px]">
+          <CardHeader>
+            <CardTitle>{t('pricing.collection.value.development')}</CardTitle>
+            <CardDescription>{t('pricing.collection.value.trends.description')}</CardDescription>
+          </CardHeader>
+          <CardContent className="h-full">
+            <CollectionValueChart showControls={true} />
+          </CardContent>
+        </Card>
+
+        {/* Price Trends for Sample Card */}
+        {wishlistItems.length > 0 && (
+          <Card className="min-h-[500px]">
+            <CardHeader>
+              <CardTitle>{t('pricing.price.trends')}</CardTitle>
+              <CardDescription>{t('pricing.price.trends.for')} {wishlistItems[0].card?.name || 'Sample Card'}</CardDescription>
+            </CardHeader>
+            <CardContent className="h-full">
+              <PriceTrendChart
+                cardId={wishlistItems[0].card_id}
+                showControls={true}
+              />
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative flex-1">
@@ -344,9 +376,8 @@ const Wishlist = () => {
               {...card}
               onAddToCollection={() => {}}
               onAddToWishlist={() => handleRemoveFromWishlist(item.card_id, card.name)}
-              // Pass priority and price for badges
+              // Pass priority for badges
               priority={item.priority === 2 ? "high" : item.priority === 1 ? "medium" : "low"}
-              priceAvailable={!!item.card?.price}
               // Pass translation function for badge text
               getPriorityText={() => getPriorityText(item.priority, t)}
               getPriorityColor={() => getPriorityColor(item.priority)}

@@ -49,17 +49,17 @@ const Shop = () => {
         </TabsList>
 
         {/* Shop from Cards Tab */}
-        <TabsContent key="cards-tab" value="cards">
+        <TabsContent value="cards">
           <ShopFromCards />
         </TabsContent>
 
         {/* Shop from Sets Tab */}
-        <TabsContent key="sets-tab" value="sets">
+        <TabsContent value="sets">
           <ShopFromSets />
         </TabsContent>
 
         {/* Shop from Series Tab */}
-        <TabsContent key="series-tab" value="series">
+        <TabsContent value="series">
           <ShopFromSeries />
         </TabsContent>
       </Tabs>
@@ -75,6 +75,8 @@ const ShopFromCards = () => {
   const [rarityFilter, setRarityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
   const { toast } = useToast();
   const { user } = useAuth();
   const { addToCart, isLoading } = useCartActions();
@@ -121,9 +123,10 @@ const ShopFromCards = () => {
     offset: 0
   });
 
-
-
-
+  // Reset pagination when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, priceFilter, rarityFilter, sortBy]);
 
   // Filter cards based on price (mock pricing for now)
   let filteredCards = cardsData.filter(card => {
@@ -172,12 +175,21 @@ const ShopFromCards = () => {
   });
 
   // Apply pagination to filtered and sorted cards - ensure exactly 20 cards
-  // Remove pagination - show all filtered cards
-  const displayCards = filteredCards;
-  
+  const totalPages = Math.ceil(filteredCards.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredCards.length);
+  const paginatedCards = filteredCards.slice(startIndex, endIndex);
 
-
-
+  // Debug logging to track card counts
+  console.log('Card counts:', {
+    fetched: cardsData.length,
+    filtered: filteredCards.length,
+    paginated: paginatedCards.length,
+    currentPage,
+    itemsPerPage,
+    startIndex,
+    endIndex
+  });
 
   const handleAddToCart = async (card: any) => {
     if (!user) {
@@ -307,7 +319,26 @@ const ShopFromCards = () => {
       </div>
 
       {/* Total Count Display */}
-
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-semibold text-blue-900">
+              {filteredCards.length} {filteredCards.length !== 1 ? 'Cards' : 'Card'} Found
+            </h3>
+            <p className="text-sm text-blue-700">
+              Showing {paginatedCards.length} of {filteredCards.length} cards
+              {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Debug: Fetched {cardsData.length} • Filtered {filteredCards.length} • Displaying {paginatedCards.length}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-blue-700">Stock:</span>
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">In Stock</Badge>
+          </div>
+        </div>
+      </div>
 
       {/* Loading State */}
       {cardsLoading ? (
@@ -325,77 +356,78 @@ const ShopFromCards = () => {
       ) : (
         /* Cards Display */
         viewMode === "grid" ? (
-          <div key="grid-view" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {displayCards.map((card) => {
-              const mockPrice = getMockPrice(card.rarity, card.card_id);
-              const stock = getMockStock(card.card_id); // Consistent stock
-              return (
-                <div key={card.card_id} className="relative group">
-                  <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col">
-                    <div className="relative aspect-[3/4] overflow-visible">
-                      <img
-                        src={card.image_url || "/placeholder.svg"}
-                        alt={card.name}
-                        className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/placeholder.svg";
-                        }}
-                      />
-                      
-                      {/* Overlay with buttons - positioned over the image */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="space-y-2">
-                          <Button 
-                            onClick={() => handleAddToCart(card)}
-                            disabled={isLoading}
-                            className="w-full"
-                          >
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            {t('shop.addToCart')}
-                          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {paginatedCards.map((card) => {
+                const mockPrice = getMockPrice(card.rarity, card.card_id);
+                const stock = getMockStock(card.card_id); // Consistent stock
+                return (
+                  <div key={card.card_id} className="relative group">
+                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col">
+                      <div className="relative aspect-[3/4] overflow-visible">
+                        <img
+                          src={card.image_url || "/placeholder.svg"}
+                          alt={card.name}
+                          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                        
+                        {/* Overlay with buttons - positioned over the image */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => handleAddToCart(card)}
+                              disabled={isLoading}
+                              className="w-full"
+                            >
+                              <ShoppingCart className="mr-2 h-4 w-4" />
+                              {t('shop.addToCart')}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Stock indicator */}
+                        <div className="absolute top-2 right-2">
+                          <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs">
+                            {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
+                          </Badge>
                         </div>
                       </div>
 
-                      {/* Stock indicator */}
-                      <div className="absolute top-2 right-2">
-                        <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs">
-                          {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <CardContent className="p-4 flex flex-col justify-between flex-1">
-                      <div>
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{card.name}</h3>
-                        <p className="text-muted-foreground text-sm mb-2">{card.set_name} • {card.card_number}</p>
-                      </div>
-                      <div className="flex justify-between items-center mt-auto">
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                      <CardContent className="p-4 flex flex-col justify-between flex-1">
+                        <div>
+                          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{card.name}</h3>
+                          <p className="text-muted-foreground text-sm mb-2">{card.set_name} • {card.card_number}</p>
                         </div>
-                        <Badge variant="secondary">{card.rarity}</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              );
-            })}
+                        <div className="flex justify-between items-center mt-auto">
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                          </div>
+                          <Badge variant="secondary">{card.rarity}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
-          <div key="list-view" className="space-y-2">
-            {displayCards.map((card) => {
+          <div className="space-y-3">
+            {paginatedCards.map((card) => {
               const mockPrice = getMockPrice(card.rarity, card.card_id);
               const stock = getMockStock(card.card_id); // Consistent stock
               return (
                 <Card key={card.card_id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
                       {/* Smaller card image */}
-                      <div className="w-12 h-16 flex-shrink-0">
+                      <div className="w-16 h-20 flex-shrink-0">
                         <img
                           src={card.image_url || "/placeholder.svg"}
                           alt={card.name}
-                          className="w-full h-full object-contain rounded bg-gray-50"
+                          className="w-full h-full object-contain rounded-md bg-gray-50"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "/placeholder.svg";
                           }}
@@ -404,22 +436,22 @@ const ShopFromCards = () => {
                       
                       {/* Card details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-start">
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-medium text-sm truncate">{card.name}</h3>
-                            <p className="text-xs text-muted-foreground truncate">{card.set_name} • {card.card_number}</p>
+                            <h3 className="font-semibold text-base truncate">{card.name}</h3>
+                            <p className="text-sm text-muted-foreground truncate">{card.set_name} • {card.card_number}</p>
                           </div>
-                          <div className="text-right ml-3">
-                            <div className="text-base font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                          <div className="text-right ml-4">
+                            <div className="text-lg font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
                           </div>
                         </div>
                       </div>
                       
                       {/* Badges and actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-3 flex-shrink-0">
                         <div className="flex flex-col gap-1">
-                          <Badge variant="secondary" className="text-xs px-1 py-0">{card.rarity}</Badge>
-                          <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 py-0">
+                          <Badge variant="secondary" className="text-xs">{card.rarity}</Badge>
+                          <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs">
                             {stock > 5 ? 'In Stock' : `${stock} left`}
                           </Badge>
                         </div>
@@ -427,10 +459,9 @@ const ShopFromCards = () => {
                           onClick={() => handleAddToCart(card)}
                           disabled={isLoading}
                           size="sm"
-                          className="h-8 px-3"
                         >
-                          <ShoppingCart className="mr-1 h-3 w-3" />
-                          Add
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Add to Cart
                         </Button>
                       </div>
                     </div>
@@ -453,7 +484,42 @@ const ShopFromCards = () => {
         </div>
       )}
 
-
+      {/* Pagination */}
+      {!cardsLoading && filteredCards.length > 0 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            {t('common.previous')}
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={currentPage >= totalPages}
+          >
+            {t('common.next')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
@@ -470,11 +536,6 @@ const ShopFromSets = () => {
   const { user } = useAuth();
   const { addToCart, isLoading } = useCartActions();
 
-  // Reset pagination when component mounts or when tab becomes active
-  useEffect(() => {
-    setCurrentPage(1);
-  }, []);
-
   // Reset pagination when search or filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -488,19 +549,11 @@ const ShopFromSets = () => {
     offset: 0
   });
 
-  // Apply pagination to sets data - ensure strict 12 set limit
+  // Apply pagination to sets data
   const totalPages = Math.ceil(setsData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, setsData.length);
+  const endIndex = startIndex + itemsPerPage;
   const paginatedSets = setsData.slice(startIndex, endIndex);
-  
-  // Force exactly 12 sets maximum
-  const displaySets = paginatedSets.slice(0, 12);
-  
-  // Ensure we never exceed 12 sets per page
-  if (paginatedSets.length > itemsPerPage) {
-    console.warn('Sets pagination exceeded limit:', paginatedSets.length, '>', itemsPerPage);
-  }
 
   const handleAddSetToCart = async (set: any) => {
     if (!user) {
@@ -563,14 +616,15 @@ const ShopFromSets = () => {
         </div>
       </div>
 
-
-
       {/* Total Count Display for Sets */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
         <div className="flex justify-between items-center">
           <div>
+            <h3 className="text-lg font-semibold text-green-900">
+              {setsData.length} {setsData.length !== 1 ? 'Sets' : 'Set'} Found
+            </h3>
             <p className="text-sm text-green-700">
-              Showing {displaySets.length} of {setsData.length} sets
+              Showing {paginatedSets.length} of {setsData.length} sets
               {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
             </p>
           </div>
@@ -615,7 +669,7 @@ const ShopFromSets = () => {
       ) : (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displaySets.map((set) => {
+            {paginatedSets.map((set) => {
               const setPrice = (set.total || 50) * 2.99;
               return (
                 <Card key={set.set_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
@@ -669,7 +723,7 @@ const ShopFromSets = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {displaySets.map((set) => {
+            {paginatedSets.map((set) => {
               const setPrice = (set.total || 50) * 2.99;
               return (
                 <Card key={set.set_id} className="hover:shadow-md transition-shadow">
@@ -786,11 +840,6 @@ const ShopFromSeries = () => {
   const { user } = useAuth();
   const { addToCart, isLoading } = useCartActions();
 
-  // Reset pagination when component mounts or when tab becomes active
-  useEffect(() => {
-    setCurrentPage(1);
-  }, []);
-
   // Reset pagination when search or filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -804,19 +853,11 @@ const ShopFromSeries = () => {
     offset: 0
   });
 
-  // Apply pagination to series data - ensure strict 12 series limit
+  // Apply pagination to series data
   const totalPages = Math.ceil(seriesData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, seriesData.length);
+  const endIndex = startIndex + itemsPerPage;
   const paginatedSeries = seriesData.slice(startIndex, endIndex);
-  
-  // Force exactly 12 series maximum
-  const displaySeries = paginatedSeries.slice(0, 12);
-  
-  // Ensure we never exceed 12 series per page
-  if (paginatedSeries.length > itemsPerPage) {
-    console.warn('Series pagination exceeded limit:', paginatedSeries.length, '>', itemsPerPage);
-  }
 
   const handleAddSeriesToCart = async (series: any) => {
     if (!user) {
@@ -879,14 +920,15 @@ const ShopFromSeries = () => {
         </div>
       </div>
 
-
-
       {/* Total Count Display for Series */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
         <div className="flex justify-between items-center">
           <div>
+            <h3 className="text-lg font-semibold text-purple-900">
+              {seriesData.length} {seriesData.length !== 1 ? 'Series' : 'Series'} Found
+            </h3>
             <p className="text-sm text-purple-700">
-              Showing {displaySeries.length} of {seriesData.length} series
+              Showing {paginatedSeries.length} of {seriesData.length} series
               {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
             </p>
           </div>
@@ -931,7 +973,7 @@ const ShopFromSeries = () => {
       ) : (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displaySeries.map((series) => (
+            {paginatedSeries.map((series) => (
               <Card key={series.series_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
                 <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
                   {series.logo_url ? (
@@ -983,7 +1025,7 @@ const ShopFromSeries = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {displaySeries.map((series) => (
+            {paginatedSeries.map((series) => (
               <Card key={series.series_id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex gap-4">

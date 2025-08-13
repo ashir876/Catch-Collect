@@ -13,6 +13,9 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisplay";
+import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
+import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
 
 const Collection = () => {
   const { t } = useTranslation();
@@ -39,7 +42,12 @@ const Collection = () => {
     inWishlist: false,
     description: item.cards?.description || '',
     acquiredDate: item.created_at,
-    condition: 'Near Mint'
+    condition: 'Near Mint',
+    myPrice: item.my_price, // your own price
+    marketPrice: item.current_market?.price, // latest market price
+    marketSource: item.current_market?.source,
+    marketCurrency: item.current_market?.currency,
+    marketRecordedAt: item.current_market?.recorded_at,
   }));
 
   // Filter cards based on search term
@@ -218,18 +226,7 @@ const Collection = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('collection.totalValue')}</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">CHF {collectionStats.totalValue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  {t('collection.estimatedValue')}
-                </p>
-              </CardContent>
-            </Card>
+            <CollectionValueDisplay />
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -259,7 +256,7 @@ const Collection = () => {
           </div>
 
           {/* Rarity Breakdown */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>{t('collection.rarityBreakdown')}</CardTitle>
               <CardDescription>{t('collection.rarityBreakdownDescription')}</CardDescription>
@@ -329,10 +326,40 @@ const Collection = () => {
                 />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
+
+                     {/* Charts Row */}
+           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+             {/* Collection Value Trends */}
+             <Card className="min-h-[500px]">
+               <CardHeader>
+                 <CardTitle>{t('pricing.collection.value.development')}</CardTitle>
+                 <CardDescription>{t('pricing.collection.value.trends.description')}</CardDescription>
+               </CardHeader>
+               <CardContent className="h-full">
+                 <CollectionValueChart showControls={true} />
+               </CardContent>
+             </Card>
+
+             {/* Price Trends for Sample Card */}
+             {filteredCards.length > 0 && (
+               <Card className="min-h-[500px]">
+                 <CardHeader>
+                   <CardTitle>{t('pricing.price.trends')}</CardTitle>
+                   <CardDescription>{t('pricing.price.trends.for')} {filteredCards[0].name}</CardDescription>
+                 </CardHeader>
+                 <CardContent className="h-full">
+                   <PriceTrendChart
+                     cardId={filteredCards[0].id}
+                     showControls={true}
+                   />
+                 </CardContent>
+               </Card>
+             )}
+           </div>
 
           {/* Set Progress */}
-          {setProgress.length > 0 && (
+          {/* {setProgress.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>{t('collection.setProgress')}</CardTitle>
@@ -358,7 +385,7 @@ const Collection = () => {
                 </div>
               </CardContent>
             </Card>
-          )}
+          )} */}
         </div>
       ) : (
         <div className="space-y-6">

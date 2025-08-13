@@ -450,7 +450,7 @@ const Cards = () => {
             <CardWithWishlist
               key={`${card.card_id}-${card.language}`}
               card={card}
-              hidePriceAndBuy={false}
+              hidePriceAndBuy={true}
             />
           ))}
         </div>
