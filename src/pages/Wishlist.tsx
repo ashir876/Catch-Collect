@@ -14,7 +14,6 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient } from "@tanstack/react-query";
-import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
 import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 
 // Map priority number to text
@@ -48,6 +47,10 @@ const getPriorityColor = (priority: number): "default" | "secondary" | "destruct
 const Wishlist = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [rarityFilter, setRarityFilter] = useState("all");
+  const [setFilter, setSetFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "priority" | "date">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // Show 20 items per page
   const { toast } = useToast();
@@ -235,83 +238,12 @@ const Wishlist = () => {
           </p>
         </div>
 
-      {/* Wishlist Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("wishlist.cardsOnWishlist")}</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCount}</div>
-            <p className="text-xs text-muted-foreground">
-              {wishlistItems.filter(i => i.card?.price).length} {t("wishlist.available")}
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("wishlist.totalValue")}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">CHF {totalWishlistValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <p className="text-xs text-muted-foreground">
-              {t("wishlist.average")}: CHF {wishlistItems.length ? (totalWishlistValue / wishlistItems.length).toFixed(2) : "0.00"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("wishlist.highPriority")}</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {wishlistItems.filter(i => i.priority === 2).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("wishlist.highPriorityCards")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        {/* Collection Value Trends */}
-        <Card className="min-h-[500px]">
-          <CardHeader>
-            <CardTitle>{t('pricing.collection.value.development')}</CardTitle>
-            <CardDescription>{t('pricing.collection.value.trends.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="h-full">
-            <CollectionValueChart showControls={true} />
-          </CardContent>
-        </Card>
-
-        {/* Price Trends for Sample Card */}
-        {wishlistItems.length > 0 && (
-          <Card className="min-h-[500px]">
-            <CardHeader>
-              <CardTitle>{t('pricing.price.trends')}</CardTitle>
-              <CardDescription>{t('pricing.price.trends.for')} {wishlistItems[0].card?.name || 'Sample Card'}</CardDescription>
-            </CardHeader>
-            <CardContent className="h-full">
-              <PriceTrendChart
-                cardId={wishlistItems[0].card_id}
-                showControls={true}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
+      <div className="space-y-4 mb-8">
+        {/* Search Bar */}
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder={t("wishlist.searchPlaceholder")}
@@ -320,35 +252,121 @@ const Wishlist = () => {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant={priorityFilter === "all" ? "default" : "outline"}
-            onClick={() => handleFilterChange("all")}
-            size="sm"
-          >
-            {t("common.all")}
-          </Button>
-          <Button
-            variant={priorityFilter === "high" ? "default" : "outline"}
-            onClick={() => handleFilterChange("high")}
-            size="sm"
-          >
-            {t("wishlist.highPriority")}
-          </Button>
-          <Button
-            variant={priorityFilter === "medium" ? "default" : "outline"}
-            onClick={() => handleFilterChange("medium")}
-            size="sm"
-          >
-            {t("wishlist.mediumPriority")}
-          </Button>
-          <Button
-            variant={priorityFilter === "low" ? "default" : "outline"}
-            onClick={() => handleFilterChange("low")}
-            size="sm"
-          >
-            {t("wishlist.lowPriority")}
-          </Button>
+
+        {/* Filters Row */}
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* Priority Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">{t('wishlist.filterByPriority')}:</label>
+            <div className="flex gap-1">
+              <Button
+                variant={priorityFilter === "all" ? "default" : "outline"}
+                onClick={() => handleFilterChange("all")}
+                size="sm"
+              >
+                {t("common.all")}
+              </Button>
+              <Button
+                variant={priorityFilter === "high" ? "default" : "outline"}
+                onClick={() => handleFilterChange("high")}
+                size="sm"
+              >
+                {t("wishlist.highPriority")}
+              </Button>
+              <Button
+                variant={priorityFilter === "medium" ? "default" : "outline"}
+                onClick={() => handleFilterChange("medium")}
+                size="sm"
+              >
+                {t("wishlist.mediumPriority")}
+              </Button>
+              <Button
+                variant={priorityFilter === "low" ? "default" : "outline"}
+                onClick={() => handleFilterChange("low")}
+                size="sm"
+              >
+                {t("wishlist.lowPriority")}
+              </Button>
+            </div>
+          </div>
+
+          {/* Rarity Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">{t('wishlist.filterByRarity')}:</label>
+            <select
+              value={rarityFilter}
+              onChange={(e) => setRarityFilter(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">{t('wishlist.allRarities')}</option>
+              <option value="common">{t('wishlist.common')}</option>
+              <option value="rare">{t('wishlist.rare')}</option>
+              <option value="epic">{t('wishlist.epic')}</option>
+              <option value="legendary">{t('wishlist.legendary')}</option>
+            </select>
+          </div>
+
+          {/* Set Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">{t('wishlist.filterBySet')}:</label>
+            <select
+              value={setFilter}
+              onChange={(e) => setSetFilter(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">{t('wishlist.allSets')}</option>
+              {Array.from(new Set(wishlistItems.map(item => item.card?.set_name).filter(Boolean))).sort().map((set) => (
+                <option key={set} value={set}>{set}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">{t('wishlist.sortBy')}:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "priority" | "date")}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="name">{t('wishlist.sortByName')}</option>
+              <option value="rarity">{t('wishlist.sortByRarity')}</option>
+              <option value="set">{t('wishlist.sortBySet')}</option>
+              <option value="priority">{t('wishlist.sortByPriority')}</option>
+              <option value="date">{t('wishlist.sortByDate')}</option>
+            </select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              className="px-2"
+            >
+              {sortOrder === "asc" ? "↑" : "↓"}
+            </Button>
+          </div>
+
+          {/* Clear Filters */}
+          {(searchTerm || priorityFilter !== "all" || rarityFilter !== "all" || setFilter !== "all") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchTerm("");
+                setPriorityFilter("all");
+                setRarityFilter("all");
+                setSetFilter("all");
+                setSortBy("name");
+                setSortOrder("asc");
+              }}
+            >
+              {t('wishlist.clearFilters')}
+            </Button>
+          )}
+        </div>
+
+        {/* Results Count */}
+        <div className="text-sm text-muted-foreground">
+          {t('wishlist.showing')} {wishlistItems.length} {t('wishlist.of')} {totalCount} {t('wishlist.cards')}
         </div>
       </div>
 
@@ -407,6 +425,24 @@ const Wishlist = () => {
           <p className="text-muted-foreground">
             {searchTerm ? t("wishlist.tryDifferentSearch") : t("wishlist.emptyWishlistSubtitle")}
           </p>
+        </div>
+      )}
+
+      {/* Price Trends Chart */}
+      {wishlistItems.length > 0 && (
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('pricing.price.trends')}</CardTitle>
+              <CardDescription>{t('pricing.price.trends.for')} {wishlistItems[0].card?.name || 'Sample Card'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PriceTrendChart
+                cardId={wishlistItems[0].card_id}
+                showControls={true}
+              />
+            </CardContent>
+          </Card>
         </div>
       )}
 

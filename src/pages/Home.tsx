@@ -1,7 +1,11 @@
 
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, Star, TrendingUp, Users, Trophy, Package } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Grid3X3, Star, TrendingUp, Users, Trophy, Package, ShoppingCart, X } from "lucide-react";
 import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
 import { useCardsData, useCardsCount } from "@/hooks/useCardsData";
 import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
@@ -12,11 +16,18 @@ import UserStats from "@/components/user/UserStats";
 // import SocialFeed from "@/components/social/SocialFeed";
 import { useAuth } from "@/contexts/AuthContext";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
+import { useCartActions } from "@/hooks/useCartActions";
+import { useToast } from "@/hooks/use-toast";
 
 
 const Home = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { addToCart, isLoading: isAddingToCart } = useCartActions();
+  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
+  
   const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
   const { data: cardsData, isLoading: cardsLoading } = useCardsData({ 
     language: i18n.language, 
@@ -29,6 +40,66 @@ const Home = () => {
   const { data: totalSeriesCount = 0 } = useSeriesCount({});
   const { data: totalSetsCount = 0 } = useSetsCount({});
   const { data: totalCollectorsCount = 0 } = useUsersCount();
+
+  // Helper function to get consistent mock price based on rarity and card ID
+  const getMockPrice = (rarity: string, cardId: string) => {
+    const basePrice = {
+      'common': 2.50,
+      'uncommon': 5.00,
+      'rare': 12.00,
+      'rare holo': 25.00,
+      'ultra rare': 50.00,
+      'secret rare': 100.00
+    };
+    const base = basePrice[rarity.toLowerCase() as keyof typeof basePrice] || 5.00;
+    // Use card ID to generate consistent price for each card
+    const hash = cardId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const variation = (hash % 100) / 100; // 0-1 variation
+    return base * (0.8 + variation * 0.4); // ±20% variation
+  };
+
+  // Helper function to get consistent mock stock based on card ID
+  const getMockStock = (cardId: string) => {
+    const hash = cardId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return (hash % 20) + 1; // 1-20 stock
+  };
+
+  const handleCardClick = (card: any) => {
+    setSelectedCard(card);
+    setIsCardDialogOpen(true);
+  };
+
+  const handleAddToCart = async (card: any) => {
+    if (!user) {
+      toast({
+        title: t("auth.loginRequired"),
+        description: t("auth.loginRequiredCart"),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const mockPrice = getMockPrice(card.rarity || 'common', card.card_id);
+    
+    try {
+      await addToCart({
+        article_number: card.card_id,
+        price: mockPrice,
+        quantity: 1
+      });
+      
+      toast({
+        title: t("messages.addedToCart"),
+        description: `${card.name} ${t("messages.hasBeenAddedToCart")}`,
+      });
+    } catch (error) {
+      toast({
+        title: t("messages.error"),
+        description: t("messages.cartError"),
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -185,12 +256,12 @@ const Home = () => {
         </div>
       </section> */}
 
-      {/* Featured Cards Section */}
+      {/* Shop Cards Section */}
       <section className="py-12 sm:py-16 px-4 bg-muted/30 relative z-10">
         <div className="container mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider">
             <span className="bg-accent text-accent-foreground px-4 sm:px-6 py-2 sm:py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shadow-none">
-              {t('home.featuredCards')}
+              {t('home.shopCards')}
             </span>
           </h2>
           
@@ -207,22 +278,69 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {cardsData?.slice(0, 8).map((card) => (
-                <CardWithWishlist
-                  key={card.card_id}
-                  card={card}
-                  hidePriceAndBuy={true}
-                />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+              {cardsData?.slice(0, 10).map((card, index) => {
+                const mockPrice = getMockPrice(card.rarity || 'common', card.card_id);
+                const stock = getMockStock(card.card_id);
+                
+                return (
+                  <div key={`${card.card_id}-${index}`} className="relative">
+                    <Card className="overflow-hidden w-full flex flex-col h-full cursor-pointer" onClick={() => handleCardClick(card)}>
+                      <div className="relative aspect-[3/4] overflow-visible">
+                        <img
+                          src={card.image_url || "/placeholder.svg"}
+                          alt={card.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                        
+                        {/* Stock indicator */}
+                        <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
+                          <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 sm:px-2 py-0">
+                            {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <CardContent className="p-3 sm:p-4 flex flex-col justify-between flex-1">
+                        <div>
+                          <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">{card.name}</h3>
+                          <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{card.set_name} • {card.card_number}</p>
+                        </div>
+                        <div className="flex justify-between items-center mt-auto mb-2">
+                          <div className="text-right">
+                            <div className="text-base sm:text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                          </div>
+                          <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{card.rarity}</Badge>
+                        </div>
+                        
+                        {/* Add to Cart Button */}
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(card);
+                          }}
+                          disabled={isAddingToCart}
+                          className="w-full text-xs sm:text-sm"
+                        >
+                          <ShoppingCart className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                          {t('shop.addToCart')}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
             </div>
           )}
           
           <div className="text-center mt-8 sm:mt-12">
-            <Link to="/cards">
+            <Link to="/shop">
               <Button className="pixel-button text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 hover:scale-105 transition-all duration-200">
-                <Star className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
-                {t('home.browseAllCards')}
+                <ShoppingCart className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+                {t('home.shopNow')}
               </Button>
             </Link>
           </div>
@@ -279,6 +397,73 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Card Detail Dialog */}
+      <Dialog open={isCardDialogOpen} onOpenChange={setIsCardDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedCard?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedCard && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card Image */}
+              <div className="flex justify-center">
+                <img
+                  src={selectedCard.image_url || "/placeholder.svg"}
+                  alt={selectedCard.name}
+                  className="max-w-full max-h-96 object-contain rounded-lg"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
+                />
+              </div>
+              
+              {/* Card Details */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">{selectedCard.name}</h3>
+                  <p className="text-muted-foreground">
+                    {selectedCard.set_name} • {selectedCard.card_number}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{selectedCard.rarity}</Badge>
+                  <Badge variant={getMockStock(selectedCard.card_id) > 5 ? "default" : "destructive"}>
+                    {getMockStock(selectedCard.card_id) > 5 ? t('shop.inStock') : `${getMockStock(selectedCard.card_id)} ${t('shop.left')}`}
+                  </Badge>
+                </div>
+                
+                <div className="text-3xl font-bold text-primary">
+                  CHF {getMockPrice(selectedCard.rarity || 'common', selectedCard.card_id).toFixed(2)}
+                </div>
+                
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => handleAddToCart(selectedCard)}
+                    disabled={isAddingToCart}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    {t('shop.addToCart')}
+                  </Button>
+                </div>
+                
+                {selectedCard.description && (
+                  <div>
+                    <h4 className="font-semibold mb-2">{t('cardDetail.description')}</h4>
+                    <p className="text-sm text-muted-foreground">{selectedCard.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

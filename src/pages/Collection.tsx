@@ -24,6 +24,11 @@ const Collection = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "stats">("stats");
+  const [selectedCardForTrends, setSelectedCardForTrends] = useState<string>("");
+  const [rarityFilter, setRarityFilter] = useState("all");
+  const [setFilter, setSetFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Fetch real collection data
   const { data: collectionItems = [], isLoading, error } = useCollectionData();
@@ -50,10 +55,39 @@ const Collection = () => {
     marketRecordedAt: item.current_market?.recorded_at,
   }));
 
-  // Filter cards based on search term
-  const filteredCards = ownedCards.filter(card =>
-    card.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique sets for filter dropdown
+  const uniqueSets = Array.from(new Set(ownedCards.map(card => card.set))).sort();
+
+  // Filter and sort cards
+  const filteredCards = ownedCards
+    .filter(card => {
+      const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
+      const matchesSet = setFilter === "all" || card.set === setFilter;
+      return matchesSearch && matchesRarity && matchesSet;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "rarity":
+          const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+          comparison = (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0) - 
+                      (rarityOrder[b.rarity as keyof typeof rarityOrder] || 0);
+          break;
+        case "set":
+          comparison = a.set.localeCompare(b.set);
+          break;
+        case "date":
+          comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+          break;
+      }
+      
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
 
   // Calculate collection statistics from real data
   const collectionStats = {
@@ -330,29 +364,61 @@ const Collection = () => {
 
                      {/* Charts Row */}
            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-             {/* Collection Value Trends */}
-             <Card className="min-h-[500px]">
-               <CardHeader>
-                 <CardTitle>{t('pricing.collection.value.development')}</CardTitle>
-                 <CardDescription>{t('pricing.collection.value.trends.description')}</CardDescription>
-               </CardHeader>
-               <CardContent className="h-full">
-                 <CollectionValueChart showControls={true} />
-               </CardContent>
-             </Card>
+                           {/* Collection Value Trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('pricing.collection.value.development')}</CardTitle>
+                  <CardDescription>{t('pricing.collection.value.trends.description')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CollectionValueChart showControls={true} />
+                </CardContent>
+              </Card>
 
-             {/* Price Trends for Sample Card */}
-             {filteredCards.length > 0 && (
-               <Card className="min-h-[500px]">
-                 <CardHeader>
-                   <CardTitle>{t('pricing.price.trends')}</CardTitle>
-                   <CardDescription>{t('pricing.price.trends.for')} {filteredCards[0].name}</CardDescription>
-                 </CardHeader>
-                 <CardContent className="h-full">
-                   <PriceTrendChart
-                     cardId={filteredCards[0].id}
-                     showControls={true}
-                   />
+              {/* Price Trends with Card Selector */}
+              {ownedCards.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('pricing.price.trends')}</CardTitle>
+                    <CardDescription>
+                      {selectedCardForTrends ? 
+                        `${t('pricing.price.trends.for')} ${ownedCards.find(card => card.id === selectedCardForTrends)?.name || 'Unknown Card'}` :
+                        t('pricing.select.card.for.trends')
+                      }
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                   {/* Card Selector */}
+                   <div className="flex items-center gap-4">
+                     <label className="text-sm font-medium">{t('pricing.select.card')}:</label>
+                     <select
+                       value={selectedCardForTrends}
+                       onChange={(e) => setSelectedCardForTrends(e.target.value)}
+                       className="flex-1 max-w-xs px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                     >
+                       <option value="">{t('pricing.select.card.placeholder')}</option>
+                                               {ownedCards.map((card) => (
+                          <option key={card.id} value={card.id}>
+                            {card.name} ({card.set})
+                          </option>
+                        ))}
+                     </select>
+                   </div>
+                   
+                   {/* Price Trend Chart */}
+                   {selectedCardForTrends && (
+                     <PriceTrendChart
+                       cardId={selectedCardForTrends}
+                       showControls={true}
+                     />
+                   )}
+                   
+                   {/* No Card Selected Message */}
+                   {!selectedCardForTrends && (
+                     <div className="flex items-center justify-center h-64 text-gray-500">
+                       <p className="text-sm">{t('pricing.select.card.to.view.trends')}</p>
+                     </div>
+                   )}
                  </CardContent>
                </Card>
              )}
@@ -388,17 +454,99 @@ const Collection = () => {
           )} */}
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder={t('collection.searchCards')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+                 <div className="space-y-6">
+           {/* Search and Filters */}
+           <div className="space-y-4">
+             {/* Search Bar */}
+             <div className="relative">
+               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+               <Input
+                 placeholder={t('collection.searchCards')}
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="pl-10"
+               />
+             </div>
+
+             {/* Filters Row */}
+             <div className="flex flex-wrap gap-4 items-center">
+               {/* Rarity Filter */}
+               <div className="flex items-center gap-2">
+                 <label className="text-sm font-medium">{t('collection.filterByRarity')}:</label>
+                 <select
+                   value={rarityFilter}
+                   onChange={(e) => setRarityFilter(e.target.value)}
+                   className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 >
+                   <option value="all">{t('collection.allRarities')}</option>
+                   <option value="common">{t('collection.common')}</option>
+                   <option value="rare">{t('collection.rare')}</option>
+                   <option value="epic">{t('collection.epic')}</option>
+                   <option value="legendary">{t('collection.legendary')}</option>
+                 </select>
+               </div>
+
+               {/* Set Filter */}
+               <div className="flex items-center gap-2">
+                 <label className="text-sm font-medium">{t('collection.filterBySet')}:</label>
+                 <select
+                   value={setFilter}
+                   onChange={(e) => setSetFilter(e.target.value)}
+                   className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 >
+                   <option value="all">{t('collection.allSets')}</option>
+                   {uniqueSets.map((set) => (
+                     <option key={set} value={set}>{set}</option>
+                   ))}
+                 </select>
+               </div>
+
+               {/* Sort Options */}
+               <div className="flex items-center gap-2">
+                 <label className="text-sm font-medium">{t('collection.sortBy')}:</label>
+                 <select
+                   value={sortBy}
+                   onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "date")}
+                   className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 >
+                   <option value="name">{t('collection.sortByName')}</option>
+                   <option value="rarity">{t('collection.sortByRarity')}</option>
+                   <option value="set">{t('collection.sortBySet')}</option>
+                   <option value="date">{t('collection.sortByDate')}</option>
+                 </select>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                   className="px-2"
+                 >
+                   {sortOrder === "asc" ? "↑" : "↓"}
+                 </Button>
+               </div>
+
+               {/* Clear Filters */}
+               {(searchTerm || rarityFilter !== "all" || setFilter !== "all") && (
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => {
+                     setSearchTerm("");
+                     setRarityFilter("all");
+                     setSetFilter("all");
+                     setSortBy("name");
+                     setSortOrder("asc");
+                   }}
+                 >
+                   {t('collection.clearFilters')}
+                 </Button>
+               )}
+             </div>
+
+             {/* Results Count */}
+             <div className="text-sm text-muted-foreground">
+               {t('collection.showing')} {filteredCards.length} {t('collection.of')} {ownedCards.length} {t('collection.cards')}
+             </div>
+           </div>
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
