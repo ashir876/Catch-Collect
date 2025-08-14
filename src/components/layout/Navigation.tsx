@@ -37,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useWishlistCount } from "@/hooks/useWishlistData";
 import { useCartCount } from "@/hooks/useCartCount";
+import { useCollectionCount } from "@/hooks/useCollectionCount";
 
 interface NavItem {
   path: string;
@@ -55,6 +56,7 @@ const Navigation = () => {
   // Get dynamic counts
   const { data: wishlistCount = 0 } = useWishlistCount();
   const { data: cartCount = 0 } = useCartCount();
+  const { data: collectionCount = 0 } = useCollectionCount();
 
   const mainNavItems: NavItem[] = [
     { path: "/", label: "HOME", shortLabel: "HOME", icon: Home },
@@ -66,7 +68,7 @@ const Navigation = () => {
 
   const authenticatedNavItems: NavItem[] = [
     { path: "/wishlist", label: t('navigation.wishlist'), shortLabel: t('navigation.wishlist'), icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
-    { path: "/collection", label: t('navigation.collection'), shortLabel: t('navigation.collection'), icon: BookOpen },
+    { path: "/collection", label: t('navigation.collection'), shortLabel: t('navigation.collection'), icon: Star },
     { path: "/cart", label: t('navigation.cart'), shortLabel: t('navigation.cart'), icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
     { path: "/profile", label: t('navigation.profile'), shortLabel: t('navigation.profile'), icon: User },
     { path: "/settings", label: t('navigation.settings'), shortLabel: t('navigation.settings'), icon: Settings }
@@ -75,7 +77,7 @@ const Navigation = () => {
   // Desktop-only icon items (without labels)
   const desktopIconItems: NavItem[] = [
     { path: "/wishlist", label: "", icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
-    { path: "/collection", label: "", icon: BookOpen },
+    { path: "/collection", label: "", icon: Star },
     { path: "/cart", label: "", icon: ShoppingCart, badge: cartCount > 0 ? cartCount : undefined },
     { path: "/profile", label: "", icon: User },
     { path: "/settings", label: "", icon: Settings }
@@ -127,13 +129,13 @@ const Navigation = () => {
             <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {user ? (
                 <>
-                  {/* Quick access cart and wishlist with badges */}
-                  <Link to="/cart">
+                  {/* Quick access collection and wishlist with badges */}
+                  <Link to="/collection">
                     <div className="pixel-nav-item-small">
-                      <ShoppingCart className="w-3 h-3 lg:w-4 lg:h-4" />
-                      {cartCount > 0 && (
+                      <Star className="w-3 h-3 lg:w-4 lg:h-4" />
+                      {collectionCount > 0 && (
                         <span className="pixel-badge-small">
-                          {cartCount}
+                          {collectionCount}
                         </span>
                       )}
                     </div>
@@ -144,6 +146,16 @@ const Navigation = () => {
                       {wishlistCount > 0 && (
                         <span className="pixel-badge-small">
                           {wishlistCount}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                  <Link to="/cart">
+                    <div className="pixel-nav-item-small">
+                      <ShoppingCart className="w-3 h-3 lg:w-4 lg:h-4" />
+                      {cartCount > 0 && (
+                        <span className="pixel-badge-small">
+                          {cartCount}
                         </span>
                       )}
                     </div>
@@ -179,7 +191,7 @@ const Navigation = () => {
                       
                       <DropdownMenuItem asChild className="pixel-dropdown-item">
                         <Link to="/collection" className="w-full">
-                          <BookOpen className="w-4 h-4 mr-2" />
+                          <Star className="w-4 h-4 mr-2" />
                           <span>{t('navigation.collection')}</span>
                         </Link>
                       </DropdownMenuItem>

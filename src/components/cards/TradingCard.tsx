@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,7 +50,7 @@ interface TradingCardProps {
   disableHoverEffects?: boolean;
   // Action handlers
   onAddToCart?: (id?: string) => void;
-  onAddToCollection?: (id?: string) => void;
+  onAddToCollection?: (card?: CardData | any) => void;
   onAddToWishlist?: (id?: string) => void;
   onToggleWishlist?: (id: string) => void;
   onViewDetails?: (id: string) => void;
@@ -160,8 +160,37 @@ const TradingCard = ({
   
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";
-  const owned = inCollection || isOwned;
-  const wishlisted = inWishlist || isWishlisted;
+  
+  // Local state for immediate UI updates
+  const [localOwned, setLocalOwned] = useState(inCollection || isOwned);
+  const [localWishlisted, setLocalWishlisted] = useState(inWishlist || isWishlisted);
+  
+  // Update local state when props change
+  React.useEffect(() => {
+    setLocalOwned(inCollection || isOwned);
+  }, [inCollection, isOwned]);
+  
+  React.useEffect(() => {
+    setLocalWishlisted(inWishlist || isWishlisted);
+  }, [inWishlist, isWishlisted]);
+  
+  // Revert optimistic updates if actions fail
+  React.useEffect(() => {
+    if (!isAddingToCollection && !isRemovingFromCollection) {
+      // Action completed, sync with actual state
+      setLocalOwned(inCollection || isOwned);
+    }
+  }, [isAddingToCollection, isRemovingFromCollection, inCollection, isOwned]);
+  
+  React.useEffect(() => {
+    if (!isAddingToWishlist && !isRemovingFromWishlist) {
+      // Action completed, sync with actual state
+      setLocalWishlisted(inWishlist || isWishlisted);
+    }
+  }, [isAddingToWishlist, isRemovingFromWishlist, inWishlist, isWishlisted]);
+  
+  const owned = localOwned;
+  const wishlisted = localWishlisted;
   const [isHovered, setIsHovered] = useState(false);
   
   // Normalize the rarity to ensure it matches our config keys
@@ -172,9 +201,18 @@ const TradingCard = ({
   const handleCollectionToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (owned) {
+      // Optimistic update - immediately update UI
+      setLocalOwned(false);
       removeFromCollection({ cardId: id });
     } else {
-      addToCollection({ cardId: id, cardName: name, cardLanguage: cardData?.language });
+      // Optimistic update - immediately update UI
+      setLocalOwned(true);
+      // Use the custom handler if provided (for modal), otherwise use default action
+      if (onAddToCollection) {
+        onAddToCollection(cardData || { card_id: id, name, language: cardData?.language });
+      } else {
+        addToCollection({ cardId: id, cardName: name, cardLanguage: cardData?.language });
+      }
     }
   };
 
@@ -182,8 +220,12 @@ const TradingCard = ({
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (wishlisted) {
+      // Optimistic update - immediately update UI
+      setLocalWishlisted(false);
       removeFromWishlist({ cardId: id });
     } else {
+      // Optimistic update - immediately update UI
+      setLocalWishlisted(true);
       addToWishlist({ cardId: id, cardName: name, cardLanguage: cardData?.language });
     }
   };
@@ -313,12 +355,15 @@ const TradingCard = ({
             <Button
               size="sm"
               variant={owned ? "destructive" : "outline"}
-              className="w-full"
+              className={cn(
+                "w-full",
+                wishlisted && "opacity-50 cursor-not-allowed"
+              )}
               onClick={handleCollectionToggle}
-              disabled={isAddingToCollection || isRemovingFromCollection}
+              disabled={isAddingToCollection || isRemovingFromCollection || wishlisted}
             >
               <Star className="w-4 h-4 mr-2" />
-              {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
+              {wishlisted ? t('cards.alreadyInWishlist') : (owned ? t('cards.removeFromCollection') : t('cards.addToCollection'))}
             </Button>
           )}
 
@@ -326,12 +371,15 @@ const TradingCard = ({
           <Button
             size="sm"
             variant={wishlisted ? "destructive" : "secondary"}
-            className="w-full"
+            className={cn(
+              "w-full",
+              owned && "opacity-50 cursor-not-allowed"
+            )}
             onClick={handleWishlistToggle}
-            disabled={isAddingToWishlist || isRemovingFromWishlist}
+            disabled={isAddingToWishlist || isRemovingFromWishlist || owned}
           >
             <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
-            {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
+            {owned ? t('cards.alreadyInCollection') : (wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist'))}
           </Button>
         </div>
       </CardContent>

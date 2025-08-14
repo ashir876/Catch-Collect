@@ -70,7 +70,9 @@
     "removeFromCollection": "Von Sammlung entfernen",
     "addToWishlist": "Zur Wunschliste hinzufügen",
     "removeFromWishlist": "Von Wunschliste entfernen",
-    "inWishlist": "In Wunschliste"
+    "inWishlist": "In Wunschliste",
+    "alreadyInCollection": "Bereits in Sammlung",
+    "alreadyInWishlist": "Bereits in Wunschliste"
   },
   "cardDetail": {
     "backToCards": "Zurück zu den Karten",
@@ -236,7 +238,15 @@
     "sortByRarity": "Seltenheit",
     "sortBySet": "Set",
     "sortByDate": "Datum hinzugefügt",
+    "sortByPrice": "Preis",
     "clearFilters": "Filter löschen",
+    "filterByPrice": "Nach Preis filtern",
+    "allPrices": "Alle Preise",
+    "myPrice": "Mein Preis",
+    "marketPrice": "Marktpreis",
+    "priceRange": "Preisbereich",
+    "minPrice": "Min",
+    "maxPrice": "Max",
     "showing": "Zeige",
     "of": "von"
   },
@@ -582,6 +592,8 @@
     "yes": "Ja",
     "no": "Nein",
     "all": "Alle",
-    "retry": "Wiederholen"
+    "retry": "Wiederholen",
+    "add": "Hinzufügen",
+    "adding": "Wird hinzugefügt..."
   }
 }

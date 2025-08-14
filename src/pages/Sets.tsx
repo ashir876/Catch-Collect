@@ -240,7 +240,14 @@ const Sets = () => {
             // Create unique key combining set_id and language to handle duplicates
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
-              <Card key={uniqueKey} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-96 flex flex-col overflow-hidden">
+              <Card 
+                key={uniqueKey} 
+                className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-96 flex flex-col overflow-hidden"
+                onClick={() => {
+                  console.log('Navigating to set:', set.set_id, 'for set:', set.name);
+                  navigate(`/set/${set.set_id}`);
+                }}
+              >
                 <div className="h-56 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
                   {set.logo_url ? (
                     <img
@@ -288,7 +295,14 @@ const Sets = () => {
             // Create unique key combining set_id and language to handle duplicates
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
-              <Card key={uniqueKey} className="border-4 border-black hover:scale-[1.02] transition-all duration-300 hover:shadow-xl cursor-pointer group">
+              <Card 
+                key={uniqueKey} 
+                className="border-4 border-black hover:scale-[1.02] transition-all duration-300 hover:shadow-xl cursor-pointer group"
+                onClick={() => {
+                  console.log('Navigating to set:', set.set_id, 'for set:', set.name);
+                  navigate(`/set/${set.set_id}`);
+                }}
+              >
                 <div className="flex items-center p-4 gap-4">
                   <div className="w-16 h-16 bg-white flex items-center justify-center rounded overflow-hidden flex-shrink-0 border-2 border-black">
                     {set.logo_url ? (

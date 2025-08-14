@@ -211,6 +211,33 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
         throw error;
       }
 
+      // Deduplicate cards based on unique card identifier (localid or card_id)
+      // This prevents showing multiple entries for the same card in different languages/sets
+      if (data && searchTerm) {
+        const uniqueCards = new Map();
+        
+        data.forEach(card => {
+          // Use localid as primary key for deduplication, fallback to card_id
+          const uniqueKey = card.localid || card.card_id;
+          
+          if (!uniqueCards.has(uniqueKey)) {
+            uniqueCards.set(uniqueKey, card);
+          } else {
+            // If we already have this card, prefer the one that matches the search term in the name
+            const existingCard = uniqueCards.get(uniqueKey);
+            const currentNameMatch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const existingNameMatch = existingCard.name.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            // Prefer the card whose name matches the search term
+            if (currentNameMatch && !existingNameMatch) {
+              uniqueCards.set(uniqueKey, card);
+            }
+          }
+        });
+        
+        return Array.from(uniqueCards.values());
+      }
+
       return data;
     },
   });
@@ -368,14 +395,38 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
         }
       }
 
-      const { count, error } = await query;
+      // For count queries with search terms, we need to handle deduplication
+      if (searchTerm) {
+        // Get the actual data to deduplicate, then count
+        const { data, error: dataError } = await supabase
+          .from('cards')
+          .select('localid, card_id')
+          .or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%,localid.ilike.%${searchTerm}%`);
 
-      if (error) {
-        console.error('❌ Error fetching cards count:', error);
-        throw error;
+        if (dataError) {
+          console.error('❌ Error fetching cards for count:', dataError);
+          throw dataError;
+        }
+
+        // Deduplicate and count
+        const uniqueCards = new Set();
+        data.forEach(card => {
+          const uniqueKey = card.localid || card.card_id;
+          uniqueCards.add(uniqueKey);
+        });
+
+        return uniqueCards.size;
+      } else {
+        // For non-search queries, use the original count approach
+        const { count, error } = await query;
+
+        if (error) {
+          console.error('❌ Error fetching cards count:', error);
+          throw error;
+        }
+
+        return count || 0;
       }
-
-      return count || 0;
     },
   });
 };

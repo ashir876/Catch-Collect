@@ -14,6 +14,7 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Series from "./pages/Series";
 import Sets from "./pages/Sets";
+import SetDetail from "./pages/SetDetail";
 import Cards from "./pages/Cards";
 import CardDetail from "./pages/CardDetail";
 import Shop from "./pages/Shop";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/series" element={<Series />} />
               <Route path="/sets" element={<Sets />} />
+              <Route path="/set/:setId" element={<SetDetail />} />
               <Route path="/cards" element={<Cards />} />
               <Route path="/card/:id" element={<CardDetail />} />
               <Route path="/shop" element={<Shop />} />

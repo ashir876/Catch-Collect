@@ -90,18 +90,37 @@ const SearchBar = () => {
           const { data: cards } = await cardQuery;
 
           if (cards) {
-            // For general searches, also try to find cross-language matches
-            // This would ideally use a more sophisticated approach with a translation table
-            // but for now we'll rely on the existing data structure
+            // Deduplicate cards based on unique card identifier to prevent showing multiple entries for the same card
+            const uniqueCards = new Map();
             
-            searchResults.push(...cards.map(card => ({
+            cards.forEach(card => {
+              // Use localid as primary key for deduplication, fallback to card_id
+              const uniqueKey = card.localid || card.card_id;
+              
+              if (!uniqueCards.has(uniqueKey)) {
+                uniqueCards.set(uniqueKey, card);
+              } else {
+                // If we already have this card, prefer the one that matches the search term in the name
+                const existingCard = uniqueCards.get(uniqueKey);
+                const currentNameMatch = card.name.toLowerCase().includes(query.toLowerCase());
+                const existingNameMatch = existingCard.name.toLowerCase().includes(query.toLowerCase());
+                
+                // Prefer the card whose name matches the search term
+                if (currentNameMatch && !existingNameMatch) {
+                  uniqueCards.set(uniqueKey, card);
+                }
+              }
+            });
+            
+            // Add deduplicated cards to search results
+            searchResults.push(...Array.from(uniqueCards.values()).map(card => ({
               type: 'card' as const,
               id: card.card_id,
               name: card.name,
               image_url: card.image_url,
               rarity: card.rarity,
               set_name: card.set_name,
-              description: card.card_number ? `#${card.card_number}${card.localid && card.card_count_official ? ` (${card.localid}/${card.card_count_official})` : ''}` : undefined
+                             description: card.card_number ? `#${card.card_number}` : undefined
             })));
           }
         }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, TrendingUp, Package, Star, Grid3X3, BarChart } from "lucide-react";
+import React, { useState } from "react";
+import { Search, TrendingUp, Package, Star, Grid3X3, List, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import TradingCard from "@/components/cards/TradingCard";
 import { useTranslation } from "react-i18next";
 import { useCollectionData, COLLECTION_QUERY_KEY } from "@/hooks/useCollectionData";
+import { useCurrentPrices } from "@/hooks/useCurrentPrices";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisplay";
 import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
+import { testPriceData } from "@/lib/testPriceData";
 
 const Collection = () => {
   const { t } = useTranslation();
@@ -24,36 +26,76 @@ const Collection = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "stats">("stats");
+  const [cardViewMode, setCardViewMode] = useState<"grid" | "list">("grid");
   const [selectedCardForTrends, setSelectedCardForTrends] = useState<string>("");
   const [rarityFilter, setRarityFilter] = useState("all");
   const [setFilter, setSetFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date">("name");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date" | "price">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Fetch real collection data
   const { data: collectionItems = [], isLoading, error } = useCollectionData();
 
+  // Get card IDs for price fetching
+  const cardIds = collectionItems.map(item => item.card_id);
+  
+  // Fetch current prices for the cards
+  const { data: currentPrices = [], isLoading: pricesLoading, error: pricesError } = useCurrentPrices(cardIds);
+  
+  // Debug logging
+  console.log('Collection Debug:', {
+    collectionItems: collectionItems.length,
+    cardIds: cardIds,
+    currentPrices: currentPrices.length,
+    pricesLoading,
+    pricesError
+  });
+  
+  // Test price data on component mount
+  React.useEffect(() => {
+    if (user) {
+      testPriceData();
+    }
+  }, [user]);
+
   // Transform collection data to match TradingCard component expectations
-  const ownedCards = collectionItems.map((item: any) => ({
-    id: item.card_id,
-    name: item.cards?.name || 'Unknown Card',
-    series: item.cards?.series_name || 'Unknown Series',
-    set: item.cards?.set_name || 'Unknown Set',
-    number: item.cards?.card_number || '',
-    rarity: (item.cards?.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
-    type: item.cards?.types?.[0] || 'Normal',
-    image: item.cards?.image_url || '/placeholder.svg',
-    inCollection: true,
-    inWishlist: false,
-    description: item.cards?.description || '',
-    acquiredDate: item.created_at,
-    condition: 'Near Mint',
-    myPrice: item.my_price, // your own price
-    marketPrice: item.current_market?.price, // latest market price
-    marketSource: item.current_market?.source,
-    marketCurrency: item.current_market?.currency,
-    marketRecordedAt: item.current_market?.recorded_at,
-  }));
+  const ownedCards = collectionItems.map((item: any) => {
+    // Find current market price for this card
+    const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
+    
+    // Fallback mock price for testing (remove this once real prices work)
+    const mockMarketPrice = !marketPrice && item.cards?.rarity ? {
+      price: item.cards.rarity === 'legendary' ? 150.00 : 
+             item.cards.rarity === 'epic' ? 75.00 :
+             item.cards.rarity === 'rare' ? 25.00 : 5.00,
+      source: 'tcgplayer',
+      currency: 'USD',
+      recorded_at: new Date().toISOString()
+    } : null;
+    
+    return {
+      id: item.card_id,
+      name: item.cards?.name || 'Unknown Card',
+      series: item.cards?.series_name || 'Unknown Series',
+      set: item.cards?.set_name || 'Unknown Set',
+      number: item.cards?.card_number || '',
+      rarity: (item.cards?.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
+      type: item.cards?.types?.[0] || 'Normal',
+      image: item.cards?.image_url || '/placeholder.svg',
+      inCollection: true,
+      inWishlist: false,
+      description: item.cards?.description || '',
+      acquiredDate: item.created_at,
+      condition: item.condition || 'Near Mint',
+      myPrice: item.price, // your own price
+      marketPrice: marketPrice?.price || mockMarketPrice?.price, // latest market price or mock
+      marketSource: marketPrice?.source || mockMarketPrice?.source,
+      marketCurrency: marketPrice?.currency || mockMarketPrice?.currency,
+      marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at,
+    };
+  });
 
   // Get unique sets for filter dropdown
   const uniqueSets = Array.from(new Set(ownedCards.map(card => card.set))).sort();
@@ -64,7 +106,18 @@ const Collection = () => {
       const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
       const matchesSet = setFilter === "all" || card.set === setFilter;
-      return matchesSearch && matchesRarity && matchesSet;
+      
+      // Price filtering
+      let matchesPrice = true;
+      if (priceFilter !== "all") {
+        const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice;
+        const minPrice = parseFloat(priceRange.min) || 0;
+        const maxPrice = parseFloat(priceRange.max) || Infinity;
+        
+        matchesPrice = typeof cardPrice === 'number' && cardPrice >= minPrice && cardPrice <= maxPrice;
+      }
+      
+      return matchesSearch && matchesRarity && matchesSet && matchesPrice;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -83,6 +136,11 @@ const Collection = () => {
           break;
         case "date":
           comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+          break;
+        case "price":
+          const aPrice = a.myPrice || a.marketPrice || 0;
+          const bPrice = b.myPrice || b.marketPrice || 0;
+          comparison = aPrice - bPrice;
           break;
       }
       
@@ -509,10 +567,11 @@ const Collection = () => {
                    onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "date")}
                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                  >
-                   <option value="name">{t('collection.sortByName')}</option>
-                   <option value="rarity">{t('collection.sortByRarity')}</option>
-                   <option value="set">{t('collection.sortBySet')}</option>
-                   <option value="date">{t('collection.sortByDate')}</option>
+                                       <option value="name">{t('collection.sortByName')}</option>
+                    <option value="rarity">{t('collection.sortByRarity')}</option>
+                    <option value="set">{t('collection.sortBySet')}</option>
+                    <option value="date">{t('collection.sortByDate')}</option>
+                    <option value="price">{t('collection.sortByPrice')}</option>
                  </select>
                  <Button
                    variant="outline"
@@ -524,22 +583,64 @@ const Collection = () => {
                  </Button>
                </div>
 
-               {/* Clear Filters */}
-               {(searchTerm || rarityFilter !== "all" || setFilter !== "all") && (
-                 <Button
-                   variant="outline"
-                   size="sm"
-                   onClick={() => {
-                     setSearchTerm("");
-                     setRarityFilter("all");
-                     setSetFilter("all");
-                     setSortBy("name");
-                     setSortOrder("asc");
-                   }}
-                 >
-                   {t('collection.clearFilters')}
-                 </Button>
-               )}
+                               {/* Price Filter */}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium">{t('collection.filterByPrice')}:</label>
+                  <select
+                    value={priceFilter}
+                    onChange={(e) => setPriceFilter(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">{t('collection.allPrices')}</option>
+                    <option value="myPrice">{t('collection.myPrice')}</option>
+                    <option value="marketPrice">{t('collection.marketPrice')}</option>
+                  </select>
+                </div>
+
+                {/* Price Range Inputs */}
+                {priceFilter !== "all" && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">{t('collection.priceRange')}:</label>
+                    <input
+                      type="number"
+                      placeholder={t('collection.minPrice')}
+                      value={priceRange.min}
+                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      step="0.01"
+                    />
+                    <span className="text-sm text-muted-foreground">-</span>
+                    <input
+                      type="number"
+                      placeholder={t('collection.maxPrice')}
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                      className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+
+                {/* Clear Filters */}
+                {(searchTerm || rarityFilter !== "all" || setFilter !== "all" || priceFilter !== "all") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setRarityFilter("all");
+                      setSetFilter("all");
+                      setPriceFilter("all");
+                      setPriceRange({ min: "", max: "" });
+                      setSortBy("name");
+                      setSortOrder("asc");
+                    }}
+                  >
+                    {t('collection.clearFilters')}
+                  </Button>
+                )}
              </div>
 
              {/* Results Count */}
@@ -548,26 +649,110 @@ const Collection = () => {
              </div>
            </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredCards.map((card) => (
-              <div key={card.id} className="relative">
-                <TradingCard
-                  {...card}
-                  onAddToCollection={() => handleRemoveFromCollection(card.id, card.name)}
-                  onAddToWishlist={() => {}}
-                  onAddToCart={() => {}}
-                  hidePriceAndBuy={true}
-                  disableHoverEffects={true}
-                />
-                <div className="absolute top-2 right-2 z-30">
-                  <Badge variant="secondary" className="text-xs">
-                    {card.condition}
-                  </Badge>
+           {/* View Mode Toggle */}
+           <div className="flex justify-end mb-6">
+             <div className="flex gap-2">
+               <Button
+                 variant={cardViewMode === "grid" ? "default" : "outline"}
+                 onClick={() => setCardViewMode("grid")}
+                 size="sm"
+               >
+                 <Grid3X3 className="h-4 w-4" />
+               </Button>
+               <Button
+                 variant={cardViewMode === "list" ? "default" : "outline"}
+                 onClick={() => setCardViewMode("list")}
+                 size="sm"
+               >
+                 <List className="h-4 w-4" />
+               </Button>
+             </div>
+           </div>
+
+          {/* Cards Display */}
+          {cardViewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {filteredCards.map((card) => (
+                <div key={card.id} className="relative">
+                  <TradingCard
+                    {...card}
+                    inCollection={true}
+                    inWishlist={false}
+                    isOwned={true}
+                    isWishlisted={false}
+                    onAddToCollection={() => handleRemoveFromCollection(card.id, card.name)}
+                    onAddToWishlist={() => {}}
+                    onAddToCart={() => {}}
+                    hidePriceAndBuy={false}
+                    disableHoverEffects={true}
+                  />
+                  <div className="absolute top-2 right-2 z-30">
+                    <Badge variant="secondary" className="text-xs">
+                      {card.condition}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredCards.map((card) => (
+                <div key={card.id} className="flex gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black flex-shrink-0">
+                    <img
+                      src={card.image}
+                      alt={card.name}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm truncate">{card.name}</h3>
+                        <p className="text-muted-foreground text-xs mb-1">#{card.number}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs bg-muted px-2 py-1 rounded">{card.set}</span>
+                          <span className="text-xs bg-muted px-2 py-1 rounded capitalize">{card.rarity}</span>
+                          <span className="text-xs bg-muted px-2 py-1 rounded">{card.condition}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t('collection.acquired')}: {new Date(card.acquiredDate).toLocaleDateString()}
+                        </p>
+                        {/* Price Information */}
+                        <div className="flex items-center gap-4 mt-2">
+                          {typeof card.myPrice === 'number' && (
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">Your Price:</span>
+                              <span className="ml-1 font-medium">CHF {card.myPrice.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {typeof card.marketPrice === 'number' && (
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">Market Price:</span>
+                              <span className="ml-1 font-medium">{card.marketCurrency || 'USD'} {card.marketPrice.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemoveFromCollection(card.id, card.name)}
+                          className="h-8 px-2"
+                        >
+                          {t('collection.remove')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredCards.length === 0 && (

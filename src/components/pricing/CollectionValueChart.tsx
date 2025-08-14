@@ -203,89 +203,104 @@ export function CollectionValueChart({ className, showControls = true }: Collect
 
     return (
       <div className="space-y-4">
-        {/* Chart Header with High/Low/Change info */}
-        <div className="flex justify-between items-center text-sm">
-          <div className="flex gap-4">
-            <span className="text-muted-foreground">
-              High: {formatCurrency(maxValue, currency)}
-            </span>
-            <span className="text-muted-foreground">
-              Low: {formatCurrency(minValue, currency)}
-            </span>
-          </div>
-          {getValueChange() && (
-            <div className={`flex items-center gap-1 ${getValueChangeColor(getValueChange()!.change)}`}>
-              {getValueChangeIcon(getValueChange()!.change)}
-              <span className="font-medium">
-                {getValueChange()!.change > 0 ? '+' : ''}
-                {formatCurrency(getValueChange()!.change, currency)}
-              </span>
-              <span className="text-xs">
-                ({getValueChange()!.percentage > 0 ? '+' : ''}{getValueChange()!.percentage.toFixed(2)}%)
-              </span>
-            </div>
-          )}
-        </div>
+                 {/* Chart Header with High/Low/Change info */}
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 text-sm">
+           <div className="flex flex-col sm:flex-row gap-1 sm:gap-4">
+             <span className="text-muted-foreground">
+               High: {formatCurrency(maxValue, currency)}
+             </span>
+             <span className="text-muted-foreground">
+               Low: {formatCurrency(minValue, currency)}
+             </span>
+           </div>
+           {getValueChange() && (
+             <div className={`flex items-center gap-1 ${getValueChangeColor(getValueChange()!.change)}`}>
+               {getValueChangeIcon(getValueChange()!.change)}
+               <span className="font-medium">
+                 {getValueChange()!.change > 0 ? '+' : ''}
+                 {formatCurrency(getValueChange()!.change, currency)}
+               </span>
+               <span className="text-xs">
+                 ({getValueChange()!.percentage > 0 ? '+' : ''}{getValueChange()!.percentage.toFixed(2)}%)
+               </span>
+             </div>
+           )}
+         </div>
 
         {/* Chart */}
-                 <ChartContainer config={chartConfig} className="h-64 w-full">
-           <LineChart data={chartData} width={undefined} height={undefined}>
-             <CartesianGrid strokeDasharray="5 5" stroke="#f1f5f9" strokeOpacity={0.3} />
-                         <XAxis 
-               dataKey="date" 
-               className="text-xs"
-               tick={{ fontSize: 11, fill: '#64748b' }}
-               interval="preserveStartEnd"
-               axisLine={{ stroke: '#e2e8f0' }}
-               tickLine={false}
-             />
-             <YAxis 
-               className="text-xs"
-               tick={{ fontSize: 11, fill: '#64748b' }}
-               tickFormatter={(value) => formatCurrency(value, currency)}
-               axisLine={{ stroke: '#e2e8f0' }}
-               tickLine={false}
-             />
-            <ChartTooltip
-                             content={({ active, payload, label }) => {
-                 if (active && payload && payload.length) {
-                   return (
-                     <div className="rounded-xl border-0 bg-white/95 backdrop-blur-sm p-4 shadow-lg">
-                       <div className="grid gap-3">
-                         <p className="text-sm font-semibold text-gray-900">{label}</p>
-                         {payload.map((entry: any, index: number) => (
-                           <div key={index} className="flex items-center gap-3">
-                             <div 
-                               className="h-3 w-3 rounded-full shadow-sm" 
-                               style={{ backgroundColor: entry.color }}
-                             />
-                             <span className="text-sm text-gray-600">
-                               {t('pricing.collection.value')}:
-                             </span>
-                             <span className="text-sm font-bold text-gray-900">
-                               {formatCurrency(entry.value, currency)}
-                             </span>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   );
-                 }
-                 return null;
-               }}
-            />
-                         <Line
-               type="monotone"
-               dataKey="Collection Value"
-               stroke="#ef4444"
-               strokeWidth={3}
-               dot={false}
-               activeDot={{ r: 6, fill: '#ef4444', stroke: '#ffffff', strokeWidth: 2 }}
-               strokeLinecap="round"
-               strokeLinejoin="round"
-             />
-          </LineChart>
-        </ChartContainer>
+                 <div className="w-full h-80 sm:h-96 md:h-[32rem]">
+          <ResponsiveContainer width="100%" height="100%">
+                                      <LineChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 40 }}>
+               <CartesianGrid strokeDasharray="5 5" stroke="#f1f5f9" strokeOpacity={0.3} />
+               <XAxis 
+                 dataKey="date" 
+                 className="text-xs"
+                 tick={{ fontSize: 8, fill: '#64748b' }}
+                 interval="preserveStartEnd"
+                 axisLine={{ stroke: '#e2e8f0' }}
+                 tickLine={false}
+                 angle={0}
+                 textAnchor="middle"
+                 height={80}
+                 dy={10}
+                 tickFormatter={(value) => {
+                   const date = new Date(value.split('.').reverse().join('-'));
+                   return date.toLocaleDateString('de-DE', {
+                     day: '2-digit',
+                     month: '2-digit',
+                     year: '2-digit'
+                   });
+                 }}
+               />
+                             <YAxis 
+                 className="text-xs"
+                 tick={{ fontSize: 9, fill: '#64748b' }}
+                 tickFormatter={(value) => formatCurrency(value, currency)}
+                 axisLine={{ stroke: '#e2e8f0' }}
+                 tickLine={false}
+                 width={100}
+               />
+              <ChartTooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="rounded-xl border-0 bg-white/95 backdrop-blur-sm p-4 shadow-lg">
+                        <div className="grid gap-3">
+                          <p className="text-sm font-semibold text-gray-900">{label}</p>
+                          {payload.map((entry: any, index: number) => (
+                            <div key={index} className="flex items-center gap-3">
+                              <div 
+                                className="h-3 w-3 rounded-full shadow-sm" 
+                                style={{ backgroundColor: entry.color }}
+                              />
+                              <span className="text-sm text-gray-600">
+                                {t('pricing.collection.value')}:
+                              </span>
+                              <span className="text-sm font-bold text-gray-900">
+                                {formatCurrency(entry.value, currency)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="Collection Value"
+                stroke="#ef4444"
+                strokeWidth={3}
+                dot={false}
+                activeDot={{ r: 6, fill: '#ef4444', stroke: '#ffffff', strokeWidth: 2 }}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     );
   };

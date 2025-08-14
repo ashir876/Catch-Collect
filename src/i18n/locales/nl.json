@@ -85,8 +85,12 @@
     "card": "kaart",
     "found": "gevonden",
     "addToCollection": "Toevoegen aan collectie",
+    "removeFromCollection": "Verwijderen uit collectie",
     "addToWishlist": "Toevoegen aan verlanglijst",
-    "inWishlist": "Op verlanglijst"
+    "removeFromWishlist": "Verwijderen uit verlanglijst",
+    "inWishlist": "Op verlanglijst",
+    "alreadyInCollection": "Al in collectie",
+    "alreadyInWishlist": "Al op verlanglijst"
   },
   "shop": {
     "title": "Winkel",
@@ -160,7 +164,15 @@
     "sortByRarity": "Zeldzaamheid",
     "sortBySet": "Set",
     "sortByDate": "Datum toegevoegd",
+    "sortByPrice": "Prijs",
     "clearFilters": "Filters wissen",
+    "filterByPrice": "Filter op prijs",
+    "allPrices": "Alle prijzen",
+    "myPrice": "Mijn prijs",
+    "marketPrice": "Marktprijs",
+    "priceRange": "Prijsbereik",
+    "minPrice": "Min",
+    "maxPrice": "Max",
     "showing": "Toont",
     "of": "van"
   },
@@ -448,6 +460,8 @@
     "yes": "Ja",
     "no": "Nee",
     "all": "Alle",
-    "retry": "Opnieuw proberen"
+    "retry": "Opnieuw proberen",
+    "add": "Toevoegen",
+    "adding": "Wordt toegevoegd..."
   }
 } 

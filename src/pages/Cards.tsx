@@ -18,6 +18,7 @@ import CardWithWishlist from "@/components/cards/CardWithWishlist";
 import LanguageFilter from "@/components/LanguageFilter";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import CardDetailModal from "@/components/cards/CardDetailModal";
+import AddToCollectionModal from "@/components/cards/AddToCollectionModal";
 import React from "react"; // Added missing import
 import { useIsCardInCollection } from "@/hooks/useCollectionData";
 import { useIsCardInWishlist } from "@/hooks/useWishlistData";
@@ -47,6 +48,10 @@ const Cards = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50); // Show 50 items per page for more compact view
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  
+  // Modal state
+  const [isAddToCollectionModalOpen, setIsAddToCollectionModalOpen] = useState(false);
+  const [selectedCardForCollection, setSelectedCardForCollection] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -205,8 +210,8 @@ const Cards = () => {
   // Use cards data directly since we're filtering by language at the database level
   const filteredCards = cardsData || [];
 
-  // Handler for adding to collection from list view
-  const handleAddToCollection = async (card) => {
+  // Handler for opening add to collection modal
+  const handleAddToCollection = (card) => {
     if (!user) {
       toast({
         title: t('auth.loginRequired'),
@@ -215,19 +220,39 @@ const Cards = () => {
       });
       return;
     }
+    setSelectedCardForCollection(card);
+    setIsAddToCollectionModalOpen(true);
+  };
+
+  // Handler for adding to collection with modal data
+  const handleAddToCollectionWithDetails = async (data: {
+    condition: string;
+    price: number;
+    date: string;
+  }) => {
+    if (!user || !selectedCardForCollection) return;
+
     try {
       const { error } = await supabase
         .from('card_collections')
         .insert({
           user_id: user.id,
-          card_id: card.card_id,
-          language: card.language || 'en',
+          card_id: selectedCardForCollection.card_id,
+          language: selectedCardForCollection.language || 'en',
+          condition: data.condition,
+          price: data.price,
+          notes: `Acquired on: ${data.date}`,
         });
+      
       if (error) throw error;
+      
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      setIsAddToCollectionModalOpen(false);
+      setSelectedCardForCollection(null);
+      
       toast({
         title: t('messages.addedToCollection'),
-        description: `${card.name} ${t('messages.addedToCollection').toLowerCase()}.`,
+        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()}.`,
       });
     } catch (error) {
       console.error('Error adding to collection:', error);
@@ -445,15 +470,16 @@ const Cards = () => {
           </div>
         )
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredCards.map((card) => (
-            <CardWithWishlist
-              key={`${card.card_id}-${card.language}`}
-              card={card}
-              hidePriceAndBuy={true}
-            />
-          ))}
-        </div>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+           {filteredCards.map((card) => (
+             <CardWithWishlist
+               key={`${card.card_id}-${card.language}`}
+               card={card}
+               hidePriceAndBuy={true}
+               onAddToCollection={handleAddToCollection}
+             />
+           ))}
+         </div>
       ) : (
         <div className="space-y-2">
           {filteredCards.map((card) => (
@@ -494,6 +520,18 @@ const Cards = () => {
           </p>
         </div>
       )}
+
+      {/* Add to Collection Modal */}
+      <AddToCollectionModal
+        isOpen={isAddToCollectionModalOpen}
+        onClose={() => {
+          setIsAddToCollectionModalOpen(false);
+          setSelectedCardForCollection(null);
+        }}
+        onAdd={handleAddToCollectionWithDetails}
+        cardName={selectedCardForCollection?.name || ''}
+        isLoading={isAddingToCollection}
+      />
     </div>
   );
 };
@@ -518,7 +556,7 @@ const CardListItem = ({
     if (isInCollection) {
       removeFromCollection({ cardId: card.card_id });
     } else {
-      addToCollection({ cardId: card.card_id, cardName: card.name, cardLanguage: card.language });
+      addToCollection(card);
     }
   };
 

@@ -232,7 +232,9 @@
     "removeFromCollection": "Remove from Collection",
     "addToWishlist": "Add to Wishlist",
     "removeFromWishlist": "Remove from Wishlist",
-    "inWishlist": "In Wishlist"
+    "inWishlist": "In Wishlist",
+    "alreadyInCollection": "Already in Collection",
+    "alreadyInWishlist": "Already in Wishlist"
   },
   "cardDetail": {
     "backToCards": "Back to Cards",
@@ -358,6 +360,27 @@
     "advancedSeriesFilter": "Series",
     "advancedSortFilter": "Sort Order"
   },
+  "setDetail": {
+    "setNotFound": "Set not found",
+    "released": "Released",
+    "cards": "Cards",
+    "searchCards": "Search cards...",
+    "allRarities": "All Rarities",
+    "common": "Common",
+    "rare": "Rare",
+    "epic": "Epic",
+    "legendary": "Legendary",
+    "sortByName": "Sort by Name",
+    "sortByRarity": "Sort by Rarity",
+    "sortByNumber": "Sort by Number",
+    "owned": "Owned",
+    "remove": "Remove",
+    "add": "Add",
+    "wishlist": "Wishlist",
+    "cart": "Cart",
+    "noCardsFound": "No cards found",
+    "noCardsFoundSubtitle": "Try adjusting your search or filters"
+  },
   "collection": {
     "title": "My Collection",
     "subtitle": "Overview of your trading card collection and its value",
@@ -400,9 +423,32 @@
     "sortByRarity": "Rarity",
     "sortBySet": "Set",
     "sortByDate": "Date Added",
+    "sortByPrice": "Price",
     "clearFilters": "Clear Filters",
+    "filterByPrice": "Filter by Price",
+    "allPrices": "All Prices",
+    "myPrice": "My Price",
+    "marketPrice": "Market Price",
+    "priceRange": "Price Range",
+    "minPrice": "Min",
+    "maxPrice": "Max",
     "showing": "Showing",
-    "of": "of"
+    "of": "of",
+    "acquired": "Acquired",
+    "yourPrice": "Your Price",
+    "marketPrice": "Market Price",
+    "addCardToCollection": "Add Card to Collection",
+    "provideCardDetails": "Provide details for your card before adding it to your collection.",
+    "condition": "Condition",
+    "price": "Price",
+    "date": "Date",
+    "conditionMint": "Mint",
+    "conditionNearMint": "Near Mint",
+    "conditionExcellent": "Excellent",
+    "conditionGood": "Good",
+    "conditionLightPlayed": "Light Played",
+    "conditionPlayed": "Played",
+    "conditionPoor": "Poor"
   },
   "wishlist": {
     "title": "My Wishlist", 
@@ -693,6 +739,7 @@
     "filter": "Filter",
     "sort": "Sort",
     "back": "Back",
+    "backToSets": "Back to Sets",
     "next": "Next",
     "previous": "Previous",
     "close": "Close",
@@ -700,6 +747,12 @@
     "yes": "Yes",
     "no": "No",
     "all": "All",
-    "retry": "Retry"
+    "retry": "Retry",
+    "add": "Add",
+    "adding": "Adding..."
+  },
+  "error": {
+    "title": "Error",
+    "fetchSetData": "Failed to fetch set data. Please try again."
   }
 }
