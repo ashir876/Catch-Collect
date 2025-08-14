@@ -436,7 +436,11 @@
     "checkoutDescription": "You will be redirected to the secure checkout page.",
     "itemRemoved": "Item removed from cart.",
     "cleared": "Cart Cleared",
-    "allItemsRemoved": "All items have been removed."
+    "allItemsRemoved": "All items have been removed.",
+    "cartCleared": "Cart Cleared",
+    "addItemsFirst": "Please add some items to your cart first.",
+    "noItemsToClear": "There are no items to clear.",
+    "confirmClearCart": "Are you sure you want to clear your entire cart? This action cannot be undone."
   },
   "shop": {
     "title": "Shop",

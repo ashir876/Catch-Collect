@@ -276,7 +276,11 @@
     "checkoutDescription": "Du wirst zur sicheren Checkout-Seite weitergeleitet.",
     "itemRemoved": "Artikel aus dem Warenkorb entfernt.",
     "cleared": "Warenkorb geleert",
-    "allItemsRemoved": "Alle Artikel wurden entfernt."
+    "allItemsRemoved": "Alle Artikel wurden entfernt.",
+    "cartCleared": "Warenkorb geleert",
+    "addItemsFirst": "Bitte füge zuerst einige Artikel zu deinem Warenkorb hinzu.",
+    "noItemsToClear": "Es gibt keine Artikel zum Löschen.",
+    "confirmClearCart": "Bist du sicher, dass du deinen gesamten Warenkorb leeren möchtest? Diese Aktion kann nicht rückgängig gemacht werden."
   },
   "shop": {
     "title": "Shop",

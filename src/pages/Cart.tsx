@@ -14,31 +14,62 @@ const Cart = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: cartItems = [], isLoading } = useNewCartData();
-  const { updateQuantity, removeItem, isLoading: isUpdating } = useCartActions();
+  const { data: cartItems = [], isLoading, error } = useNewCartData();
+  const { updateQuantity, removeItem, clearCart, isLoading: isUpdating } = useCartActions();
 
-  const updateCartQuantity = async (id: number, newQuantity: number) => {
+  // Debug logging
+  console.log('Cart component render:', { user, cartItems, isLoading, error });
+
+  const updateCartQuantity = async (id: string, newQuantity: number) => {
+    if (newQuantity < 0) return;
+    
     try {
       await updateQuantity({ id, quantity: newQuantity });
     } catch (error) {
       console.error('Error updating quantity:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update quantity. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
-  const removeCartItem = async (id: number) => {
+  const removeCartItem = async (id: string) => {
     try {
       await removeItem(id);
     } catch (error) {
       console.error('Error removing item:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove item. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
   const clearCartItems = async () => {
-    // try {
-    //   await clearCart();
-    // } catch (error) {
-    //   console.error('Error clearing cart:', error);
-    // }
+    if (!cartItems || cartItems.length === 0) {
+      toast({
+        title: t('cart.emptyCart'),
+        description: t('cart.noItemsToClear'),
+      });
+      return;
+    }
+
+    // Simple confirmation - in a real app you might want a proper confirmation dialog
+    if (window.confirm(t('cart.confirmClearCart'))) {
+      try {
+        await clearCart();
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to clear cart. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    }
   };
 
   if (!user) {
@@ -60,16 +91,42 @@ const Cart = () => {
     );
   }
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Safely calculate totals with error handling
+  let subtotal = 0;
+  let totalItems = 0;
+  
+  try {
+    subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  } catch (error) {
+    console.error('Error calculating cart totals:', error);
+    subtotal = 0;
+    totalItems = 0;
+  }
+  
   const shipping = subtotal > 50 ? 0 : 5.90;
   const total = subtotal + shipping;
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCheckout = () => {
+    if (!cartItems || cartItems.length === 0) {
+      toast({
+        title: t('cart.emptyCart'),
+        description: t('cart.addItemsFirst'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // For now, show a placeholder message
+    // In a real implementation, this would redirect to a checkout page or payment processor
     toast({
       title: t('cart.checkoutRedirect'),
       description: t('cart.checkoutDescription'),
     });
+    
+    // TODO: Implement actual checkout flow
+    // This could redirect to a checkout page or integrate with a payment processor
+    console.log('Checkout initiated with items:', cartItems);
   };
 
   if (isLoading) {
@@ -85,6 +142,24 @@ const Cart = () => {
     );
   }
 
+  if (error) {
+    console.error('Cart loading error:', error);
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-6" />
+          <h2 className="text-2xl font-semibold mb-4">Error Loading Cart</h2>
+          <p className="text-muted-foreground mb-8">
+            There was an error loading your cart. Please try refreshing the page.
+          </p>
+          <Button onClick={() => window.location.reload()} size="lg">
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -95,7 +170,7 @@ const Cart = () => {
           </span>
         </h1>
         <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
-          {totalItems} {totalItems !== 1 ? t('cart.items') : t('cart.item')} {t('cart.inCart')}
+          {totalItems || 0} {(totalItems || 0) !== 1 ? t('cart.items') : t('cart.item')} {t('cart.inCart')}
         </p>
       </div>
       
@@ -109,7 +184,7 @@ const Cart = () => {
         </Link>
       </div>
 
-      {cartItems.length === 0 ? (
+      {!cartItems || cartItems.length === 0 ? (
         /* Empty Cart State */
         <div className="text-center py-12">
           <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-6" />
@@ -142,14 +217,14 @@ const Cart = () => {
               </Button>
             </div>
 
-            {cartItems.map((item) => (
+            {cartItems && Array.isArray(cartItems) && cartItems.map((item) => (
               <Card key={item.id}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {/* Card Image */}
                     <div className="w-20 h-28 flex-shrink-0">
                       <img
-                        src={item.product_image || "/placeholder.svg"}
+                        src="/placeholder.svg"
                         alt={item.article_number}
                         className="w-full h-full object-cover rounded-lg"
                         onError={(e) => {
@@ -162,7 +237,7 @@ const Cart = () => {
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-semibold text-lg">{item.product_name || item.article_number}</h3>
+                          <h3 className="font-semibold text-lg">{item.article_number || 'Unknown Item'}</h3>
                         </div>
                         <Button
                           variant="ghost"
@@ -200,24 +275,24 @@ const Cart = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1 || isUpdating}
+                            onClick={() => updateCartQuantity(item.id, (item.quantity || 1) - 1)}
+                            disabled={(item.quantity || 1) <= 1 || isUpdating}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="font-medium min-w-8 text-center">{item.quantity}</span>
+                          <span className="font-medium min-w-8 text-center">{item.quantity || 1}</span>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateCartQuantity(item.id, (item.quantity || 1) + 1)}
                             disabled={isUpdating}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold">CHF {(item.price * item.quantity).toFixed(2)}</div>
-                          <div className="text-sm text-muted-foreground">CHF {item.price.toFixed(2)} {t('cart.perItem')}</div>
+                          <div className="text-xl font-bold">CHF {((item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
+                          <div className="text-sm text-muted-foreground">CHF {(item.price || 0).toFixed(2)} {t('cart.perItem')}</div>
                         </div>
                       </div>
                     </div>
@@ -235,8 +310,8 @@ const Cart = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>{t('cart.subtotal')} ({totalItems} {totalItems !== 1 ? t('cart.items') : t('cart.item')})</span>
-                  <span>CHF {subtotal.toFixed(2)}</span>
+                  <span>{t('cart.subtotal')} ({(totalItems || 0)} {(totalItems || 0) !== 1 ? t('cart.items') : t('cart.item')})</span>
+                  <span>CHF {(subtotal || 0).toFixed(2)}</span>
                 </div>
                 
                 <div className="flex justify-between">
@@ -260,7 +335,7 @@ const Cart = () => {
                 
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t('cart.total')}</span>
-                  <span>CHF {total.toFixed(2)}</span>
+                  <span>CHF {(total || 0).toFixed(2)}</span>
                 </div>
 
                 <Button 
@@ -270,7 +345,7 @@ const Cart = () => {
                   disabled={isUpdating}
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
-                  {t('cart.checkout')} ({totalItems})
+                  {t('cart.checkout')} ({(totalItems || 0)})
                 </Button>
 
                 <div className="text-sm text-muted-foreground text-center">

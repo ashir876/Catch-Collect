@@ -4,16 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface CartItem {
-  id: number;
+  id: string;
   user_id: string;
   article_number: string;
-  quantity: number;
   price: number;
+  quantity: number;
   created_at: string;
-  product_name?: string;
-  product_image?: string;
-  product_rarity?: string;
-  product_condition?: string;
 }
 
 export const useNewCartData = () => {
@@ -24,8 +20,8 @@ export const useNewCartData = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('carts')
+      const { data, error } = await (supabase as any)
+        .from('carts_with_id')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });

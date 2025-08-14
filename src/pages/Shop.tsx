@@ -21,21 +21,21 @@ const Shop = () => {
   const { data: cartCount = 0 } = useCartCount();
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
       {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
-          <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+      <div className="text-center mb-8 sm:mb-12">
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black mb-4 sm:mb-8 uppercase tracking-wider">
+          <span className="bg-yellow-400 text-black px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 border-2 sm:border-3 md:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
             {t('shop.title')}
           </span>
         </h1>
-        <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground font-bold px-2">
           {t('shop.subtitle')}
         </p>
         {cartCount > 0 && (
-          <div className="mt-4">
+          <div className="mt-3 sm:mt-4">
             <Link to="/cart">
-              <Badge variant="secondary" className="text-sm hover:bg-secondary/80 cursor-pointer transition-colors">
+              <Badge variant="secondary" className="text-xs sm:text-sm hover:bg-secondary/80 cursor-pointer transition-colors">
                 <ShoppingCart className="mr-1 h-3 w-3" />
                 {cartCount} {cartCount === 1 ? 'item' : 'items'} in cart
               </Badge>
@@ -46,18 +46,21 @@ const Shop = () => {
 
       {/* Tabs for different shop categories */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger value="cards" className="flex items-center gap-2">
-            <Grid3X3 className="h-4 w-4" />
-            {t('shop.shopFromCards')}
+        <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8">
+          <TabsTrigger value="cards" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('shop.shopFromCards')}</span>
+            <span className="sm:hidden">Cards</span>
           </TabsTrigger>
-          <TabsTrigger value="sets" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            {t('shop.shopFromSets')}
+          <TabsTrigger value="sets" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('shop.shopFromSets')}</span>
+            <span className="sm:hidden">Sets</span>
           </TabsTrigger>
-          <TabsTrigger value="series" className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            {t('shop.shopFromSeries')}
+          <TabsTrigger value="series" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('shop.shopFromSeries')}</span>
+            <span className="sm:hidden">Series</span>
           </TabsTrigger>
         </TabsList>
 
@@ -194,26 +197,47 @@ const ShopFromCards = () => {
       return;
     }
 
+    // Validate card data
+    if (!card || !card.card_id || !card.name) {
+      console.error('Invalid card data:', card);
+      toast({
+        title: "Error",
+        description: "Invalid card data. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const mockPrice = getMockPrice(card.rarity, card.card_id);
+      const mockPrice = getMockPrice(card.rarity || 'common', card.card_id);
       
       const cartItem = {
         article_number: card.card_id,
         price: mockPrice,
-        quantity: 1,
-        product_name: card.name,
-        product_image: card.image_url,
-        product_rarity: card.rarity
+        quantity: 1
       };
       
-      await addToCart(cartItem);
+      console.log('Adding card to cart:', { card, cartItem, mockPrice });
       
-      toast({
-        title: t('messages.addedToCart'),
-        description: `${card.name} has been added to your cart`,
-      });
+      // Test the addToCart function
+      try {
+        await addToCart(cartItem);
+        console.log('Successfully added to cart');
+        
+        toast({
+          title: t('messages.addedToCart'),
+          description: `${card.name} has been added to your cart`,
+        });
+      } catch (addError) {
+        console.error('Error in addToCart:', addError);
+        throw addError;
+      }
     } catch (error) {
       console.error('Error adding to cart:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : 'No message');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      
       toast({
         title: "Error",
         description: `Failed to add item to cart: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -226,115 +250,134 @@ const ShopFromCards = () => {
     <div>
       {/* Search and Filters */}
       <div className="space-y-4 mb-8">
-        <div className="flex flex-col lg:flex-row gap-4">
+        {/* Search Bar and View Toggle */}
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 sm:h-5 sm:w-5 z-10" />
             <Input
               placeholder={t('shop.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-4 py-3 text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
+              className="pl-10 sm:pl-12 pr-4 py-2 sm:py-3 text-base sm:text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
             />
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center sm:justify-start">
             <Button
               variant={viewMode === "grid" ? "default" : "outline"}
               onClick={() => setViewMode("grid")}
               size="sm"
+              className="flex-1 sm:flex-none"
             >
               <Grid3X3 className="h-4 w-4" />
+              <span className="ml-1 sm:hidden">Grid</span>
             </Button>
             <Button
               variant={viewMode === "list" ? "default" : "outline"}
               onClick={() => setViewMode("list")}
               size="sm"
+              className="flex-1 sm:flex-none"
             >
               <List className="h-4 w-4" />
+              <span className="ml-1 sm:hidden">List</span>
             </Button>
           </div>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex flex-wrap gap-4">
+        {/* Filter Buttons - Responsive Layout */}
+        <div className="space-y-3">
           {/* Price Filters */}
-          <div className="flex gap-2">
-            <Button
-              variant={priceFilter === "all" ? "default" : "outline"}
-              onClick={() => setPriceFilter("all")}
-              size="sm"
-            >
-              {t('shop.allPrices')}
-            </Button>
-            <Button
-              variant={priceFilter === "under25" ? "default" : "outline"}
-              onClick={() => setPriceFilter("under25")}
-              size="sm"
-            >
-              {t('shop.under25')}
-            </Button>
-            <Button
-              variant={priceFilter === "25to50" ? "default" : "outline"}
-              onClick={() => setPriceFilter("25to50")}
-              size="sm"
-            >
-              {t('shop.25to50')}
-            </Button>
-            <Button
-              variant={priceFilter === "50to100" ? "default" : "outline"}
-              onClick={() => setPriceFilter("50to100")}
-              size="sm"
-            >
-              {t('shop.50to100')}
-            </Button>
-            <Button
-              variant={priceFilter === "over100" ? "default" : "outline"}
-              onClick={() => setPriceFilter("over100")}
-              size="sm"
-            >
-              {t('shop.over100')}
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <span className="text-sm font-semibold text-gray-700 sm:hidden">Price Range:</span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={priceFilter === "all" ? "default" : "outline"}
+                onClick={() => setPriceFilter("all")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.allPrices')}
+              </Button>
+              <Button
+                variant={priceFilter === "under25" ? "default" : "outline"}
+                onClick={() => setPriceFilter("under25")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.under25')}
+              </Button>
+              <Button
+                variant={priceFilter === "25to50" ? "default" : "outline"}
+                onClick={() => setPriceFilter("25to50")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.25to50')}
+              </Button>
+              <Button
+                variant={priceFilter === "50to100" ? "default" : "outline"}
+                onClick={() => setPriceFilter("50to100")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.50to100')}
+              </Button>
+              <Button
+                variant={priceFilter === "over100" ? "default" : "outline"}
+                onClick={() => setPriceFilter("over100")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.over100')}
+              </Button>
+            </div>
           </div>
 
-
-
           {/* Sort Options */}
-          <div className="flex gap-2">
-            <Button
-              variant={sortBy === "newest" ? "default" : "outline"}
-              onClick={() => setSortBy("newest")}
-              size="sm"
-            >
-              {t('shop.newest')}
-            </Button>
-            <Button
-              variant={sortBy === "price-low" ? "default" : "outline"}
-              onClick={() => setSortBy("price-low")}
-              size="sm"
-            >
-              {t('shop.priceLow')}
-            </Button>
-            <Button
-              variant={sortBy === "price-high" ? "default" : "outline"}
-              onClick={() => setSortBy("price-high")}
-              size="sm"
-            >
-              {t('shop.priceHigh')}
-            </Button>
-            <Button
-              variant={sortBy === "name" ? "default" : "outline"}
-              onClick={() => setSortBy("name")}
-              size="sm"
-            >
-              {t('shop.name')}
-            </Button>
-            <Button
-              variant={sortBy === "rarity" ? "default" : "outline"}
-              onClick={() => setSortBy("rarity")}
-              size="sm"
-            >
-              {t('shop.rarity')}
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <span className="text-sm font-semibold text-gray-700 sm:hidden">Sort By:</span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={sortBy === "newest" ? "default" : "outline"}
+                onClick={() => setSortBy("newest")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.newest')}
+              </Button>
+              <Button
+                variant={sortBy === "price-low" ? "default" : "outline"}
+                onClick={() => setSortBy("price-low")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.priceLow')}
+              </Button>
+              <Button
+                variant={sortBy === "price-high" ? "default" : "outline"}
+                onClick={() => setSortBy("price-high")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.priceHigh')}
+              </Button>
+              <Button
+                variant={sortBy === "name" ? "default" : "outline"}
+                onClick={() => setSortBy("name")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.name')}
+              </Button>
+              <Button
+                variant={sortBy === "rarity" ? "default" : "outline"}
+                onClick={() => setSortBy("rarity")}
+                size="sm"
+                className="text-xs sm:text-sm px-2 sm:px-3"
+              >
+                {t('shop.rarity')}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -342,13 +385,13 @@ const ShopFromCards = () => {
       {/* Cards Display */}
       {cardsLoading ? (
         viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
             {[...Array(8)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <div className="aspect-[3/4] bg-muted"></div>
-                <CardContent className="p-4">
-                  <div className="h-6 bg-muted rounded mb-2"></div>
-                  <div className="h-4 bg-muted rounded"></div>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="h-4 sm:h-6 bg-muted rounded mb-1 sm:mb-2"></div>
+                  <div className="h-3 sm:h-4 bg-muted rounded"></div>
                 </CardContent>
               </Card>
             ))}
@@ -358,10 +401,10 @@ const ShopFromCards = () => {
             {[...Array(8)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-3">
-                  <div className="flex gap-3">
-                    <div className="w-12 h-16 bg-muted rounded"></div>
+                  <div className="flex gap-2 sm:gap-3">
+                    <div className="w-10 h-14 sm:w-12 sm:h-16 bg-muted rounded"></div>
                     <div className="flex-1">
-                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-4 bg-muted rounded mb-1 sm:mb-2"></div>
                       <div className="h-3 bg-muted rounded"></div>
                     </div>
                   </div>
@@ -373,13 +416,13 @@ const ShopFromCards = () => {
       ) : (
         /* Cards Display */
         viewMode === "grid" ? (
-          <div key="grid-view" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div key="grid-view" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
             {displayCards.map((card, index) => {
               const mockPrice = getMockPrice(card.rarity, card.card_id);
               const stock = getMockStock(card.card_id); // Consistent stock
               return (
                 <div key={`${card.card_id}-${index}`} className="relative group">
-                  <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col">
+                  <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col h-full">
                     <div className="relative aspect-[3/4] overflow-visible">
                       <img
                         src={card.image_url || "/placeholder.svg"}
@@ -391,37 +434,35 @@ const ShopFromCards = () => {
                       />
                       
                       {/* Overlay with Add to Cart button */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="space-y-2">
-                          <Button 
-                            onClick={() => handleAddToCart(card)}
-                            disabled={isLoading}
-                            className="w-full"
-                          >
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            {t('shop.addToCart')}
-                          </Button>
-                        </div>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2">
+                        <Button 
+                          onClick={() => handleAddToCart(card)}
+                          disabled={isLoading}
+                          className="w-full text-xs sm:text-sm"
+                        >
+                          <ShoppingCart className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                          {t('shop.addToCart')}
+                        </Button>
                       </div>
 
                       {/* Stock indicator */}
-                      <div className="absolute top-2 right-2">
-                        <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs">
+                      <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
+                        <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 sm:px-2 py-0">
                           {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
                         </Badge>
                       </div>
                     </div>
 
-                    <CardContent className="p-4 flex flex-col justify-between flex-1">
+                    <CardContent className="p-3 sm:p-4 flex flex-col justify-between flex-1">
                       <div>
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{card.name}</h3>
-                        <p className="text-muted-foreground text-sm mb-2">{card.set_name} • {card.card_number}</p>
+                        <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">{card.name}</h3>
+                        <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{card.set_name} • {card.card_number}</p>
                       </div>
                       <div className="flex justify-between items-center mt-auto">
                         <div className="text-right">
-                          <div className="text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                          <div className="text-base sm:text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
                         </div>
-                        <Badge variant="secondary">{card.rarity}</Badge>
+                        <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{card.rarity}</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -437,9 +478,9 @@ const ShopFromCards = () => {
               return (
                 <Card key={`${card.card_id}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {/* Smaller card image */}
-                      <div className="w-12 h-16 flex-shrink-0">
+                      <div className="w-10 h-14 sm:w-12 sm:h-16 flex-shrink-0">
                         <img
                           src={card.image_url || "/placeholder.svg"}
                           alt={card.name}
@@ -452,33 +493,33 @@ const ShopFromCards = () => {
                       
                       {/* Card details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                           <div className="min-w-0 flex-1">
                             <h3 className="font-medium text-sm truncate">{card.name}</h3>
                             <p className="text-xs text-muted-foreground truncate">{card.set_name} • {card.card_number}</p>
                           </div>
-                          <div className="text-right ml-3">
-                            <div className="text-base font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                          <div className="text-left sm:text-right">
+                            <div className="text-sm sm:text-base font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
                           </div>
                         </div>
                       </div>
                       
                       {/* Badges and Add to Cart button */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         <div className="flex flex-col gap-1">
                           <Badge variant="secondary" className="text-xs px-1 py-0">{card.rarity}</Badge>
                           <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 py-0">
-                            {stock > 5 ? 'In Stock' : `${stock} left`}
+                            {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
                           </Badge>
                         </div>
                         <Button 
                           onClick={() => handleAddToCart(card)}
                           disabled={isLoading}
                           size="sm"
-                          className="h-8 px-3"
+                          className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
                         >
                           <ShoppingCart className="mr-1 h-3 w-3" />
-                          Add
+                          <span className="hidden sm:inline">Add</span>
                         </Button>
                       </div>
                     </div>
@@ -566,10 +607,7 @@ const ShopFromSets = () => {
       await addToCart({
         article_number: `set-${set.set_id}`,
         price: setPrice,
-        quantity: 1,
-        product_name: `${set.name} Complete Set`,
-        product_image: set.logo_url,
-        product_rarity: 'Complete Set'
+        quantity: 1
       });
       toast({
         title: t('messages.addedToCart'),
@@ -888,10 +926,7 @@ const ShopFromSeries = () => {
       await addToCart({
         article_number: `series-${series.series_id}`,
         price: seriesPrice,
-        quantity: 1,
-        product_name: `${series.series_name} Complete Series`,
-        product_image: series.logo_url,
-        product_rarity: 'Complete Series'
+        quantity: 1
       });
       toast({
         title: t('messages.addedToCart'),
