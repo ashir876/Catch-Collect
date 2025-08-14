@@ -315,14 +315,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Debug Info */}
-        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          <p>User ID: {user?.id}</p>
-          <p>Loading: {loading ? 'Yes' : 'No'}</p>
-          <p>Error: {error || 'None'}</p>
-          <p>Data Points: {valueHistory.length}</p>
-          <p>Demo Data: {valueHistory.length > 0 && valueHistory[0]?.total_value === 359.00 ? 'Yes' : 'No'}</p>
-        </div>
+
 
         {/* Chart */}
         <div className="space-y-2">

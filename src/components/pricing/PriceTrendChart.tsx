@@ -385,14 +385,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Debug Info */}
-        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          <p>Card ID: {cardId}</p>
-          <p>Loading: {loading ? 'Yes' : 'No'}</p>
-          <p>Error: {error || 'None'}</p>
-          <p>Data Points: {priceHistory.length}</p>
-          <p>Demo Data: {priceHistory.length > 0 && new Set(priceHistory.map(p => p.recorded_at.split('T')[0])).size <= 1 ? 'Yes' : 'No'}</p>
-        </div>
+
 
         {/* Price Change Summary */}
         {priceChange && (
