@@ -423,7 +423,11 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
         {priceHistory.length > 0 && (
           <div className="text-xs text-gray-500 text-center">
             {priceHistory.length} {t('pricing.data.points')} • {t('pricing.last.updated')}: {
-              formatDate(priceHistory[0].recorded_at)
+              formatDate(
+                [...priceHistory]
+                  .sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())[0]
+                  .recorded_at
+              )
             }
           </div>
         )}
