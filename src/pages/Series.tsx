@@ -14,7 +14,7 @@ const Series = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [languageFilter, setLanguageFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("en");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');

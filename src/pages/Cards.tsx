@@ -28,7 +28,7 @@ const Cards = () => {
   const [searchParams] = useSearchParams();
   const setFilter = searchParams.get("set");
   const [searchTerm, setSearchTerm] = useState("");
-  const [languageFilter, setLanguageFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("en");
   const [rarityFilter, setRarityFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [hpRange, setHpRange] = useState({ min: "", max: "" });

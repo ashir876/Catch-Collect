@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, ShoppingCart, Filter, Grid3X3, List, Package, Star, Calendar } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +13,12 @@ import { useTranslation } from 'react-i18next';
 import { useCardsData } from "@/hooks/useCardsData";
 import { useSetsData } from "@/hooks/useSetsData";
 import { useSeriesData } from "@/hooks/useSeriesData";
+import { useCartCount } from "@/hooks/useCartCount";
 
 const Shop = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("cards");
+  const { data: cartCount = 0 } = useCartCount();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -29,6 +32,16 @@ const Shop = () => {
         <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
           {t('shop.subtitle')}
         </p>
+        {cartCount > 0 && (
+          <div className="mt-4">
+            <Link to="/cart">
+              <Badge variant="secondary" className="text-sm hover:bg-secondary/80 cursor-pointer transition-colors">
+                <ShoppingCart className="mr-1 h-3 w-3" />
+                {cartCount} {cartCount === 1 ? 'item' : 'items'} in cart
+              </Badge>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Tabs for different shop categories */}
@@ -121,10 +134,6 @@ const ShopFromCards = () => {
     offset: 0
   });
 
-
-
-
-
   // Filter cards based on price (mock pricing for now)
   let filteredCards = cardsData.filter(card => {
     // Mock price calculation based on rarity
@@ -174,10 +183,6 @@ const ShopFromCards = () => {
   // Apply pagination to filtered and sorted cards - ensure exactly 20 cards
   // Remove pagination - show all filtered cards
   const displayCards = filteredCards;
-  
-
-
-
 
   const handleAddToCart = async (card: any) => {
     if (!user) {
@@ -191,17 +196,29 @@ const ShopFromCards = () => {
 
     try {
       const mockPrice = getMockPrice(card.rarity, card.card_id);
-      await addToCart({
+      
+      const cartItem = {
         article_number: card.card_id,
         price: mockPrice,
-        quantity: 1
-      });
+        quantity: 1,
+        product_name: card.name,
+        product_image: card.image_url,
+        product_rarity: card.rarity
+      };
+      
+      await addToCart(cartItem);
+      
       toast({
-        title: t('shop.addedToCart'),
-        description: `${card.name} ${t('shop.addedToCart')}`,
+        title: t('messages.addedToCart'),
+        description: `${card.name} has been added to your cart`,
       });
     } catch (error) {
       console.error('Error adding to cart:', error);
+      toast({
+        title: "Error",
+        description: `Failed to add item to cart: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -261,14 +278,14 @@ const ShopFromCards = () => {
               onClick={() => setPriceFilter("25to50")}
               size="sm"
             >
-              {t('shop.price25to50')}
+              {t('shop.25to50')}
             </Button>
             <Button
               variant={priceFilter === "50to100" ? "default" : "outline"}
               onClick={() => setPriceFilter("50to100")}
               size="sm"
             >
-              {t('shop.price50to100')}
+              {t('shop.50to100')}
             </Button>
             <Button
               variant={priceFilter === "over100" ? "default" : "outline"}
@@ -279,8 +296,17 @@ const ShopFromCards = () => {
             </Button>
           </div>
 
+
+
           {/* Sort Options */}
           <div className="flex gap-2">
+            <Button
+              variant={sortBy === "newest" ? "default" : "outline"}
+              onClick={() => setSortBy("newest")}
+              size="sm"
+            >
+              {t('shop.newest')}
+            </Button>
             <Button
               variant={sortBy === "price-low" ? "default" : "outline"}
               onClick={() => setSortBy("price-low")}
@@ -296,41 +322,63 @@ const ShopFromCards = () => {
               {t('shop.priceHigh')}
             </Button>
             <Button
+              variant={sortBy === "name" ? "default" : "outline"}
+              onClick={() => setSortBy("name")}
+              size="sm"
+            >
+              {t('shop.name')}
+            </Button>
+            <Button
               variant={sortBy === "rarity" ? "default" : "outline"}
               onClick={() => setSortBy("rarity")}
               size="sm"
             >
-              {t('cards.rarity')}
+              {t('shop.rarity')}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Total Count Display */}
-
-
-      {/* Loading State */}
+      {/* Cards Display */}
       {cardsLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <div className="aspect-[3/4] bg-muted"></div>
-              <CardContent className="p-4">
-                <div className="h-6 bg-muted rounded mb-2"></div>
-                <div className="h-4 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <div className="aspect-[3/4] bg-muted"></div>
+                <CardContent className="p-4">
+                  <div className="h-6 bg-muted rounded mb-2"></div>
+                  <div className="h-4 bg-muted rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-3">
+                  <div className="flex gap-3">
+                    <div className="w-12 h-16 bg-muted rounded"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-3 bg-muted rounded"></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       ) : (
         /* Cards Display */
         viewMode === "grid" ? (
           <div key="grid-view" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {displayCards.map((card) => {
+            {displayCards.map((card, index) => {
               const mockPrice = getMockPrice(card.rarity, card.card_id);
               const stock = getMockStock(card.card_id); // Consistent stock
               return (
-                <div key={card.card_id} className="relative group">
+                <div key={`${card.card_id}-${index}`} className="relative group">
                   <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col">
                     <div className="relative aspect-[3/4] overflow-visible">
                       <img
@@ -342,7 +390,7 @@ const ShopFromCards = () => {
                         }}
                       />
                       
-                      {/* Overlay with buttons - positioned over the image */}
+                      {/* Overlay with Add to Cart button */}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <div className="space-y-2">
                           <Button 
@@ -383,11 +431,11 @@ const ShopFromCards = () => {
           </div>
         ) : (
           <div key="list-view" className="space-y-2">
-            {displayCards.map((card) => {
+            {displayCards.map((card, index) => {
               const mockPrice = getMockPrice(card.rarity, card.card_id);
               const stock = getMockStock(card.card_id); // Consistent stock
               return (
-                <Card key={card.card_id} className="hover:shadow-md transition-shadow">
+                <Card key={`${card.card_id}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">
                       {/* Smaller card image */}
@@ -415,7 +463,7 @@ const ShopFromCards = () => {
                         </div>
                       </div>
                       
-                      {/* Badges and actions */}
+                      {/* Badges and Add to Cart button */}
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <div className="flex flex-col gap-1">
                           <Badge variant="secondary" className="text-xs px-1 py-0">{card.rarity}</Badge>
@@ -445,7 +493,7 @@ const ShopFromCards = () => {
       {/* Empty State */}
       {!cardsLoading && filteredCards.length === 0 && (
         <div className="text-center py-12">
-          <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <Filter className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{t('shop.noCardsFound')}</h3>
           <p className="text-muted-foreground">
             {t('shop.noCardsSubtitle')}
@@ -518,14 +566,22 @@ const ShopFromSets = () => {
       await addToCart({
         article_number: `set-${set.set_id}`,
         price: setPrice,
-        quantity: 1
+        quantity: 1,
+        product_name: `${set.name} Complete Set`,
+        product_image: set.logo_url,
+        product_rarity: 'Complete Set'
       });
       toast({
-        title: t('shop.addedToCart'),
-        description: `${set.name} ${t('shop.setAddedToCart')}`,
+        title: t('messages.addedToCart'),
+        description: `${set.name} complete set has been added to your cart`,
       });
     } catch (error) {
       console.error('Error adding set to cart:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add set to cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -562,8 +618,6 @@ const ShopFromSets = () => {
           </div>
         </div>
       </div>
-
-
 
       {/* Total Count Display for Sets */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -615,10 +669,10 @@ const ShopFromSets = () => {
       ) : (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displaySets.map((set) => {
+            {displaySets.map((set, index) => {
               const setPrice = (set.total || 50) * 2.99;
               return (
-                <Card key={set.set_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
+                <Card key={`${set.set_id}-${index}`} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
                   <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
                     {set.logo_url ? (
                       <img
@@ -669,10 +723,10 @@ const ShopFromSets = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {displaySets.map((set) => {
+            {displaySets.map((set, index) => {
               const setPrice = (set.total || 50) * 2.99;
               return (
-                <Card key={set.set_id} className="hover:shadow-md transition-shadow">
+                <Card key={`${set.set_id}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex gap-4">
                       <div className="w-24 h-32 flex-shrink-0">
@@ -829,19 +883,27 @@ const ShopFromSeries = () => {
     }
 
     try {
-      // Mock price for complete series - in real app this would come from the database
-      const seriesPrice = 299.99; // Estimated price for complete series
+      // Mock price for complete series
+      const seriesPrice = 299.99; // Fixed price for series
       await addToCart({
         article_number: `series-${series.series_id}`,
         price: seriesPrice,
-        quantity: 1
+        quantity: 1,
+        product_name: `${series.series_name} Complete Series`,
+        product_image: series.logo_url,
+        product_rarity: 'Complete Series'
       });
       toast({
-        title: t('shop.addedToCart'),
-        description: `${series.series_name} ${t('shop.seriesAddedToCart')}`,
+        title: t('messages.addedToCart'),
+        description: `${series.series_name} complete series has been added to your cart`,
       });
     } catch (error) {
       console.error('Error adding series to cart:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add series to cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -878,8 +940,6 @@ const ShopFromSeries = () => {
           </div>
         </div>
       </div>
-
-
 
       {/* Total Count Display for Series */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
@@ -931,8 +991,8 @@ const ShopFromSeries = () => {
       ) : (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displaySeries.map((series) => (
-              <Card key={series.series_id} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
+            {displaySeries.map((series, index) => (
+              <Card key={`${series.series_id}-${index}`} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
                 <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
                   {series.logo_url ? (
                     <img 
@@ -983,8 +1043,8 @@ const ShopFromSeries = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {displaySeries.map((series) => (
-              <Card key={series.series_id} className="hover:shadow-md transition-shadow">
+            {displaySeries.map((series, index) => (
+              <Card key={`${series.series_id}-${index}`} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     <div className="w-24 h-32 flex-shrink-0">

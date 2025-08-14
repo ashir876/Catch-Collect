@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/chart';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CollectionValueData {
   recorded_at: string;
@@ -55,14 +56,41 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     setLoading(true);
     setError(null);
     try {
-      // Generate demo data instead of fetching from database
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
-      const demoData = generateDemoData(days);
-      setValueHistory(demoData);
+      
+      // Call the real database function
+      const { data, error } = await (supabase as any)
+        .rpc('get_collection_value_history', {
+          p_user_id: user.id,
+          p_days: days
+        });
+
+      if (error) {
+        console.error('Failed to load collection value history:', error);
+        throw error;
+      }
+
+      if (data && Array.isArray(data) && data.length > 0) {
+        // Transform the data to match the expected format
+        const transformedData = data.map((record: any) => ({
+          recorded_at: record.recorded_at,
+          total_value: parseFloat(record.total_value),
+          currency: record.currency
+        }));
+        setValueHistory(transformedData);
+      } else {
+        // No real data available, use demo data as fallback
+        console.log('No real collection value history found, using demo data');
+        const demoData = generateDemoData(days);
+        setValueHistory(demoData);
+      }
     } catch (error) {
       console.error('Failed to load collection value history:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      setValueHistory([]);
+      // Use demo data as fallback on error
+      const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
+      const demoData = generateDemoData(days);
+      setValueHistory(demoData);
     } finally {
       setLoading(false);
     }
@@ -293,7 +321,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
           <p>Loading: {loading ? 'Yes' : 'No'}</p>
           <p>Error: {error || 'None'}</p>
           <p>Data Points: {valueHistory.length}</p>
-          <p>Demo Data: Yes</p>
+          <p>Demo Data: {valueHistory.length > 0 && valueHistory[0]?.total_value === 359.00 ? 'Yes' : 'No'}</p>
         </div>
 
         {/* Chart */}

@@ -22,7 +22,7 @@ const Sets = () => {
   const [searchParams] = useSearchParams();
   const seriesFilter = searchParams.get("series");
   const [searchTerm, setSearchTerm] = useState("");
-  const [languageFilter, setLanguageFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("en");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
