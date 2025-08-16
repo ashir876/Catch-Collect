@@ -19,7 +19,7 @@ export const useCollectionData = () => {
       // First, get the collection items from card_collections table
       const { data: collectionItems, error: collectionError } = await supabase
         .from('card_collections')
-        .select('*')
+        .select('id, card_id, user_id, created_at, condition, price, notes')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -53,6 +53,12 @@ export const useCollectionData = () => {
         };
       });
 
+      console.log('useCollectionData - fetched data:', {
+        collectionItemsCount: collectionItems.length,
+        cardsCount: cards?.length,
+        sampleItem: data[0],
+        priceFields: data.map(item => ({ cardId: item.card_id, price: item.price }))
+      });
       
       return data;
     },

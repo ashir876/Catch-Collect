@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import SeriesFilters from "@/components/filters/SeriesFilters";
 const Series = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("en");
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,6 +67,14 @@ const Series = () => {
     });
     queryClient.invalidateQueries({ queryKey: ['available-series-languages'] });
   };
+
+  // Initialize and update language filter from URL parameters
+  useEffect(() => {
+    const urlLanguage = searchParams.get("language");
+    if (urlLanguage) {
+      setLanguageFilter(urlLanguage);
+    }
+  }, [searchParams]);
 
   // Reset page when language filter changes
   useEffect(() => {

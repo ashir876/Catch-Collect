@@ -244,8 +244,9 @@ const Sets = () => {
                 key={uniqueKey} 
                 className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer group h-96 flex flex-col overflow-hidden"
                 onClick={() => {
-                  console.log('Navigating to set:', set.set_id, 'for set:', set.name);
-                  navigate(`/set/${set.set_id}`);
+                  const languageParam = languageFilter !== "all" ? `?language=${languageFilter}` : "";
+                  console.log('Grid view - Navigating to set:', set.set_id, 'for set:', set.name, 'with language:', languageFilter);
+                  navigate(`/set/${set.set_id}${languageParam}`);
                 }}
               >
                 <div className="h-56 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0">
@@ -299,8 +300,9 @@ const Sets = () => {
                 key={uniqueKey} 
                 className="border-4 border-black hover:scale-[1.02] transition-all duration-300 hover:shadow-xl cursor-pointer group"
                 onClick={() => {
-                  console.log('Navigating to set:', set.set_id, 'for set:', set.name);
-                  navigate(`/set/${set.set_id}`);
+                  const languageParam = languageFilter !== "all" ? `?language=${languageFilter}` : "";
+                  console.log('List view - Navigating to set:', set.set_id, 'for set:', set.name, 'with language:', languageFilter);
+                  navigate(`/set/${set.set_id}${languageParam}`);
                 }}
               >
                 <div className="flex items-center p-4 gap-4">

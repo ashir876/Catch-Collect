@@ -7,12 +7,16 @@ export const useCurrentPrices = (cardIds: string[]) => {
     queryFn: async () => {
       if (!cardIds || cardIds.length === 0) return [];
 
+      console.log('useCurrentPrices - fetching prices for cardIds:', cardIds);
+
       // Directly query the current_prices view for the specific card IDs
       const { data, error } = await supabase
         .from('price_history')
         .select('card_id, source, price_type, price, currency, recorded_at')
         .in('card_id', cardIds)
         .order('recorded_at', { ascending: false });
+
+      console.log('useCurrentPrices - query result:', { data, error, dataLength: data?.length });
 
       if (error) {
         console.error('Error fetching current prices:', error);

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Grid3X3, Star, TrendingUp, Users, Trophy, Package, ShoppingCart, X } from "lucide-react";
 import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
-import { useCardsData, useCardsCount } from "@/hooks/useCardsData";
+import { useProductsData } from "@/hooks/useProductsData";
 import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
 import { useUsersCount } from "@/hooks/useProfilesCount";
 import { useTranslation } from 'react-i18next';
@@ -29,14 +29,12 @@ const Home = () => {
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   
   const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
-  const { data: cardsData, isLoading: cardsLoading } = useCardsData({ 
-    language: i18n.language, 
-    limit: 10 
-  });
+  const { data: productsData, isLoading: productsLoading } = useProductsData(i18n.language, 10);
   const { data: setsData, isLoading: setsLoading } = useSetsData({ language: 'en' });
   
   // Get actual counts for quick stats - count all languages
-  const { data: totalCardsCount = 0 } = useCardsCount({});
+  const { data: totalProductsData = [] } = useProductsData('en', 1000); // Use products count as approximation
+  const totalCardsCount = totalProductsData.length;
   const { data: totalSeriesCount = 0 } = useSeriesCount({});
   const { data: totalSetsCount = 0 } = useSetsCount({});
   const { data: totalCollectorsCount = 0 } = useUsersCount();
@@ -69,7 +67,7 @@ const Home = () => {
     setIsCardDialogOpen(true);
   };
 
-  const handleAddToCart = async (card: any) => {
+  const handleAddToCart = async (product: any) => {
     if (!user) {
       toast({
         title: t("auth.loginRequired"),
@@ -79,18 +77,18 @@ const Home = () => {
       return;
     }
 
-    const mockPrice = getMockPrice(card.rarity || 'common', card.card_id);
+    const productPrice = product.price || 0;
     
     try {
       await addToCart({
-        article_number: card.card_id,
-        price: mockPrice,
+        article_number: product.article_number || product.card_id,
+        price: productPrice,
         quantity: 1
       });
       
       toast({
         title: t("messages.addedToCart"),
-        description: `${card.name} ${t("messages.hasBeenAddedToCart")}`,
+        description: `${product.name} ${t("messages.hasBeenAddedToCart")}`,
       });
     } catch (error) {
       toast({
@@ -261,11 +259,11 @@ const Home = () => {
         <div className="container mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider">
             <span className="bg-accent text-accent-foreground px-4 sm:px-6 py-2 sm:py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shadow-none">
-              {t('home.shopCards')}
+              {t('home.shopProducts')}
             </span>
           </h2>
           
-          {cardsLoading ? (
+          {productsLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
               {[...Array(10)].map((_, i) => (
                 <div key={i} className="pixel-card animate-pulse">
@@ -279,17 +277,17 @@ const Home = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-              {cardsData?.slice(0, 10).map((card, index) => {
-                const mockPrice = getMockPrice(card.rarity || 'common', card.card_id);
-                const stock = getMockStock(card.card_id);
+              {productsData?.slice(0, 10).map((product, index) => {
+                const productPrice = product.price || 0;
+                const stock = product.stock || 0;
                 
                 return (
-                  <div key={`${card.card_id}-${index}`} className="relative">
-                    <Card className="overflow-hidden w-full flex flex-col h-full cursor-pointer" onClick={() => handleCardClick(card)}>
+                  <div key={`${product.article_number || product.id}-${index}`} className="relative">
+                    <Card className="overflow-hidden w-full flex flex-col h-full cursor-pointer" onClick={() => handleCardClick(product)}>
                       <div className="relative aspect-[3/4] overflow-visible">
                         <img
-                          src={card.image_url || "/placeholder.svg"}
-                          alt={card.name}
+                          src={product.image_url || "/placeholder.svg"}
+                          alt={product.name}
                           className="w-full h-full object-contain"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -306,21 +304,21 @@ const Home = () => {
 
                       <CardContent className="p-3 sm:p-4 flex flex-col justify-between flex-1">
                         <div>
-                          <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">{card.name}</h3>
-                          <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{card.set_name} • {card.card_number}</p>
+                          <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
+                          <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{product.set_name || product.category} • {product.card_number || product.article_number}</p>
                         </div>
                         <div className="flex justify-between items-center mt-auto mb-2">
                           <div className="text-right">
-                            <div className="text-base sm:text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                            <div className="text-base sm:text-xl font-bold text-primary">CHF {productPrice.toFixed(2)}</div>
                           </div>
-                          <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{card.rarity}</Badge>
+                          <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{product.rarity || 'N/A'}</Badge>
                         </div>
                         
                         {/* Add to Cart Button */}
                         <Button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleAddToCart(card);
+                            handleAddToCart(product);
                           }}
                           disabled={isAddingToCart}
                           className="w-full text-xs sm:text-sm"

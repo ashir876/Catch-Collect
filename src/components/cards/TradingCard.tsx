@@ -7,7 +7,12 @@ import { Heart, ShoppingCart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import CardDetailModal from "./CardDetailModal";
+import AddToCollectionModal from "./AddToCollectionModal";
+import AddToWishlistModal from "./AddToWishlistModal";
+import { EditCardModal } from "./EditCardModal";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
+
+
 
 interface CardData {
   card_id: string;
@@ -154,9 +159,11 @@ const TradingCard = ({
   marketCurrency,
   marketRecordedAt,
 }: TradingCardProps) => {
+  console.log('TradingCard component rendering with props:', { id, name, series, set });
+  
   const { t } = useTranslation();
-  const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
-  const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
+  const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
+  const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
   
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";
@@ -164,6 +171,15 @@ const TradingCard = ({
   // Local state for immediate UI updates
   const [localOwned, setLocalOwned] = useState(inCollection || isOwned);
   const [localWishlisted, setLocalWishlisted] = useState(inWishlist || isWishlisted);
+  
+  // Modal state
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
+  const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // Define owned and wishlisted variables first
+  const owned = localOwned;
+  const wishlisted = localWishlisted;
   
   // Update local state when props change
   React.useEffect(() => {
@@ -173,6 +189,19 @@ const TradingCard = ({
   React.useEffect(() => {
     setLocalWishlisted(inWishlist || isWishlisted);
   }, [inWishlist, isWishlisted]);
+
+  // Reset modal states when card status changes
+  React.useEffect(() => {
+    if (owned) {
+      setIsCollectionModalOpen(false);
+    }
+  }, [owned]);
+
+  React.useEffect(() => {
+    if (wishlisted) {
+      setIsWishlistModalOpen(false);
+    }
+  }, [wishlisted]);
   
   // Revert optimistic updates if actions fail
   React.useEffect(() => {
@@ -188,9 +217,6 @@ const TradingCard = ({
       setLocalWishlisted(inWishlist || isWishlisted);
     }
   }, [isAddingToWishlist, isRemovingFromWishlist, inWishlist, isWishlisted]);
-  
-  const owned = localOwned;
-  const wishlisted = localWishlisted;
   const [isHovered, setIsHovered] = useState(false);
   
   // Normalize the rarity to ensure it matches our config keys
@@ -205,15 +231,37 @@ const TradingCard = ({
       setLocalOwned(false);
       removeFromCollection({ cardId: id });
     } else {
-      // Optimistic update - immediately update UI
-      setLocalOwned(true);
-      // Use the custom handler if provided (for modal), otherwise use default action
-      if (onAddToCollection) {
-        onAddToCollection(cardData || { card_id: id, name, language: cardData?.language });
-      } else {
-        addToCollection({ cardId: id, cardName: name, cardLanguage: cardData?.language });
-      }
+      // Open collection modal
+      setIsCollectionModalOpen(true);
     }
+  };
+
+  // Handle collection modal submit
+  const handleCollectionModalSubmit = (data: {
+    condition: string;
+    price: number;
+    date: string;
+    notes: string;
+    quantity: number;
+    language: string;
+  }) => {
+    // Always use the default collection action for modal submissions
+    // The onAddToCollection prop is for direct button clicks, not modal submissions
+    setOnCollectionSuccess(() => () => {
+      setIsCollectionModalOpen(false);
+      setLocalOwned(true);
+    });
+    
+    addToCollection({ 
+      cardId: id, 
+      cardName: name, 
+      cardLanguage: data.language === 'all' ? cardData?.language : data.language,
+      condition: data.condition,
+      price: data.price,
+      date: data.date,
+      notes: data.notes,
+      quantity: data.quantity
+    });
   };
 
   // Handle wishlist toggle
@@ -224,16 +272,38 @@ const TradingCard = ({
       setLocalWishlisted(false);
       removeFromWishlist({ cardId: id });
     } else {
-      // Optimistic update - immediately update UI
-      setLocalWishlisted(true);
-      addToWishlist({ cardId: id, cardName: name, cardLanguage: cardData?.language });
+      // Open wishlist modal
+      setIsWishlistModalOpen(true);
     }
+  };
+
+  // Handle wishlist modal submit
+  const handleWishlistModalSubmit = (data: {
+    priority: string;
+    notes: string;
+    language: string;
+    price: number;
+  }) => {
+    // Set success callback to close modal
+    setOnWishlistSuccess(() => () => {
+      setIsWishlistModalOpen(false);
+      setLocalWishlisted(true);
+    });
+    
+    addToWishlist({ 
+      cardId: id, 
+      cardName: name, 
+      cardLanguage: data.language === 'all' ? cardData?.language : data.language,
+      priority: data.priority,
+      notes: data.notes,
+      price: data.price
+    });
   };
 
   const cardContent = (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 cursor-pointer flex flex-col",
+        "group relative overflow-hidden transition-all duration-300 flex flex-col",
         owned && "ring-2 ring-accent ring-opacity-50"
       )}
     >
@@ -254,7 +324,13 @@ const TradingCard = ({
           <img
             src={cardImage}
             alt={name}
-            className="w-full h-full object-contain transition-transform duration-300"
+            className="w-full h-full object-contain transition-transform duration-300 cursor-pointer hover:scale-105"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onViewDetails) {
+                onViewDetails(id);
+              }
+            }}
           />
           
           {/* Status Badges */}
@@ -300,7 +376,7 @@ const TradingCard = ({
         {/* Price Comparison Section - Only show if hidePriceAndBuy is false */}
         {!hidePriceAndBuy && (
           <>
-            {typeof myPrice === 'number' && typeof marketPrice === 'number' && (
+            {typeof myPrice === 'number' && myPrice > 0 && typeof marketPrice === 'number' && marketPrice > 0 ? (
               <div className="mt-2">
                 <div className="flex justify-between text-xs">
                   <span>Your Price</span>
@@ -325,45 +401,65 @@ const TradingCard = ({
                   <div className="text-[10px] text-muted-foreground mt-1">Market price as of {new Date(marketRecordedAt).toLocaleDateString()}</div>
                 )}
               </div>
+            ) : (
+              <div className="mt-2 space-y-1">
+                {typeof myPrice === 'number' && myPrice > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span>Your Price</span>
+                    <span>{myPrice} {marketCurrency || 'CHF'}</span>
+                  </div>
+                )}
+                {typeof marketPrice === 'number' && marketPrice > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span>Market Price{marketSource ? ` (${marketSource})` : ''}</span>
+                    <span>{marketPrice} {marketCurrency || 'USD'}</span>
+                  </div>
+                )}
+                {(!myPrice || myPrice === 0) && (!marketPrice || marketPrice === 0) && (
+                  <div className="text-xs text-muted-foreground">
+                    {!myPrice || myPrice === 0 ? "💡 Add your price when adding to collection" : ""}
+                    {(!myPrice || myPrice === 0) && (!marketPrice || marketPrice === 0) ? " • " : ""}
+                    {!marketPrice || marketPrice === 0 ? "Market price not available" : ""}
+                  </div>
+                )}
+                {(!myPrice || myPrice === 0) && owned && (
+                  <div className="text-xs text-blue-600 mt-1">
+                    💡 Click "Remove from Collection" and add again to set your price
+                  </div>
+                )}
+              </div>
             )}
-            {/* If either price is missing, show a fallback */}
-            {((typeof myPrice !== 'number' || typeof marketPrice !== 'number') && (
-              <div className="mt-2 text-xs text-muted-foreground">Price data unavailable</div>
-            ))}
           </>
         )}
 
         {/* Bottom Action Buttons */}
         <div className="mt-4 space-y-2">
-          {/* Add to Cart Button */}
-          {!hidePriceAndBuy && inStock && !owned && onAddToCart && (
-            <Button
-              size="sm"
-              className="w-full bg-gradient-primary hover:shadow-card transition-all duration-200"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCart?.(id);
-              }}
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Kaufen
-            </Button>
-          )}
+                     {/* Add to Cart Button */}
+           {!hidePriceAndBuy && inStock && !owned && !wishlisted && onAddToCart && (
+             <Button
+               size="sm"
+               className="w-full bg-gradient-primary hover:shadow-card transition-all duration-200"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 onAddToCart?.(id);
+               }}
+             >
+               <ShoppingCart className="w-4 h-4 mr-2" />
+               Kaufen
+             </Button>
+           )}
 
           {/* Add to Collection Button */}
           {(hidePriceAndBuy || (!hidePriceAndBuy && !onAddToCart)) && (
             <Button
               size="sm"
               variant={owned ? "destructive" : "outline"}
-              className={cn(
-                "w-full",
-                wishlisted && "opacity-50 cursor-not-allowed"
-              )}
+              className="w-full"
               onClick={handleCollectionToggle}
-              disabled={isAddingToCollection || isRemovingFromCollection || wishlisted}
+              disabled={isAddingToCollection || isRemovingFromCollection}
             >
               <Star className="w-4 h-4 mr-2" />
-              {wishlisted ? t('cards.alreadyInWishlist') : (owned ? t('cards.removeFromCollection') : t('cards.addToCollection'))}
+              {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
             </Button>
           )}
 
@@ -371,16 +467,31 @@ const TradingCard = ({
           <Button
             size="sm"
             variant={wishlisted ? "destructive" : "secondary"}
-            className={cn(
-              "w-full",
-              owned && "opacity-50 cursor-not-allowed"
-            )}
-            onClick={handleWishlistToggle}
-            disabled={isAddingToWishlist || isRemovingFromWishlist || owned}
+            className="w-full"
+            onClick={owned ? handleCollectionToggle : handleWishlistToggle}
+            disabled={isAddingToWishlist || isRemovingFromWishlist || isAddingToCollection || isRemovingFromCollection}
           >
             <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
-            {owned ? t('cards.alreadyInCollection') : (wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist'))}
+            {owned ? t('cards.removeFromCollection') : (wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist'))}
           </Button>
+
+          {/* Edit Card Button - Only show if card is in collection or wishlist */}
+          {(owned || wishlisted) && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditModalOpen(true);
+              }}
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              {t('common.edit')}
+            </Button>
+          )}
         </div>
       </CardContent>
 
@@ -391,13 +502,105 @@ const TradingCard = ({
   // Wrap with CardDetailModal if cardData is available
   if (cardData) {
     return (
-      <CardDetailModal card={cardData}>
-        {cardContent}
-      </CardDetailModal>
+      <>
+        <CardDetailModal card={cardData}>
+          {cardContent}
+        </CardDetailModal>
+        
+        {/* Add to Collection Modal */}
+        <AddToCollectionModal
+          isOpen={isCollectionModalOpen}
+          onClose={() => setIsCollectionModalOpen(false)}
+          onAdd={handleCollectionModalSubmit}
+          cardName={name}
+          isLoading={isAddingToCollection}
+        />
+        
+              {/* Add to Wishlist Modal */}
+      <AddToWishlistModal
+        isOpen={isWishlistModalOpen}
+        onClose={() => setIsWishlistModalOpen(false)}
+        onAdd={handleWishlistModalSubmit}
+        cardName={name}
+        isLoading={isAddingToWishlist}
+      />
+
+                     {/* Edit Card Modal */}
+        <EditCardModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          card={{
+            id: (cardData as any)?.id || id, // Use collection/wishlist item ID if available
+            card_id: id, // The actual card ID
+            name: name,
+            set: set,
+            image: cardImage,
+            user_id: (cardData as any)?.user_id,
+            condition: (cardData as any)?.condition,
+            price: myPrice,
+            notes: (cardData as any)?.notes,
+            priority: priority,
+            language: (cardData as any)?.language
+          }}
+          type={owned ? 'collection' : 'wishlist'}
+          onSuccess={() => {
+            // Refresh the card data if needed
+            if (onAddToCollection) onAddToCollection();
+            if (onAddToWishlist) onAddToWishlist();
+          }}
+        />
+      </>
     );
   }
 
-  return cardContent;
+  return (
+    <>
+      {cardContent}
+      
+      {/* Add to Collection Modal */}
+      <AddToCollectionModal
+        isOpen={isCollectionModalOpen}
+        onClose={() => setIsCollectionModalOpen(false)}
+        onAdd={handleCollectionModalSubmit}
+        cardName={name}
+        isLoading={isAddingToCollection}
+      />
+      
+      {/* Add to Wishlist Modal */}
+      <AddToWishlistModal
+        isOpen={isWishlistModalOpen}
+        onClose={() => setIsWishlistModalOpen(false)}
+        onAdd={handleWishlistModalSubmit}
+        cardName={name}
+        isLoading={isAddingToWishlist}
+      />
+
+      {/* Edit Card Modal */}
+      <EditCardModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        card={{
+          id: (cardData as any)?.id || id, // Use collection/wishlist item ID if available
+          card_id: id, // The actual card ID
+          name: name,
+          set: set,
+          image: cardImage,
+          user_id: (cardData as any)?.user_id,
+          condition: (cardData as any)?.condition,
+          price: myPrice,
+          notes: (cardData as any)?.notes,
+          priority: priority,
+          language: (cardData as any)?.language
+        }}
+        type={owned ? 'collection' : 'wishlist'}
+        onSuccess={() => {
+          // Refresh the card data if needed
+          if (onAddToCollection) onAddToCollection();
+          if (onAddToWishlist) onAddToWishlist();
+        }}
+      />
+    </>
+  );
 };
 
 export default TradingCard;

@@ -12,35 +12,38 @@ import {
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useCollectionData } from '@/hooks/useCollectionData';
+import { useWishlistData } from '@/hooks/useWishlistData';
 import { useCurrentPrices } from '@/hooks/useCurrentPrices';
 
-interface CollectionValueData {
+interface WishlistValueData {
   recorded_at: string;
   myValue: number;
   marketValue: number;
   currency: string;
 }
 
-interface CollectionValueChartProps {
+interface WishlistValueChartProps {
   className?: string;
   showControls?: boolean;
 }
 
 type TimeRange = '2m' | '3m' | '6m' | '12m' | '24m' | 'all';
 
-export function CollectionValueChart({ className, showControls = true }: CollectionValueChartProps) {
+export function WishlistValueChart({ className, showControls = true }: WishlistValueChartProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   
   const [timeRange, setTimeRange] = useState<TimeRange>('12m');
-  const [valueHistory, setValueHistory] = useState<CollectionValueData[]>([]);
+  const [valueHistory, setValueHistory] = useState<WishlistValueData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch collection data and current prices
-  const { data: collectionItems = [] } = useCollectionData();
-  const cardIds = collectionItems.map(item => item.card_id);
+  // Fetch wishlist data and current prices
+  const { data: wishlistItems = [] } = useWishlistData({
+    limit: 1000,
+    offset: 0
+  });
+  const cardIds = wishlistItems.map(item => item.card_id);
   const { data: currentPrices = [] } = useCurrentPrices(cardIds);
 
   const timeRangeOptions: { value: TimeRange; label: string; days: number }[] = [
@@ -53,27 +56,27 @@ export function CollectionValueChart({ className, showControls = true }: Collect
   ];
 
   useEffect(() => {
-    console.log('CollectionValueChart useEffect:', {
+    console.log('WishlistValueChart useEffect:', {
       user: !!user,
-      collectionItemsLength: collectionItems.length,
+      wishlistItemsLength: wishlistItems.length,
       currentPricesLength: currentPrices.length,
       timeRange
     });
     
-    if (user && collectionItems.length > 0) {
-      loadCollectionValueHistory();
+    if (user && wishlistItems.length > 0) {
+      loadWishlistValueHistory();
     }
-  }, [user, timeRange, collectionItems, currentPrices]);
+  }, [user, timeRange, wishlistItems, currentPrices]);
 
-  const loadCollectionValueHistory = async () => {
-    console.log('loadCollectionValueHistory called:', {
+  const loadWishlistValueHistory = async () => {
+    console.log('loadWishlistValueHistory called:', {
       user: !!user,
-      collectionItemsLength: collectionItems.length,
+      wishlistItemsLength: wishlistItems.length,
       timeRange
     });
     
-    if (!user || collectionItems.length === 0) {
-      console.log('Early return - no user or no collection items');
+    if (!user || wishlistItems.length === 0) {
+      console.log('Early return - no user or no wishlist items');
       return;
     }
 
@@ -97,13 +100,13 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         const fallbackData = generateRealisticHistoricalData(currentValues, days);
         console.log('Using fallback realistic data:', fallbackData.length, 'points');
         setValueHistory(fallbackData);
-        console.log('⚠️ No real historical data found - using realistic estimates based on your collection');
+        console.log('⚠️ No real historical data found - using realistic estimates based on your wishlist');
       }
       
     } catch (error) {
-      console.error('Failed to load collection value history:', error);
+      console.error('Failed to load wishlist value history:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      // Use realistic fallback data based on current collection
+      // Use realistic fallback data based on current wishlist
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
       const currentValues = calculateCurrentValues();
       const fallbackData = generateRealisticHistoricalData(currentValues, days);
@@ -114,18 +117,18 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     }
   };
 
-  const fetchRealHistoricalData = async (days: number): Promise<CollectionValueData[]> => {
-    if (!user || collectionItems.length === 0) return [];
+  const fetchRealHistoricalData = async (days: number): Promise<WishlistValueData[]> => {
+    if (!user || wishlistItems.length === 0) return [];
 
     try {
-      const cardIds = collectionItems.map(item => item.card_id);
+      const cardIds = wishlistItems.map(item => item.card_id);
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
 
-      console.log('Fetching real historical data for cards:', cardIds);
+      console.log('Fetching real historical data for wishlist cards:', cardIds);
       console.log('Cutoff date:', cutoffDate.toISOString());
 
-      // Fetch price history for all cards in collection
+      // Fetch price history for all cards in wishlist
       const { data: priceHistory, error } = await (supabase as any)
         .from('price_history')
         .select('card_id, price, currency, recorded_at, source, price_type')
@@ -147,8 +150,8 @@ export function CollectionValueChart({ className, showControls = true }: Collect
       // Group price data by date
       const priceByDate = new Map<string, { myValue: number; marketValue: number; count: number }>();
       
-      // Initialize with your collection prices
-      collectionItems.forEach((item: any) => {
+      // Initialize with your wishlist prices
+      wishlistItems.forEach((item: any) => {
         const myPrice = item.price || 0;
         const createdDate = new Date(item.created_at).toISOString().split('T')[0];
         
@@ -174,7 +177,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
       });
 
       // Convert to chart data format
-      const chartData: CollectionValueData[] = [];
+      const chartData: WishlistValueData[] = [];
       let cumulativeMyValue = 0;
       let cumulativeMarketValue = 0;
 
@@ -208,16 +211,16 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     let myTotalValue = 0;
     let marketTotalValue = 0;
 
-    console.log('CollectionValueChart - collectionItems:', collectionItems);
-    console.log('CollectionValueChart - currentPrices:', currentPrices);
+    console.log('WishlistValueChart - wishlistItems:', wishlistItems);
+    console.log('WishlistValueChart - currentPrices:', currentPrices);
 
-    collectionItems.forEach((item: any) => {
+    wishlistItems.forEach((item: any) => {
       // Find current market price for this card
       const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
       
-      // Your price (what you paid)
+      // Your desired price (what you want to pay)
       const myPrice = item.price || 0;
-      console.log(`Card ${item.card_id}: myPrice = ${myPrice}, item.price = ${item.price}`);
+      console.log(`Wishlist Card ${item.card_id}: myPrice = ${myPrice}, item.price = ${item.price}`);
       myTotalValue += myPrice;
 
       // Market price (current value)
@@ -232,30 +235,44 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     };
   };
 
-  const generateRealisticHistoricalData = (currentValues: any, days: number): CollectionValueData[] => {
-    const data: CollectionValueData[] = [];
+  const generateRealisticHistoricalData = (currentValues: any, days: number): WishlistValueData[] => {
+    const data: WishlistValueData[] = [];
     const baseDate = new Date();
     
-    // Get the earliest date when any collection item was added
-    const earliestCollectionDate = collectionItems.length > 0 
-      ? new Date(Math.min(...collectionItems.map(item => new Date(item.created_at).getTime())))
+    // Get the earliest date when any wishlist item was added
+    const earliestWishlistDate = wishlistItems.length > 0 
+      ? new Date(Math.min(...wishlistItems.map(item => new Date(item.created_at).getTime())))
       : new Date();
     
     // Calculate how many days ago the earliest item was added
-    const daysSinceEarliest = Math.floor((baseDate.getTime() - earliestCollectionDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysSinceEarliest = Math.floor((baseDate.getTime() - earliestWishlistDate.getTime()) / (1000 * 60 * 60 * 24));
     
     // Use the actual range from when items were added, but cap at the requested days
     const actualDays = Math.min(daysSinceEarliest, days);
+    
+    console.log('WishlistValueChart - Historical data generation:', {
+      earliestWishlistDate: earliestWishlistDate.toISOString(),
+      daysSinceEarliest,
+      requestedDays: days,
+      actualDays,
+      wishlistItemsCount: wishlistItems.length
+    });
     
     // Start with the current values and work backwards
     let myValue = currentValues.myValue;
     let marketValue = currentValues.marketValue;
 
+    // Only generate data from when the earliest wishlist item was added
     for (let day = actualDays; day >= 0; day--) {
       const currentDate = new Date(baseDate);
       currentDate.setDate(currentDate.getDate() - day);
       
-      // Create realistic trends based on actual collection growth
+      // If this date is before the earliest wishlist item, skip it
+      if (currentDate < earliestWishlistDate) {
+        continue;
+      }
+      
+      // Create realistic trends based on actual wishlist growth
       const baseTrend = Math.sin(day * 0.05) * 0.01; // Gentle trend
       const myVariation = (Math.random() - 0.5) * 0.005; // ±0.25% variation for your prices
       const marketVariation = (Math.random() - 0.5) * 0.008; // ±0.4% variation for market prices
@@ -337,21 +354,21 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     if (valueHistory.length === 0) {
       return (
         <div className="flex items-center justify-center h-64 text-gray-500">
-          <p className="text-sm">{t('pricing.no.collection.data')}</p>
+          <p className="text-sm">{t('pricing.no.wishlist.data')}</p>
         </div>
       );
     }
 
-    // Prepare data for the chart
-    const chartData = valueHistory.map(record => ({
-      date: formatDate(record.recorded_at),
-      timestamp: new Date(record.recorded_at).getTime(),
-      'Your Value': record.myValue,
-      'Market Value': record.marketValue
-    }));
+         // Prepare data for the chart
+     const chartData = valueHistory.map(record => ({
+       date: formatDate(record.recorded_at),
+       timestamp: new Date(record.recorded_at).getTime(),
+       'My Price': record.myValue,
+       'Market Price': record.marketValue
+     }));
 
-    const maxValue = Math.max(...chartData.map(d => Math.max(d['Your Value'], d['Market Value'])));
-    const minValue = Math.min(...chartData.map(d => Math.min(d['Your Value'], d['Market Value'])));
+     const maxValue = Math.max(...chartData.map(d => Math.max(d['My Price'], d['Market Price'])));
+     const minValue = Math.min(...chartData.map(d => Math.min(d['My Price'], d['Market Price'])));
     const currency = valueHistory[0]?.currency || 'CHF';
 
     return (
@@ -368,26 +385,26 @@ export function CollectionValueChart({ className, showControls = true }: Collect
           </div>
           {getValueChange() && (
             <div className="flex flex-col sm:flex-row gap-2">
-              <div className={`flex items-center gap-1 ${getValueChangeColor(getValueChange()!.myChange)}`}>
-                {getValueChangeIcon(getValueChange()!.myChange)}
-                <span className="font-medium">
-                  Your: {getValueChange()!.myChange > 0 ? '+' : ''}
-                  {formatCurrency(getValueChange()!.myChange, currency)}
-                </span>
-                <span className="text-xs">
-                  ({getValueChange()!.myPercentage > 0 ? '+' : ''}{getValueChange()!.myPercentage.toFixed(2)}%)
-                </span>
-              </div>
-              <div className={`flex items-center gap-1 ${getValueChangeColor(getValueChange()!.marketChange)}`}>
-                {getValueChangeIcon(getValueChange()!.marketChange)}
-                <span className="font-medium">
-                  Market: {getValueChange()!.marketChange > 0 ? '+' : ''}
-                  {formatCurrency(getValueChange()!.marketChange, currency)}
-                </span>
-                <span className="text-xs">
-                  ({getValueChange()!.marketPercentage > 0 ? '+' : ''}{getValueChange()!.marketPercentage.toFixed(2)}%)
-                </span>
-              </div>
+                             <div className={`flex items-center gap-1 ${getValueChangeColor(getValueChange()!.myChange)}`}>
+                 {getValueChangeIcon(getValueChange()!.myChange)}
+                 <span className="font-medium">
+                   My Price: {getValueChange()!.myChange > 0 ? '+' : ''}
+                   {formatCurrency(getValueChange()!.myChange, currency)}
+                 </span>
+                 <span className="text-xs">
+                   ({getValueChange()!.myPercentage > 0 ? '+' : ''}{getValueChange()!.myPercentage.toFixed(2)}%)
+                 </span>
+               </div>
+                             <div className={`flex items-center gap-1 ${getValueChangeColor(getValueChange()!.marketChange)}`}>
+                 {getValueChangeIcon(getValueChange()!.marketChange)}
+                 <span className="font-medium">
+                   Market Price: {getValueChange()!.marketChange > 0 ? '+' : ''}
+                   {formatCurrency(getValueChange()!.marketChange, currency)}
+                 </span>
+                 <span className="text-xs">
+                   ({getValueChange()!.marketPercentage > 0 ? '+' : ''}{getValueChange()!.marketPercentage.toFixed(2)}%)
+                 </span>
+               </div>
             </div>
           )}
         </div>
@@ -438,9 +455,9 @@ export function CollectionValueChart({ className, showControls = true }: Collect
                                 className="h-3 w-3 rounded-full shadow-sm" 
                                 style={{ backgroundColor: entry.color }}
                               />
-                              <span className="text-sm text-gray-600">
-                                {entry.dataKey === 'Your Value' ? 'Your Value' : 'Market Value'}:
-                              </span>
+                                                             <span className="text-sm text-gray-600">
+                                 {entry.dataKey === 'My Price' ? 'My Price' : 'Market Price'}:
+                               </span>
                               <span className="text-sm font-bold text-gray-900">
                                 {formatCurrency(entry.value, currency)}
                               </span>
@@ -453,26 +470,26 @@ export function CollectionValueChart({ className, showControls = true }: Collect
                   return null;
                 }}
               />
-              <Line
-                type="monotone"
-                dataKey="Your Value"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                dot={false}
-                activeDot={{ r: 6, fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 }}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <Line
-                type="monotone"
-                dataKey="Market Value"
-                stroke="#ef4444"
-                strokeWidth={3}
-                dot={false}
-                activeDot={{ r: 6, fill: '#ef4444', stroke: '#ffffff', strokeWidth: 2 }}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+                             <Line
+                 type="monotone"
+                 dataKey="My Price"
+                 stroke="#3b82f6"
+                 strokeWidth={3}
+                 dot={false}
+                 activeDot={{ r: 6, fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 }}
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+               />
+               <Line
+                 type="monotone"
+                 dataKey="Market Price"
+                 stroke="#ef4444"
+                 strokeWidth={3}
+                 dot={false}
+                 activeDot={{ r: 6, fill: '#ef4444', stroke: '#ffffff', strokeWidth: 2 }}
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+               />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -486,7 +503,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     <Card className={className}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-sm">
-          <span>{t('collection.value.development')}</span>
+          <span>{t('pricing.wishlist.value.development')}</span>
           {showControls && (
             <div className="flex gap-1">
               {timeRangeOptions.map((option) => (

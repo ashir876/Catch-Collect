@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, ShoppingCart, Filter, Grid3X3, List, Package, Star, Calendar } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useCartActions } from "@/hooks/useCartActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
-import { useCardsData } from "@/hooks/useCardsData";
+import { useProductsData } from "@/hooks/useProductsData";
 import { useSetsData } from "@/hooks/useSetsData";
 import { useSeriesData } from "@/hooks/useSeriesData";
 import { useCartCount } from "@/hooks/useCartCount";
+import SetsLanguageFilter from "@/components/SetsLanguageFilter";
+import SeriesLanguageFilter from "@/components/SeriesLanguageFilter";
 
 const Shop = () => {
   const { t } = useTranslation();
@@ -129,44 +131,45 @@ const ShopFromCards = () => {
     return Math.floor(random * 20) + 1; // 1-20 stock
   };
 
-  // Use real TCG API data - fetch a reasonable amount for filtering
-  const { data: cardsData = [], isLoading: cardsLoading } = useCardsData({
-    searchTerm: searchTerm || undefined,
-    rarity: rarityFilter === "all" ? undefined : rarityFilter,
-    limit: 100, // Fetch 100 cards for filtering
-    offset: 0
-  });
+  // Use products data from Supabase
+  const { data: productsData = [], isLoading: productsLoading } = useProductsData('en', 100);
 
-  // Filter cards based on price (mock pricing for now)
-  let filteredCards = cardsData.filter(card => {
-    // Mock price calculation based on rarity
-    const mockPrice = getMockPrice(card.rarity, card.card_id);
+  // Filter products based on price and rarity
+  let filteredProducts = productsData.filter(product => {
+    // Use actual product price from database
+    const productPrice = product.price || 0;
     
     let matchesPrice = true;
     switch (priceFilter) {
       case "under25":
-        matchesPrice = mockPrice < 25;
+        matchesPrice = productPrice < 25;
         break;
       case "25to50":
-        matchesPrice = mockPrice >= 25 && mockPrice <= 50;
+        matchesPrice = productPrice >= 25 && productPrice <= 50;
         break;
       case "50to100":
-        matchesPrice = mockPrice >= 50 && mockPrice <= 100;
+        matchesPrice = productPrice >= 50 && productPrice <= 100;
         break;
       case "over100":
-        matchesPrice = mockPrice > 100;
+        matchesPrice = productPrice > 100;
         break;
       default:
-        matchesPrice = true; // Show all cards when no price filter is selected
+        matchesPrice = true; // Show all products when no price filter is selected
+    }
+
+    // Filter by rarity if specified
+    let matchesRarity = true;
+    if (rarityFilter !== "all" && product.rarity) {
+      matchesRarity = product.rarity.toLowerCase() === rarityFilter.toLowerCase();
     }
     
-    return matchesPrice;
+    return matchesPrice && matchesRarity;
   });
 
-  // Sort cards
-  filteredCards = filteredCards.sort((a, b) => {
-    const priceA = getMockPrice(a.rarity, a.card_id);
-    const priceB = getMockPrice(b.rarity, b.card_id);
+  // Sort products
+  filteredProducts = filteredProducts.sort((a, b) => {
+    const priceA = a.price || 0;
+    const priceB = b.price || 0;
     
     switch (sortBy) {
       case "price-low":
@@ -174,20 +177,21 @@ const ShopFromCards = () => {
       case "price-high":
         return priceB - priceA;
       case "name":
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       case "rarity":
         const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
-        return rarityOrder[b.rarity as keyof typeof rarityOrder] - rarityOrder[a.rarity as keyof typeof rarityOrder];
+        const rarityA = rarityOrder[(a.rarity || 'common').toLowerCase() as keyof typeof rarityOrder] || 0;
+        const rarityB = rarityOrder[(b.rarity || 'common').toLowerCase() as keyof typeof rarityOrder] || 0;
+        return rarityB - rarityA;
       default:
         return 0;
     }
   });
 
-  // Apply pagination to filtered and sorted cards - ensure exactly 20 cards
-  // Remove pagination - show all filtered cards
-  const displayCards = filteredCards;
+  // Apply pagination to filtered and sorted products
+  const displayProducts = filteredProducts;
 
-  const handleAddToCart = async (card: any) => {
+  const handleAddToCart = async (product: any) => {
     if (!user) {
       toast({
         title: t('auth.loginRequired'),
@@ -197,27 +201,27 @@ const ShopFromCards = () => {
       return;
     }
 
-    // Validate card data
-    if (!card || !card.card_id || !card.name) {
-      console.error('Invalid card data:', card);
+    // Validate product data
+    if (!product || !product.article_number || !product.name) {
+      console.error('Invalid product data:', product);
       toast({
         title: "Error",
-        description: "Invalid card data. Please try again.",
+        description: "Invalid product data. Please try again.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      const mockPrice = getMockPrice(card.rarity || 'common', card.card_id);
+      const productPrice = product.price || 0;
       
       const cartItem = {
-        article_number: card.card_id,
-        price: mockPrice,
+        article_number: product.article_number,
+        price: productPrice,
         quantity: 1
       };
       
-      console.log('Adding card to cart:', { card, cartItem, mockPrice });
+      console.log('Adding product to cart:', { product, cartItem, productPrice });
       
       // Test the addToCart function
       try {
@@ -226,7 +230,7 @@ const ShopFromCards = () => {
         
         toast({
           title: t('messages.addedToCart'),
-          description: `${card.name} has been added to your cart`,
+          description: `${product.name} has been added to your cart`,
         });
       } catch (addError) {
         console.error('Error in addToCart:', addError);
@@ -382,8 +386,8 @@ const ShopFromCards = () => {
         </div>
       </div>
 
-      {/* Cards Display */}
-      {cardsLoading ? (
+      {/* Products Display */}
+      {productsLoading ? (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
             {[...Array(8)].map((_, i) => (
@@ -414,19 +418,19 @@ const ShopFromCards = () => {
           </div>
         )
       ) : (
-        /* Cards Display */
+        /* Products Display */
         viewMode === "grid" ? (
           <div key="grid-view" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-            {displayCards.map((card, index) => {
-              const mockPrice = getMockPrice(card.rarity, card.card_id);
-              const stock = getMockStock(card.card_id); // Consistent stock
+            {displayProducts.map((product, index) => {
+              const productPrice = product.price || 0;
+              const stock = product.stock || 0; // Use actual stock from database
               return (
-                <div key={`${card.card_id}-${index}`} className="relative group">
+                <div key={`${product.article_number || product.id}-${index}`} className="relative group">
                   <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col h-full">
                     <div className="relative aspect-[3/4] overflow-visible">
                       <img
-                        src={card.image_url || "/placeholder.svg"}
-                        alt={card.name}
+                        src={product.image_url || "/placeholder.svg"}
+                        alt={product.name}
                         className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -436,7 +440,7 @@ const ShopFromCards = () => {
                       {/* Overlay with Add to Cart button */}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2">
                         <Button 
-                          onClick={() => handleAddToCart(card)}
+                          onClick={() => handleAddToCart(product)}
                           disabled={isLoading}
                           className="w-full text-xs sm:text-sm"
                         >
@@ -455,14 +459,14 @@ const ShopFromCards = () => {
 
                     <CardContent className="p-3 sm:p-4 flex flex-col justify-between flex-1">
                       <div>
-                        <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">{card.name}</h3>
-                        <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{card.set_name} • {card.card_number}</p>
+                        <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
+                        <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{product.set_name || product.category} • {product.card_number || product.article_number}</p>
                       </div>
                       <div className="flex justify-between items-center mt-auto">
                         <div className="text-right">
-                          <div className="text-base sm:text-xl font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                          <div className="text-base sm:text-xl font-bold text-primary">CHF {productPrice.toFixed(2)}</div>
                         </div>
-                        <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{card.rarity}</Badge>
+                        <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{product.rarity || 'N/A'}</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -472,18 +476,18 @@ const ShopFromCards = () => {
           </div>
         ) : (
           <div key="list-view" className="space-y-2">
-            {displayCards.map((card, index) => {
-              const mockPrice = getMockPrice(card.rarity, card.card_id);
-              const stock = getMockStock(card.card_id); // Consistent stock
+            {displayProducts.map((product, index) => {
+              const productPrice = product.price || 0;
+              const stock = product.stock || 0; // Use actual stock from database
               return (
-                <Card key={`${card.card_id}-${index}`} className="hover:shadow-md transition-shadow">
+                <Card key={`${product.article_number || product.id}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      {/* Smaller card image */}
+                      {/* Smaller product image */}
                       <div className="w-10 h-14 sm:w-12 sm:h-16 flex-shrink-0">
                         <img
-                          src={card.image_url || "/placeholder.svg"}
-                          alt={card.name}
+                          src={product.image_url || "/placeholder.svg"}
+                          alt={product.name}
                           className="w-full h-full object-contain rounded bg-gray-50"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -491,15 +495,15 @@ const ShopFromCards = () => {
                         />
                       </div>
                       
-                      {/* Card details */}
+                      {/* Product details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-medium text-sm truncate">{card.name}</h3>
-                            <p className="text-xs text-muted-foreground truncate">{card.set_name} • {card.card_number}</p>
+                            <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                            <p className="text-xs text-muted-foreground truncate">{product.set_name || product.category} • {product.card_number || product.article_number}</p>
                           </div>
                           <div className="text-left sm:text-right">
-                            <div className="text-sm sm:text-base font-bold text-primary">CHF {mockPrice.toFixed(2)}</div>
+                            <div className="text-sm sm:text-base font-bold text-primary">CHF {productPrice.toFixed(2)}</div>
                           </div>
                         </div>
                       </div>
@@ -507,13 +511,13 @@ const ShopFromCards = () => {
                       {/* Badges and Add to Cart button */}
                       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         <div className="flex flex-col gap-1">
-                          <Badge variant="secondary" className="text-xs px-1 py-0">{card.rarity}</Badge>
+                          <Badge variant="secondary" className="text-xs px-1 py-0">{product.rarity || 'N/A'}</Badge>
                           <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 py-0">
                             {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
                           </Badge>
                         </div>
                         <Button 
-                          onClick={() => handleAddToCart(card)}
+                          onClick={() => handleAddToCart(product)}
                           disabled={isLoading}
                           size="sm"
                           className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
@@ -532,12 +536,12 @@ const ShopFromCards = () => {
       )}
 
       {/* Empty State */}
-      {!cardsLoading && filteredCards.length === 0 && (
+      {!productsLoading && filteredProducts.length === 0 && (
         <div className="text-center py-12">
           <Filter className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">{t('shop.noCardsFound')}</h3>
+          <h3 className="text-lg font-medium mb-2">{t('shop.noProductsFound')}</h3>
           <p className="text-muted-foreground">
-            {t('shop.noCardsSubtitle')}
+            {t('shop.noProductsSubtitle')}
           </p>
         </div>
       )}
@@ -550,6 +554,7 @@ const ShopFromCards = () => {
 // Component for shopping complete sets
 const ShopFromSets = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -655,6 +660,16 @@ const ShopFromSets = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Language Filter */}
+        <SetsLanguageFilter
+          selectedLanguage={languageFilter}
+          onLanguageChange={(newLanguage) => {
+            console.log('Language filter changed from', languageFilter, 'to', newLanguage);
+            setLanguageFilter(newLanguage);
+          }}
+          className="mb-4"
+        />
       </div>
 
       {/* Total Count Display for Sets */}
@@ -710,7 +725,16 @@ const ShopFromSets = () => {
             {displaySets.map((set, index) => {
               const setPrice = (set.total || 50) * 2.99;
               return (
-                <Card key={`${set.set_id}-${index}`} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
+                <Card 
+                  key={`${set.set_id}-${index}`} 
+                  className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col cursor-pointer"
+                  onClick={() => {
+                    console.log('Current languageFilter before navigation:', languageFilter);
+                    const languageParam = languageFilter !== "all" ? `?language=${languageFilter}` : "";
+                    console.log('Grid view - Navigating to set with language:', languageFilter, 'URL:', `/set/${set.set_id}${languageParam}`);
+                    navigate(`/set/${set.set_id}${languageParam}`);
+                  }}
+                >
                   <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
                     {set.logo_url ? (
                       <img
@@ -727,7 +751,10 @@ const ShopFromSets = () => {
                     {/* Overlay with buy button */}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <Button 
-                        onClick={() => handleAddSetToCart(set)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddSetToCart(set);
+                        }}
                         disabled={isLoading}
                         className="bg-green-600 hover:bg-green-700"
                       >
@@ -764,7 +791,16 @@ const ShopFromSets = () => {
             {displaySets.map((set, index) => {
               const setPrice = (set.total || 50) * 2.99;
               return (
-                <Card key={`${set.set_id}-${index}`} className="hover:shadow-md transition-shadow">
+                <Card 
+                  key={`${set.set_id}-${index}`} 
+                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => {
+                    console.log('Current languageFilter before navigation (list):', languageFilter);
+                    const languageParam = languageFilter !== "all" ? `?language=${languageFilter}` : "";
+                    console.log('List view - Navigating to set with language:', languageFilter, 'URL:', `/set/${set.set_id}${languageParam}`);
+                    navigate(`/set/${set.set_id}${languageParam}`);
+                  }}
+                >
                   <CardContent className="p-6">
                     <div className="flex gap-4">
                       <div className="w-24 h-32 flex-shrink-0">
@@ -797,7 +833,10 @@ const ShopFromSets = () => {
                             {t('shop.completeSet')}
                           </div>
                           <Button 
-                            onClick={() => handleAddSetToCart(set)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddSetToCart(set);
+                            }}
                             disabled={isLoading}
                             className="bg-green-600 hover:bg-green-700"
                           >
@@ -869,6 +908,7 @@ const ShopFromSets = () => {
 // Component for shopping complete series
 const ShopFromSeries = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -974,6 +1014,13 @@ const ShopFromSeries = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Language Filter */}
+        <SeriesLanguageFilter
+          selectedLanguage={languageFilter}
+          onLanguageChange={setLanguageFilter}
+          className="mb-4"
+        />
       </div>
 
       {/* Total Count Display for Series */}
@@ -1027,7 +1074,14 @@ const ShopFromSeries = () => {
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {displaySeries.map((series, index) => (
-              <Card key={`${series.series_id}-${index}`} className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col">
+              <Card 
+                key={`${series.series_id}-${index}`} 
+                className="border-4 border-black hover:scale-105 transition-all duration-300 hover:shadow-xl group h-96 flex flex-col cursor-pointer"
+                onClick={() => {
+                  const languageParam = languageFilter !== "all" ? `?language=${languageFilter}` : "";
+                  navigate(`/series${languageParam}`);
+                }}
+              >
                 <div className="h-48 bg-white flex items-center justify-center p-4 overflow-hidden flex-shrink-0 relative">
                   {series.logo_url ? (
                     <img 
@@ -1045,7 +1099,10 @@ const ShopFromSeries = () => {
                   {/* Overlay with buy button */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <Button 
-                      onClick={() => handleAddSeriesToCart(series)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddSeriesToCart(series);
+                      }}
                       disabled={isLoading}
                       className="bg-purple-600 hover:bg-purple-700"
                     >
@@ -1079,7 +1136,14 @@ const ShopFromSeries = () => {
         ) : (
           <div className="space-y-4">
             {displaySeries.map((series, index) => (
-              <Card key={`${series.series_id}-${index}`} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={`${series.series_id}-${index}`} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => {
+                  const languageParam = languageFilter !== "all" ? `?language=${languageFilter}` : "";
+                  navigate(`/series${languageParam}`);
+                }}
+              >
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     <div className="w-24 h-32 flex-shrink-0">
@@ -1113,7 +1177,10 @@ const ShopFromSeries = () => {
                           {t('shop.completeSeries')}
                         </div>
                         <Button 
-                          onClick={() => handleAddSeriesToCart(series)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddSeriesToCart(series);
+                          }}
                           disabled={isLoading}
                           className="bg-purple-600 hover:bg-purple-700"
                         >

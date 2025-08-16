@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ const SetDetail = () => {
   const { t } = useTranslation();
   const { setId } = useParams<{ setId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -69,6 +70,17 @@ const SetDetail = () => {
 
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
+
+  // Initialize and update language filter from URL parameters
+  useEffect(() => {
+    const urlLanguage = searchParams.get("language");
+    console.log('URL language parameter:', urlLanguage);
+    console.log('Current language filter:', languageFilter);
+    if (urlLanguage) {
+      console.log('Setting language filter to:', urlLanguage);
+      setLanguageFilter(urlLanguage);
+    }
+  }, [searchParams]);
 
   // Fetch cards for this set with filters
   const [cardsData, setCardsData] = useState<any[]>([]);
@@ -159,15 +171,75 @@ const SetDetail = () => {
 
         if (error) throw error;
 
+        console.log('Language filter:', languageFilter);
         console.log('Cards found for set:', data?.length || 0);
         setCardsData(data || []);
 
-        // Get total count for pagination
-        const { count } = await supabase
+        // Get total count for pagination - apply same filters as the main query
+        let countQuery = supabase
           .from('cards')
           .select('*', { count: 'exact', head: true })
           .eq('set_id', setId);
 
+        // Apply same filters as the main query
+        if (searchTerm) {
+          countQuery = countQuery.ilike('name', `%${searchTerm}%`);
+        }
+
+        if (languageFilter !== "all") {
+          countQuery = countQuery.eq('language', languageFilter);
+        }
+
+        if (rarityFilter !== "all") {
+          countQuery = countQuery.eq('rarity', rarityFilter);
+        }
+
+        if (typeFilter !== "all") {
+          countQuery = countQuery.eq('type', typeFilter);
+        }
+
+        if (hpRange.min) {
+          countQuery = countQuery.gte('hp', parseInt(hpRange.min));
+        }
+
+        if (hpRange.max) {
+          countQuery = countQuery.lte('hp', parseInt(hpRange.max));
+        }
+
+        if (illustratorFilter !== "all") {
+          countQuery = countQuery.eq('illustrator', illustratorFilter);
+        }
+
+        if (categoryFilter !== "all") {
+          countQuery = countQuery.eq('category', categoryFilter);
+        }
+
+        if (stageFilter !== "all") {
+          countQuery = countQuery.eq('stage', stageFilter);
+        }
+
+        if (evolveFromFilter !== "all") {
+          countQuery = countQuery.eq('evolve_from', evolveFromFilter);
+        }
+
+        if (retreatCostFilter !== "all") {
+          countQuery = countQuery.eq('retreat_cost', retreatCostFilter);
+        }
+
+        if (regulationMarkFilter !== "all") {
+          countQuery = countQuery.eq('regulation_mark', regulationMarkFilter);
+        }
+
+        if (formatLegalityFilter !== "all") {
+          countQuery = countQuery.eq('format_legality', formatLegalityFilter);
+        }
+
+        if (weaknessTypeFilter !== "all") {
+          countQuery = countQuery.eq('weakness_type', weaknessTypeFilter);
+        }
+
+        const { count } = await countQuery;
+        console.log('Total count with filters:', count || 0);
         setTotalCount(count || 0);
 
       } catch (error) {
@@ -343,6 +415,7 @@ const SetDetail = () => {
 
   const handleReloadCollection = () => {
     queryClient.invalidateQueries({ queryKey: ['collection', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
     toast({
       title: t('messages.collectionReloaded'),
@@ -369,30 +442,36 @@ const SetDetail = () => {
     condition: string;
     price: number;
     date: string;
+    notes: string;
+    quantity: number;
   }) => {
     if (!user || !selectedCardForCollection) return;
 
     try {
+      // Insert multiple records if quantity > 1
+      const insertData = Array.from({ length: data.quantity }, () => ({
+        user_id: user.id,
+        card_id: selectedCardForCollection.card_id,
+        language: selectedCardForCollection.language || 'en',
+        condition: data.condition,
+        price: data.price,
+        notes: data.notes || `Acquired on: ${data.date}`,
+      }));
+
       const { error } = await supabase
         .from('card_collections')
-        .insert({
-          user_id: user.id,
-          card_id: selectedCardForCollection.card_id,
-          language: selectedCardForCollection.language || 'en',
-          condition: data.condition,
-          price: data.price,
-          notes: `Acquired on: ${data.date}`,
-        });
+        .insert(insertData);
       
       if (error) throw error;
       
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
       setIsAddToCollectionModalOpen(false);
       setSelectedCardForCollection(null);
       
       toast({
         title: t('messages.addedToCollection'),
-        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()}.`,
+        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()} (${data.quantity} ${data.quantity === 1 ? 'copy' : 'copies'}).`,
       });
     } catch (error) {
       console.error('Error adding to collection:', error);

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -11,9 +12,30 @@ export const useCollectionActions = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
+  // Callback functions for modal closing
+  const [onCollectionSuccess, setOnCollectionSuccess] = useState<(() => void) | null>(null);
+
   // Add to Collection
   const addToCollection = useMutation({
-    mutationFn: async ({ cardId, cardName, cardLanguage }: { cardId: string; cardName: string; cardLanguage?: string }) => {
+    mutationFn: async ({ 
+      cardId, 
+      cardName, 
+      cardLanguage,
+      condition,
+      price,
+      date,
+      notes,
+      quantity
+    }: { 
+      cardId: string; 
+      cardName: string; 
+      cardLanguage?: string;
+      condition?: string;
+      price?: number;
+      date?: string;
+      notes?: string;
+      quantity?: number;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
       // Check if already in collection
@@ -62,7 +84,11 @@ export const useCollectionActions = () => {
           types: cardData.types,
           attacks: cardData.attacks,
           weaknesses: cardData.weaknesses,
-          retreat: cardData.retreat
+          retreat: cardData.retreat,
+          condition: condition || 'Near Mint',
+          price: price || 0,
+          notes: notes || '',
+          created_at: date ? new Date(date).toISOString() : new Date().toISOString()
         });
 
       if (error) throw error;
@@ -108,6 +134,13 @@ export const useCollectionActions = () => {
       // Refetch to ensure data consistency
       queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
+      
+      // Close modal if callback is set
+      if (onCollectionSuccess) {
+        onCollectionSuccess();
+        setOnCollectionSuccess(null);
+      }
       
       toast({
         title: t('messages.addedToCollection'),
@@ -156,6 +189,7 @@ export const useCollectionActions = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
       
       toast({
         title: t('messages.removedFromCollection'),
@@ -169,6 +203,7 @@ export const useCollectionActions = () => {
     removeFromCollection: removeFromCollection.mutate,
     isAddingToCollection: addToCollection.isPending,
     isRemovingFromCollection: removeFromCollection.isPending,
+    setOnCollectionSuccess,
   };
 };
 
@@ -178,9 +213,28 @@ export const useWishlistActions = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
+  // Callback functions for modal closing
+  const [onWishlistSuccess, setOnWishlistSuccess] = useState<(() => void) | null>(null);
+
+
+
   // Add to Wishlist
   const addToWishlist = useMutation({
-    mutationFn: async ({ cardId, cardName, cardLanguage }: { cardId: string; cardName: string; cardLanguage?: string }) => {
+    mutationFn: async ({ 
+      cardId, 
+      cardName, 
+      cardLanguage, 
+      priority = 1, 
+      notes = "",
+      price = 0
+    }: { 
+      cardId: string; 
+      cardName: string; 
+      cardLanguage?: string; 
+      priority?: number | string; 
+      notes?: string; 
+      price?: number;
+    }) => {
       if (!user) throw new Error("User not authenticated");
 
       // Check if already in wishlist
@@ -205,17 +259,51 @@ export const useWishlistActions = () => {
 
       if (cardError) throw cardError;
 
-      // Add to wishlist
+      // Convert priority string to number
+      let priorityNumber = 1; // default medium
+      if (typeof priority === 'string') {
+        switch (priority) {
+          case 'low':
+            priorityNumber = 0;
+            break;
+          case 'high':
+            priorityNumber = 2;
+            break;
+          default:
+            priorityNumber = 1; // medium
+        }
+      } else {
+        priorityNumber = priority;
+      }
+
+      // Add to wishlist - try with price and notes first, fallback to basic insert if columns don't exist
+      let insertData: any = {
+        user_id: user.id,
+        card_id: cardId,
+        language: cardData.language || 'en',
+        priority: priorityNumber
+      };
+
+      // Try to add price and notes if they exist
+      if (price !== undefined) {
+        insertData.price = price;
+      }
+      if (notes !== undefined) {
+        insertData.notes = notes;
+      }
+
       const { error } = await supabase
         .from('card_wishlist')
-        .insert({
-          user_id: user.id,
-          card_id: cardId,
-          language: cardData.language || 'en',
-          priority: 1 // default medium priority
-        });
+        .insert(insertData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        // If it's a column error, provide a more helpful message
+        if (error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist')) {
+          throw new Error('Database schema needs to be updated. Please run the SQL script to add price and notes columns.');
+        }
+        throw error;
+      }
       return { cardId, cardName };
     },
     onMutate: async ({ cardId, cardName }) => {
@@ -247,11 +335,16 @@ export const useWishlistActions = () => {
         queryClient.setQueryData(['wishlist', user?.id], context.previousData);
       }
       
+      let errorMessage = t('messages.wishlistError');
+      if (error.message === "Card already in wishlist") {
+        errorMessage = t('messages.alreadyInWishlist');
+      } else if (error.message.includes('Database schema needs to be updated')) {
+        errorMessage = 'Database needs to be updated. Please contact support or run the provided SQL script.';
+      }
+      
       toast({
         title: t('messages.error'),
-        description: error.message === "Card already in wishlist" 
-          ? t('messages.alreadyInWishlist') 
-          : t('messages.wishlistError'),
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -260,6 +353,12 @@ export const useWishlistActions = () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
+      
+      // Close modal if callback is set
+      if (onWishlistSuccess) {
+        onWishlistSuccess();
+        setOnWishlistSuccess(null);
+      }
       
       toast({
         title: t('messages.addedToWishlist'),
@@ -322,5 +421,6 @@ export const useWishlistActions = () => {
     removeFromWishlist: removeFromWishlist.mutate,
     isAddingToWishlist: addToWishlist.isPending,
     isRemovingFromWishlist: removeFromWishlist.isPending,
+    setOnWishlistSuccess,
   };
 };

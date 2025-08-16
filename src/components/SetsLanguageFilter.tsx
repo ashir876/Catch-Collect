@@ -62,7 +62,10 @@ const SetsLanguageFilter = ({ selectedLanguage, onLanguageChange, className = ''
             key={language.code}
             variant={selectedLanguage === language.code ? "default" : "outline"}
             size="sm"
-            onClick={() => onLanguageChange(language.code)}
+            onClick={() => {
+              console.log('SetsLanguageFilter: Language button clicked:', language.code);
+              onLanguageChange(language.code);
+            }}
             className={`
               px-2 sm:px-3 py-1 text-xs font-bold uppercase border-2 border-black flex-shrink-0
               ${selectedLanguage === language.code 

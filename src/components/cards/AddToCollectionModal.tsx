@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,9 @@ interface AddToCollectionModalProps {
     condition: string;
     price: number;
     date: string;
+    notes: string;
+    quantity: number;
+    language: string;
   }) => void;
   cardName: string;
   isLoading?: boolean;
@@ -30,13 +34,19 @@ const AddToCollectionModal = ({
   const [condition, setCondition] = useState("Mint");
   const [price, setPrice] = useState("0.00");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [selectedLanguage, setSelectedLanguage] = useState("all");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAdd({
       condition,
       price: parseFloat(price) || 0,
-      date
+      date,
+      notes,
+      quantity: parseInt(quantity) || 1,
+      language: selectedLanguage
     });
   };
 
@@ -45,13 +55,16 @@ const AddToCollectionModal = ({
     setCondition("Mint");
     setPrice("0.00");
     setDate(new Date().toISOString().split('T')[0]);
+    setNotes("");
+    setQuantity("1");
+    setSelectedLanguage("all");
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogHeader className="pb-3">
           <DialogTitle className="text-lg font-bold">
             {t('collection.addCardToCollection')}
           </DialogTitle>
@@ -60,7 +73,31 @@ const AddToCollectionModal = ({
           </p>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Language Filter */}
+          <div className="space-y-2">
+            <Label htmlFor="language">{t('cards.language')}</Label>
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('filters.allLanguages')}</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="de">Deutsch</SelectItem>
+                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+                <SelectItem value="it">Italiano</SelectItem>
+                <SelectItem value="pt">Português</SelectItem>
+                <SelectItem value="nl">Nederlands</SelectItem>
+                <SelectItem value="ja">日本語</SelectItem>
+                <SelectItem value="ko">한국어</SelectItem>
+                <SelectItem value="zh">中文</SelectItem>
+                <SelectItem value="ru">Русский</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Condition */}
           <div className="space-y-2">
             <Label htmlFor="condition">{t('collection.condition')}</Label>
@@ -78,6 +115,19 @@ const AddToCollectionModal = ({
                 <SelectItem value="Poor">{t('collection.conditionPoor')}</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Quantity */}
+          <div className="space-y-2">
+            <Label htmlFor="quantity">{t('collection.quantity')}</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="1"
+            />
           </div>
 
           {/* Price */}
@@ -111,8 +161,20 @@ const AddToCollectionModal = ({
             />
           </div>
 
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">{t('collection.notes')}</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t('collection.notesPlaceholder')}
+              rows={2}
+            />
+          </div>
+
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-3">
             <Button
               type="button"
               variant="outline"

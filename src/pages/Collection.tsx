@@ -18,6 +18,7 @@ import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisp
 import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
 import { testPriceData } from "@/lib/testPriceData";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Collection = () => {
   const { t } = useTranslation();
@@ -27,13 +28,17 @@ const Collection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "stats">("stats");
   const [cardViewMode, setCardViewMode] = useState<"grid" | "list">("grid");
-  const [selectedCardForTrends, setSelectedCardForTrends] = useState<string>("");
+
   const [rarityFilter, setRarityFilter] = useState("all");
   const [setFilter, setSetFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date" | "price">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  
+  // Modal state for price trends
+  const [isPriceTrendModalOpen, setIsPriceTrendModalOpen] = useState(false);
+  const [selectedCardForModal, setSelectedCardForModal] = useState<any>(null);
 
   // Fetch real collection data
   const { data: collectionItems = [], isLoading, error } = useCollectionData();
@@ -65,6 +70,18 @@ const Collection = () => {
     // Find current market price for this card
     const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
     
+    // Debug logging
+    console.log('Collection card processing:', {
+      cardId: item.card_id,
+      cardName: item.cards?.name,
+      itemPrice: item.price,
+      itemPriceType: typeof item.price,
+      marketPrice: marketPrice?.price,
+      hasMarketPrice: !!marketPrice,
+      currentPricesLength: currentPrices.length,
+      fullItem: item
+    });
+    
     // Fallback mock price for testing (remove this once real prices work)
     const mockMarketPrice = !marketPrice && item.cards?.rarity ? {
       price: item.cards.rarity === 'legendary' ? 150.00 : 
@@ -89,13 +106,19 @@ const Collection = () => {
       description: item.cards?.description || '',
       acquiredDate: item.created_at,
       condition: item.condition || 'Near Mint',
-      myPrice: item.price, // your own price
-      marketPrice: marketPrice?.price || mockMarketPrice?.price, // latest market price or mock
-      marketSource: marketPrice?.source || mockMarketPrice?.source,
-      marketCurrency: marketPrice?.currency || mockMarketPrice?.currency,
-      marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at,
+      myPrice: item.price || 0, // your own price
+      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, // latest market price or mock
+      marketSource: marketPrice?.source || mockMarketPrice?.source || 'tcgplayer',
+      marketCurrency: marketPrice?.currency || mockMarketPrice?.currency || 'USD',
+      marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at || new Date().toISOString(),
     };
   });
+
+  // Handle card click to show price trends modal
+  const handleCardClick = (card: any) => {
+    setSelectedCardForModal(card);
+    setIsPriceTrendModalOpen(true);
+  };
 
   // Get unique sets for filter dropdown
   const uniqueSets = Array.from(new Set(ownedCards.map(card => card.set))).sort();
@@ -147,6 +170,23 @@ const Collection = () => {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
+  // Debug function to check collection data
+  const debugCollectionData = () => {
+    console.log('=== COLLECTION DATA DEBUG ===');
+    console.log('Collection Items:', collectionItems);
+    console.log('Current Prices:', currentPrices);
+    console.log('Owned Cards:', ownedCards);
+    console.log('Filtered Cards:', filteredCards);
+  };
+
+  // Make debug function available globally
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).debugCollectionData = debugCollectionData;
+      console.log('🔍 Debug function available: debugCollectionData()');
+    }
+  }, [collectionItems, currentPrices, ownedCards, filteredCards]);
+
   // Calculate collection statistics from real data
   const collectionStats = {
     totalCards: ownedCards.length,
@@ -160,6 +200,20 @@ const Collection = () => {
       common: ownedCards.filter(card => card.rarity === 'common').length
     }
   };
+
+  // Find the most expensive card
+  const mostExpensiveCard = ownedCards.reduce((mostExpensive, card) => {
+    const cardValue = card.marketPrice || card.myPrice || 0;
+    const mostExpensiveValue = mostExpensive.marketPrice || mostExpensive.myPrice || 0;
+    return cardValue > mostExpensiveValue ? card : mostExpensive;
+  }, ownedCards[0]);
+
+  // Get set names with card counts
+  const setNames = Array.from(new Set(ownedCards.map(card => card.set))).sort();
+  const setWithCardCounts = setNames.map(setName => {
+    const cardCount = ownedCards.filter(card => card.set === setName).length;
+    return `${setName} (${cardCount} cards)`;
+  });
 
   // Calculate set progress (simplified version)
   const setProgress = Array.from(new Set(ownedCards.map(card => card.set))).map(setName => {
@@ -195,6 +249,7 @@ const Collection = () => {
       
       // Invalidate and refetch the collection data to ensure consistency
       await queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user.id) });
+      await queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
       
       toast({
         title: t("messages.removedFromCollection"),
@@ -315,6 +370,28 @@ const Collection = () => {
                 <p className="text-xs text-muted-foreground">
                   {t('collection.cardsInCollection')}
                 </p>
+                {mostExpensiveCard && (
+                  <div className="mt-3 p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0">
+                        <img
+                          src={mostExpensiveCard.image}
+                          alt={mostExpensiveCard.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{mostExpensiveCard.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(mostExpensiveCard.marketPrice || mostExpensiveCard.myPrice || 0).toFixed(2)} CHF
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -330,6 +407,42 @@ const Collection = () => {
                 <p className="text-xs text-muted-foreground">
                   {t('collection.differentSets')}
                 </p>
+                <div className="mt-3 space-y-2">
+                  {setNames.map((setName) => {
+                    const setCards = ownedCards.filter(card => card.set === setName);
+                    const cardCount = setCards.length;
+                    const setImage = setCards[0]?.image || '/placeholder.svg';
+                    
+                    return (
+                      <div 
+                        key={setName}
+                        className="p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => {
+                          // Filter to show only cards from this set
+                          setSetFilter(setName);
+                          setViewMode("cards");
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0">
+                            <img
+                              src={setImage}
+                              alt={setName}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{setName}</p>
+                            <p className="text-xs text-muted-foreground">{cardCount} cards</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
 
@@ -420,67 +533,16 @@ const Collection = () => {
             </CardContent>
           </Card> */}
 
-                     {/* Charts Row */}
-           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                           {/* Collection Value Trends */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('pricing.collection.value.development')}</CardTitle>
-                  <CardDescription>{t('pricing.collection.value.trends.description')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <CollectionValueChart showControls={true} />
-                </CardContent>
-              </Card>
-
-              {/* Price Trends with Card Selector */}
-              {ownedCards.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t('pricing.price.trends')}</CardTitle>
-                    <CardDescription>
-                      {selectedCardForTrends ? 
-                        `${t('pricing.price.trends.for')} ${ownedCards.find(card => card.id === selectedCardForTrends)?.name || 'Unknown Card'}` :
-                        t('pricing.select.card.for.trends')
-                      }
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                   {/* Card Selector */}
-                   <div className="flex items-center gap-4">
-                     <label className="text-sm font-medium">{t('pricing.select.card')}:</label>
-                     <select
-                       value={selectedCardForTrends}
-                       onChange={(e) => setSelectedCardForTrends(e.target.value)}
-                       className="flex-1 max-w-xs px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                     >
-                       <option value="">{t('pricing.select.card.placeholder')}</option>
-                                               {ownedCards.map((card) => (
-                          <option key={card.id} value={card.id}>
-                            {card.name} ({card.set})
-                          </option>
-                        ))}
-                     </select>
-                   </div>
-                   
-                   {/* Price Trend Chart */}
-                   {selectedCardForTrends && (
-                     <PriceTrendChart
-                       cardId={selectedCardForTrends}
-                       showControls={true}
-                     />
-                   )}
-                   
-                   {/* No Card Selected Message */}
-                   {!selectedCardForTrends && (
-                     <div className="flex items-center justify-center h-64 text-gray-500">
-                       <p className="text-sm">{t('pricing.select.card.to.view.trends')}</p>
-                     </div>
-                   )}
-                 </CardContent>
-               </Card>
-             )}
-           </div>
+                                 {/* Collection Value Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('collection.value.development')}</CardTitle>
+                <CardDescription>{t('collection.value.trends.description')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CollectionValueChart showControls={true} />
+              </CardContent>
+            </Card>
 
           {/* Set Progress */}
           {/* {setProgress.length > 0 && (
@@ -680,9 +742,13 @@ const Collection = () => {
                     inWishlist={false}
                     isOwned={true}
                     isWishlisted={false}
-                    onAddToCollection={() => handleRemoveFromCollection(card.id, card.name)}
+                    onAddToCollection={(e) => {
+                      e?.stopPropagation?.();
+                      handleRemoveFromCollection(card.id, card.name);
+                    }}
                     onAddToWishlist={() => {}}
                     onAddToCart={() => {}}
+                    onViewDetails={() => handleCardClick(card)}
                     hidePriceAndBuy={false}
                     disableHoverEffects={true}
                   />
@@ -697,7 +763,11 @@ const Collection = () => {
           ) : (
             <div className="space-y-2">
               {filteredCards.map((card) => (
-                <div key={card.id} className="flex gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div 
+                  key={card.id} 
+                  className="flex gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleCardClick(card)}
+                >
                   <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black flex-shrink-0">
                     <img
                       src={card.image}
@@ -741,7 +811,10 @@ const Collection = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveFromCollection(card.id, card.name)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFromCollection(card.id, card.name);
+                          }}
                           className="h-8 px-2"
                         >
                           {t('collection.remove')}
@@ -768,6 +841,23 @@ const Collection = () => {
           )}
         </div>
       )}
+
+             {/* Price Trends Modal */}
+       {selectedCardForModal && (
+         <Dialog open={isPriceTrendModalOpen} onOpenChange={setIsPriceTrendModalOpen}>
+                       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+             <DialogHeader>
+               <DialogTitle>{t('pricing.price.trends.for')} {selectedCardForModal.name}</DialogTitle>
+             </DialogHeader>
+                           <div className="w-full h-[500px] overflow-hidden">
+                <PriceTrendChart
+                  cardId={selectedCardForModal.id}
+                  showControls={true}
+                />
+              </div>
+           </DialogContent>
+         </Dialog>
+       )}
     </div>
   );
 };

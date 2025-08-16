@@ -8,9 +8,10 @@ interface CardWithWishlistProps {
   card: any; // Card data from the database
   hidePriceAndBuy?: boolean;
   onAddToCollection?: (card: any) => void; // Custom handler for adding to collection
+  onViewDetails?: (id: string) => void; // Handler for viewing card details
 }
 
-const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection }: CardWithWishlistProps) => {
+const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection, onViewDetails }: CardWithWishlistProps) => {
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
   
@@ -56,6 +57,7 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection }: C
       cardData={card}
       onAddToCollection={handleAddToCollection}
       onAddToWishlist={handleAddToWishlist}
+      onViewDetails={onViewDetails}
     />
   );
 };

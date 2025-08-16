@@ -12,6 +12,8 @@ export interface WishlistItem {
   set_id?: string;
   series_id?: string;
   language?: string;
+  price?: number; // User's desired price
+  notes?: string; // User's notes
   
   // Card information (joined with cards table)
   card?: {
@@ -48,7 +50,7 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
       // First get the wishlist items with pagination
       let wishlistQuery = supabase
         .from('card_wishlist')
-        .select('*')
+        .select('id, card_id, user_id, created_at, priority, set_id, series_id, language, price, notes')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -60,11 +62,47 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
         wishlistQuery = wishlistQuery.range(offset, offset + limit - 1);
       }
 
-      const { data: wishlistItems, error: wishlistError } = await wishlistQuery;
+      let { data: wishlistItems, error: wishlistError } = await wishlistQuery;
 
       if (wishlistError) {
         console.error('Error fetching wishlist:', wishlistError);
-        throw wishlistError;
+        
+        // If the error is due to missing columns, try without price and notes
+        if (wishlistError.message?.includes('column') && wishlistError.message?.includes('does not exist')) {
+          console.warn('Price or notes columns not found, falling back to basic query');
+          
+          let fallbackQuery = supabase
+            .from('card_wishlist')
+            .select('id, card_id, user_id, created_at, priority, set_id, series_id, language')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (priority !== undefined) {
+            fallbackQuery = fallbackQuery.eq('priority', priority);
+          }
+
+          if (limit) {
+            fallbackQuery = fallbackQuery.range(offset, offset + limit - 1);
+          }
+
+          const { data: fallbackItems, error: fallbackError } = await fallbackQuery;
+          
+          if (fallbackError) {
+            console.error('Error with fallback query:', fallbackError);
+            throw fallbackError;
+          }
+          
+          // Add default values for missing columns
+          const itemsWithDefaults = fallbackItems?.map((item: any) => ({
+            ...item,
+            price: 0,
+            notes: ''
+          })) || [];
+          
+          wishlistItems = itemsWithDefaults;
+        } else {
+          throw wishlistError;
+        }
       }
 
       // If we have wishlist items, fetch the card details for each

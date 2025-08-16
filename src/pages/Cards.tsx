@@ -198,6 +198,7 @@ const Cards = () => {
 
   const handleReloadCollection = () => {
     queryClient.invalidateQueries({ queryKey: ['collection', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
     toast({
       title: t('messages.collectionReloaded'),
@@ -229,30 +230,36 @@ const Cards = () => {
     condition: string;
     price: number;
     date: string;
+    notes: string;
+    quantity: number;
   }) => {
     if (!user || !selectedCardForCollection) return;
 
     try {
+      // Insert multiple records if quantity > 1
+      const insertData = Array.from({ length: data.quantity }, () => ({
+        user_id: user.id,
+        card_id: selectedCardForCollection.card_id,
+        language: selectedCardForCollection.language || 'en',
+        condition: data.condition,
+        price: data.price,
+        notes: data.notes || `Acquired on: ${data.date}`,
+      }));
+
       const { error } = await supabase
         .from('card_collections')
-        .insert({
-          user_id: user.id,
-          card_id: selectedCardForCollection.card_id,
-          language: selectedCardForCollection.language || 'en',
-          condition: data.condition,
-          price: data.price,
-          notes: `Acquired on: ${data.date}`,
-        });
+        .insert(insertData);
       
       if (error) throw error;
       
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
       setIsAddToCollectionModalOpen(false);
       setSelectedCardForCollection(null);
       
       toast({
         title: t('messages.addedToCollection'),
-        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()}.`,
+        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()} (${data.quantity} ${data.quantity === 1 ? 'copy' : 'copies'}).`,
       });
     } catch (error) {
       console.error('Error adding to collection:', error);
