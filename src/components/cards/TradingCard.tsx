@@ -66,6 +66,12 @@ interface TradingCardProps {
   getPriorityColor?: () => "default" | "secondary" | "destructive";
   // Full card data for modal
   cardData?: CardData;
+  // Collection/wishlist item data for editing
+  collectionItemId?: string;
+  // Additional properties for collection items
+  notes?: string;
+  condition?: string;
+  language?: string;
   myPrice?: number;
   marketPrice?: number;
   marketSource?: string;
@@ -106,11 +112,14 @@ const normalizeRarity = (rarity: string): "common" | "rare" | "epic" | "legendar
   
   switch (normalizedRarity) {
     case "common":
+    case "gewöhnlich":
       return "common";
     case "rare":
+    case "selten":
       return "rare";
     case "ultra rare":
     case "epic":
+    case "ungewöhnlich":
       return "epic";
     case "legendary":
     case "secret rare":
@@ -153,13 +162,24 @@ const TradingCard = ({
   getPriorityColor,
   // Full card data for modal
   cardData,
+  collectionItemId,
+  notes,
+  condition,
+  language,
   myPrice,
   marketPrice,
   marketSource,
   marketCurrency,
   marketRecordedAt,
 }: TradingCardProps) => {
-  console.log('TradingCard component rendering with props:', { id, name, series, set });
+  console.log('TradingCard component rendering with props:', { 
+    id, 
+    name, 
+    series, 
+    set, 
+    collectionItemId, // Add this to see the collectionItemId value
+    cardData: cardData ? 'present' : 'missing' // Add this to see if cardData is present
+  });
   
   const { t } = useTranslation();
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
@@ -483,6 +503,15 @@ const TradingCard = ({
               className="w-full"
               onClick={(e) => {
                 e.stopPropagation();
+                console.log('TradingCard - Edit button clicked for card:', {
+                  id,
+                  collectionItemId,
+                  cardData: cardData ? 'present' : 'missing',
+                  cardDataId: (cardData as any)?.id,
+                  owned,
+                  wishlisted,
+                  finalId: collectionItemId || (cardData as any)?.id || id
+                });
                 setIsEditModalOpen(true);
               }}
             >
@@ -530,22 +559,21 @@ const TradingCard = ({
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           card={{
-            id: (cardData as any)?.id || id, // Use collection/wishlist item ID if available
+            id: collectionItemId || (cardData as any)?.id || id, // Use collection item ID if available
             card_id: id, // The actual card ID
             name: name,
             set: set,
             image: cardImage,
-            user_id: (cardData as any)?.user_id,
-            condition: (cardData as any)?.condition,
-            price: myPrice,
-            notes: (cardData as any)?.notes,
+            condition: condition || (cardData as any)?.condition,
+            myPrice: myPrice,
+            notes: notes || (cardData as any)?.notes,
             priority: priority,
-            language: (cardData as any)?.language
+            language: language || (cardData as any)?.language
           }}
           type={owned ? 'collection' : 'wishlist'}
           onSuccess={() => {
-            // Refresh the card data if needed
-            if (onAddToCollection) onAddToCollection();
+            // Don't call onAddToCollection here as it's actually the remove function
+            // The query invalidation in EditCardModal will handle refreshing the data
             if (onAddToWishlist) onAddToWishlist();
           }}
         />
@@ -580,22 +608,21 @@ const TradingCard = ({
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         card={{
-          id: (cardData as any)?.id || id, // Use collection/wishlist item ID if available
+          id: collectionItemId || (cardData as any)?.id || id, // Use collection item ID if available
           card_id: id, // The actual card ID
           name: name,
           set: set,
           image: cardImage,
-          user_id: (cardData as any)?.user_id,
-          condition: (cardData as any)?.condition,
-          price: myPrice,
-          notes: (cardData as any)?.notes,
+          condition: condition || (cardData as any)?.condition,
+          myPrice: myPrice,
+          notes: notes || (cardData as any)?.notes,
           priority: priority,
-          language: (cardData as any)?.language
+          language: language || (cardData as any)?.language
         }}
         type={owned ? 'collection' : 'wishlist'}
         onSuccess={() => {
-          // Refresh the card data if needed
-          if (onAddToCollection) onAddToCollection();
+          // Don't call onAddToCollection here as it's actually the remove function
+          // The query invalidation in EditCardModal will handle refreshing the data
           if (onAddToWishlist) onAddToWishlist();
         }}
       />

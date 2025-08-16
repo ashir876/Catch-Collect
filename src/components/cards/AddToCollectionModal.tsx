@@ -18,6 +18,7 @@ interface AddToCollectionModalProps {
     notes: string;
     quantity: number;
     language: string;
+    acquiredDate: string;
   }) => void;
   cardName: string;
   isLoading?: boolean;
@@ -46,7 +47,8 @@ const AddToCollectionModal = ({
       date,
       notes,
       quantity: parseInt(quantity) || 1,
-      language: selectedLanguage
+      language: selectedLanguage,
+      acquiredDate: date
     });
   };
 

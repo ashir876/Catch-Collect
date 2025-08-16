@@ -25,7 +25,8 @@ export const useCollectionActions = () => {
       price,
       date,
       notes,
-      quantity
+      quantity,
+      acquiredDate
     }: { 
       cardId: string; 
       cardName: string; 
@@ -35,24 +36,25 @@ export const useCollectionActions = () => {
       date?: string;
       notes?: string;
       quantity?: number;
+      acquiredDate?: string;
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Check if already in collection
-      const { data: existingItem, error: checkError } = await supabase
-        .from('card_collections')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('card_id', cardId)
-        .single();
+             // Check if already in collection
+       const { data: existingItem, error: checkError } = await supabase
+         .from('card_collections')
+         .select('id')
+         .eq('user_id', user.id)
+         .eq('card_id', cardId)
+         .single();
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
+       if (checkError && checkError.code !== 'PGRST116') {
+         throw checkError;
+       }
 
-      if (existingItem) {
-        throw new Error("Card already in collection");
-      }
+       if (existingItem) {
+         throw new Error("Card already in collection");
+       }
 
       // Get card data
       let query = supabase.from('cards').select('*').eq('card_id', cardId);
@@ -65,33 +67,33 @@ export const useCollectionActions = () => {
         throw cardError;
       }
 
-      // Add to collection
-      const { error } = await supabase
-        .from('card_collections')
-        .insert({
-          user_id: user.id,
-          card_id: cardId,
-          language: cardData.language,
-          name: cardData.name,
-          set_name: cardData.set_name,
-          set_id: cardData.set_id,
-          card_number: cardData.card_number,
-          rarity: cardData.rarity,
-          image_url: cardData.image_url,
-          description: cardData.description,
-          illustrator: cardData.illustrator,
-          hp: cardData.hp,
-          types: cardData.types,
-          attacks: cardData.attacks,
-          weaknesses: cardData.weaknesses,
-          retreat: cardData.retreat,
-          condition: condition || 'Near Mint',
-          price: price || 0,
-          notes: notes || '',
-          created_at: date ? new Date(date).toISOString() : new Date().toISOString()
-        });
+             // Add to collection
+       const { error } = await supabase
+         .from('card_collections')
+         .insert({
+           user_id: user.id,
+           card_id: cardId,
+           language: cardData.language,
+           name: cardData.name,
+           set_name: cardData.set_name,
+           set_id: cardData.set_id,
+           card_number: cardData.card_number,
+           rarity: cardData.rarity,
+           image_url: cardData.image_url,
+           description: cardData.description,
+           illustrator: cardData.illustrator,
+           hp: cardData.hp,
+           types: cardData.types,
+           attacks: cardData.attacks,
+           weaknesses: cardData.weaknesses,
+           retreat: cardData.retreat,
+           condition: condition || 'Near Mint',
+           price: price || 0,
+           notes: notes || '',
+           created_at: date ? new Date(date).toISOString() : new Date().toISOString()
+         });
 
-      if (error) throw error;
+             if (error) throw error;
       return { cardId, cardData };
     },
     onMutate: async ({ cardId, cardName }) => {
@@ -122,13 +124,13 @@ export const useCollectionActions = () => {
         queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), context.previousData);
       }
       
-      toast({
-        title: t('messages.error'),
-        description: error.message === "Card already in collection" 
-          ? t('messages.alreadyInCollection') 
-          : t('messages.collectionError'),
-        variant: "destructive",
-      });
+             toast({
+         title: t('messages.error'),
+         description: error.message === "Card already in collection" 
+           ? t('messages.alreadyInCollection') 
+           : t('messages.collectionError'),
+         variant: "destructive",
+       });
     },
     onSuccess: (data) => {
       // Refetch to ensure data consistency

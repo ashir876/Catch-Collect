@@ -42,6 +42,25 @@ const Collection = () => {
 
   // Fetch real collection data
   const { data: collectionItems = [], isLoading, error } = useCollectionData();
+  
+  // Debug: Log when collection data changes
+  React.useEffect(() => {
+    console.log('Collection - Data changed:', {
+      itemsCount: collectionItems.length,
+      isLoading,
+      hasError: !!error,
+      sampleItem: collectionItems[0] ? {
+        id: collectionItems[0].id,
+        card_id: collectionItems[0].card_id,
+        condition: collectionItems[0].condition,
+        price: collectionItems[0].price,
+        notes: collectionItems[0].notes
+      } : null
+    });
+  }, [collectionItems, isLoading, error]);
+  
+  // Debug: Log the raw collection items
+  console.log('Collection - Raw collection items:', collectionItems);
 
   // Get card IDs for price fetching
   const cardIds = collectionItems.map(item => item.card_id);
@@ -66,6 +85,7 @@ const Collection = () => {
   }, [user]);
 
   // Transform collection data to match TradingCard component expectations
+  console.log('Collection - Processing collection items:', collectionItems.length);
   const ownedCards = collectionItems.map((item: any) => {
     // Find current market price for this card
     const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
@@ -79,6 +99,8 @@ const Collection = () => {
       marketPrice: marketPrice?.price,
       hasMarketPrice: !!marketPrice,
       currentPricesLength: currentPrices.length,
+      itemId: item.id, // Add this to see the actual item.id value
+      itemIdType: typeof item.id, // Add this to see the type of item.id
       fullItem: item
     });
     
@@ -93,7 +115,8 @@ const Collection = () => {
     } : null;
     
     return {
-      id: item.card_id,
+      id: item.card_id, // Use the card_id for the TradingCard component
+      cardId: item.card_id, // Keep the original card ID for reference
       name: item.cards?.name || 'Unknown Card',
       series: item.cards?.series_name || 'Unknown Series',
       set: item.cards?.set_name || 'Unknown Set',
@@ -111,8 +134,44 @@ const Collection = () => {
       marketSource: marketPrice?.source || mockMarketPrice?.source || 'tcgplayer',
       marketCurrency: marketPrice?.currency || mockMarketPrice?.currency || 'USD',
       marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at || new Date().toISOString(),
+      notes: item.notes || '',
+      quantity: item.quantity || 1,
+      language: item.language || 'en',
+      // Add collection item ID for editing
+      collectionItemId: item.id,
+      // Add cardData for EditCardModal - using the full card data structure
+      cardData: item.cards ? {
+        card_id: item.card_id,
+        name: item.cards.name,
+        set_name: item.cards.set_name,
+        set_id: item.cards.set_id,
+        card_number: item.cards.card_number,
+        rarity: item.cards.rarity,
+        types: item.cards.types,
+        hp: item.cards.hp,
+        image_url: item.cards.image_url,
+        description: item.cards.description,
+        illustrator: item.cards.illustrator,
+        attacks: item.cards.attacks,
+        weaknesses: item.cards.weaknesses,
+        retreat: item.cards.retreat,
+        set_symbol_url: item.cards.set_symbol_url,
+        language: item.language
+      } : undefined,
+      // Add instance identifier for display
+      instanceId: `${item.card_id}-${item.condition}-${item.price}-${item.created_at}`,
     };
   });
+
+  // Debug: Log the first card to see the structure
+  if (ownedCards.length > 0) {
+    console.log('First owned card structure:', {
+      id: ownedCards[0].id,
+      collectionItemId: ownedCards[0].collectionItemId,
+      cardId: ownedCards[0].cardId,
+      name: ownedCards[0].name
+    });
+  }
 
   // Handle card click to show price trends modal
   const handleCardClick = (card: any) => {
@@ -123,52 +182,52 @@ const Collection = () => {
   // Get unique sets for filter dropdown
   const uniqueSets = Array.from(new Set(ownedCards.map(card => card.set))).sort();
 
-  // Filter and sort cards
-  const filteredCards = ownedCards
-    .filter(card => {
-      const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
-      const matchesSet = setFilter === "all" || card.set === setFilter;
-      
-      // Price filtering
-      let matchesPrice = true;
-      if (priceFilter !== "all") {
-        const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice;
-        const minPrice = parseFloat(priceRange.min) || 0;
-        const maxPrice = parseFloat(priceRange.max) || Infinity;
-        
-        matchesPrice = typeof cardPrice === 'number' && cardPrice >= minPrice && cardPrice <= maxPrice;
-      }
-      
-      return matchesSearch && matchesRarity && matchesSet && matchesPrice;
-    })
-    .sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortBy) {
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "rarity":
-          const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
-          comparison = (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0) - 
-                      (rarityOrder[b.rarity as keyof typeof rarityOrder] || 0);
-          break;
-        case "set":
-          comparison = a.set.localeCompare(b.set);
-          break;
-        case "date":
-          comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
-          break;
-        case "price":
-          const aPrice = a.myPrice || a.marketPrice || 0;
-          const bPrice = b.myPrice || b.marketPrice || 0;
-          comparison = aPrice - bPrice;
-          break;
-      }
-      
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
+        // Filter and sort cards
+   const filteredCards = ownedCards
+     .filter(card => {
+       const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
+       const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
+       const matchesSet = setFilter === "all" || card.set === setFilter;
+       
+       // Price filtering
+       let matchesPrice = true;
+       if (priceFilter !== "all") {
+         const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice;
+         const minPrice = parseFloat(priceRange.min) || 0;
+         const maxPrice = parseFloat(priceRange.max) || Infinity;
+         
+         matchesPrice = typeof cardPrice === 'number' && cardPrice >= minPrice && cardPrice <= maxPrice;
+       }
+       
+       return matchesSearch && matchesRarity && matchesSet && matchesPrice;
+     })
+     .sort((a, b) => {
+       let comparison = 0;
+       
+       switch (sortBy) {
+         case "name":
+           comparison = a.name.localeCompare(b.name);
+           break;
+         case "rarity":
+           const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+           comparison = (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0) - 
+                       (rarityOrder[b.rarity as keyof typeof rarityOrder] || 0);
+           break;
+         case "set":
+           comparison = a.set.localeCompare(b.set);
+           break;
+         case "date":
+           comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+           break;
+         case "price":
+           const aPrice = a.myPrice || a.marketPrice || 0;
+           const bPrice = b.myPrice || b.marketPrice || 0;
+           comparison = aPrice - bPrice;
+           break;
+       }
+       
+       return sortOrder === "asc" ? comparison : -comparison;
+     });
 
   // Debug function to check collection data
   const debugCollectionData = () => {
@@ -185,7 +244,7 @@ const Collection = () => {
       (window as any).debugCollectionData = debugCollectionData;
       console.log('🔍 Debug function available: debugCollectionData()');
     }
-  }, [collectionItems, currentPrices, ownedCards, filteredCards]);
+     }, [collectionItems, currentPrices, ownedCards, filteredCards]);
 
   // Calculate collection statistics from real data
   const collectionStats = {
@@ -228,28 +287,36 @@ const Collection = () => {
     };
   }).slice(0, 5); // Show top 5 sets
 
-  const handleRemoveFromCollection = async (cardId: string, cardName: string) => {
+  const handleRemoveFromCollection = async (collectionItemId: string, cardName: string) => {
     if (!user) return;
     
     // Optimistic update - remove the card from the cache immediately
-    const previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user.id));
-    queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), (old: any) => {
-      if (!old) return old;
-      return old.filter((item: any) => item.card_id !== cardId);
-    });
+    let previousData: any = null;
+    if (user?.id) {
+      previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user.id));
+      queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), (old: any) => {
+        if (!old) return old;
+        return old.filter((item: any) => item.id !== collectionItemId);
+      });
+    }
     
     try {
+      // Extract card_id from the composite key
+      const cardId = collectionItemId.split('_')[1]; // Get the card_id part from the composite key
+      
       const { error } = await supabase
         .from('card_collections')
         .delete()
-        .eq('user_id', user.id)
-        .eq('card_id', cardId);
+        .eq('card_id', cardId)
+        .eq('user_id', user.id as string);
         
       if (error) throw error;
       
       // Invalidate and refetch the collection data to ensure consistency
-      await queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user.id) });
-      await queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      if (user?.id) {
+        await queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user.id) });
+        await queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      }
       
       toast({
         title: t("messages.removedFromCollection"),
@@ -259,7 +326,9 @@ const Collection = () => {
       console.error('Error removing from collection:', err);
       
       // Revert optimistic update on error
-      queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), previousData);
+      if (user?.id && previousData) {
+        queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), previousData);
+      }
       
       toast({
         title: t("messages.error"),
@@ -325,7 +394,7 @@ const Collection = () => {
   }
 
   return (
-          <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
@@ -731,104 +800,106 @@ const Collection = () => {
              </div>
            </div>
 
-          {/* Cards Display */}
-          {cardViewMode === "grid" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {filteredCards.map((card) => (
-                <div key={card.id} className="relative">
-                  <TradingCard
-                    {...card}
-                    inCollection={true}
-                    inWishlist={false}
-                    isOwned={true}
-                    isWishlisted={false}
-                    onAddToCollection={(e) => {
-                      e?.stopPropagation?.();
-                      handleRemoveFromCollection(card.id, card.name);
-                    }}
-                    onAddToWishlist={() => {}}
-                    onAddToCart={() => {}}
-                    onViewDetails={() => handleCardClick(card)}
-                    hidePriceAndBuy={false}
-                    disableHoverEffects={true}
-                  />
-                  <div className="absolute top-2 right-2 z-30">
-                    <Badge variant="secondary" className="text-xs">
-                      {card.condition}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredCards.map((card) => (
-                <div 
-                  key={card.id} 
-                  className="flex gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleCardClick(card)}
-                >
-                  <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black flex-shrink-0">
-                    <img
-                      src={card.image}
-                      alt={card.name}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">{card.name}</h3>
-                        <p className="text-muted-foreground text-xs mb-1">#{card.number}</p>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs bg-muted px-2 py-1 rounded">{card.set}</span>
-                          <span className="text-xs bg-muted px-2 py-1 rounded capitalize">{card.rarity}</span>
-                          <span className="text-xs bg-muted px-2 py-1 rounded">{card.condition}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {t('collection.acquired')}: {new Date(card.acquiredDate).toLocaleDateString()}
-                        </p>
-                        {/* Price Information */}
-                        <div className="flex items-center gap-4 mt-2">
-                          {typeof card.myPrice === 'number' && (
-                            <div className="text-xs">
-                              <span className="text-muted-foreground">Your Price:</span>
-                              <span className="ml-1 font-medium">CHF {card.myPrice.toFixed(2)}</span>
-                            </div>
-                          )}
-                          {typeof card.marketPrice === 'number' && (
-                            <div className="text-xs">
-                              <span className="text-muted-foreground">Market Price:</span>
-                              <span className="ml-1 font-medium">{card.marketCurrency || 'USD'} {card.marketPrice.toFixed(2)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveFromCollection(card.id, card.name);
-                          }}
-                          className="h-8 px-2"
-                        >
-                          {t('collection.remove')}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                     {/* Cards Display */}
+           {cardViewMode === "grid" ? (
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+               {filteredCards.map((card) => (
+                 <div key={card.instanceId || card.id} className="relative">
+                                        <TradingCard
+                       {...card}
+                       inCollection={true}
+                       inWishlist={false}
+                       isOwned={true}
+                       isWishlisted={false}
+                       onAddToCollection={(e) => {
+                         e?.stopPropagation?.();
+                         handleRemoveFromCollection(card.collectionItemId, card.name);
+                       }}
+                       onAddToWishlist={() => {}}
+                       onAddToCart={() => {}}
+                       onViewDetails={() => handleCardClick(card)}
+                       hidePriceAndBuy={false}
+                       disableHoverEffects={true}
+                       cardData={card.cardData}
+                       collectionItemId={card.collectionItemId}
+                     />
+                   <div className="absolute top-2 right-2 z-30">
+                     <Badge variant="secondary" className="text-xs">
+                       {card.condition}
+                     </Badge>
+                   </div>
+                 </div>
+               ))}
+             </div>
+                     ) : (
+             <div className="space-y-2">
+               {filteredCards.map((card) => (
+                 <div 
+                   key={card.instanceId || card.id} 
+                   className="flex gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                   onClick={() => handleCardClick(card)}
+                 >
+                   <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black flex-shrink-0">
+                     <img
+                       src={card.image}
+                       alt={card.name}
+                       className="w-full h-full object-contain"
+                       onError={(e) => {
+                         (e.target as HTMLImageElement).src = '/placeholder.svg';
+                       }}
+                     />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                     <div className="flex items-start justify-between">
+                       <div className="flex-1 min-w-0">
+                         <h3 className="font-semibold text-sm truncate">{card.name}</h3>
+                         <p className="text-muted-foreground text-xs mb-1">#{card.number}</p>
+                         <div className="flex items-center gap-2 mb-1">
+                           <span className="text-xs bg-muted px-2 py-1 rounded">{card.set}</span>
+                           <span className="text-xs bg-muted px-2 py-1 rounded capitalize">{card.rarity}</span>
+                           <span className="text-xs bg-muted px-2 py-1 rounded">{card.condition}</span>
+                         </div>
+                         <p className="text-xs text-muted-foreground">
+                           {t('collection.acquired')}: {new Date(card.acquiredDate).toLocaleDateString()}
+                         </p>
+                         {/* Price Information */}
+                         <div className="flex items-center gap-4 mt-2">
+                           {typeof card.myPrice === 'number' && (
+                             <div className="text-xs">
+                               <span className="text-muted-foreground">Your Price:</span>
+                               <span className="ml-1 font-medium">CHF {card.myPrice.toFixed(2)}</span>
+                             </div>
+                           )}
+                           {typeof card.marketPrice === 'number' && (
+                             <div className="text-xs">
+                               <span className="text-muted-foreground">Market Price:</span>
+                               <span className="ml-1 font-medium">{card.marketCurrency || 'USD'} {card.marketPrice.toFixed(2)}</span>
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                       <div className="flex flex-col items-end gap-2">
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleRemoveFromCollection(card.collectionItemId, card.name);
+                           }}
+                           className="h-8 px-2"
+                         >
+                           {t('collection.remove')}
+                         </Button>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
 
-          {/* Empty State */}
-          {filteredCards.length === 0 && (
+                     {/* Empty State */}
+           {filteredCards.length === 0 && (
             <div className="text-center py-12">
               <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">

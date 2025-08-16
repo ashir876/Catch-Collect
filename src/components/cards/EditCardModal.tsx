@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EditCardModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
     condition: '',
@@ -35,6 +37,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
   // Initialize form data when card changes
   useEffect(() => {
     if (card) {
+      console.log('EditCardModal - Card data received:', card);
       setFormData({
         condition: card.condition || '',
         price: card.myPrice?.toString() || '',
@@ -51,6 +54,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
 
     setLoading(true);
     try {
+      console.log('EditCardModal - Starting update for card:', card);
       const updateData: any = {};
 
       if (type === 'collection') {
@@ -60,17 +64,41 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         if (formData.notes !== undefined) updateData.notes = formData.notes;
         if (formData.language && formData.language !== 'all') updateData.language = formData.language;
 
+        console.log('EditCardModal - Updating collection card with data:', { 
+          cardId: card.id, 
+          card_id: card.card_id,
+          user_id: user?.id,
+          updateData,
+          formData 
+        });
+
         const { error } = await supabase
           .from('card_collections')
           .update(updateData)
-          .eq('user_id', card.user_id || '')
-          .eq('id', card.id);
+          .eq('card_id', card.card_id)
+          .eq('user_id', user?.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('EditCardModal - Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('EditCardModal - Database update successful');
 
         // Invalidate collection queries
-        await queryClient.invalidateQueries({ queryKey: ['collection', card.user_id] });
-        await queryClient.invalidateQueries({ queryKey: ['collection-count', card.user_id] });
+        if (user?.id) {
+          console.log('EditCardModal - Invalidating queries for user:', user.id);
+          // Force refetch by invalidating and refetching
+          await queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+          await queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+          
+          // Force a refetch to ensure the data is updated
+          await queryClient.refetchQueries({ queryKey: ['collection', user.id] });
+          
+          console.log('EditCardModal - Query invalidation and refetch completed');
+        } else {
+          console.warn('EditCardModal - No user found for query invalidation');
+        }
 
         toast({
           title: t('messages.updated'),
@@ -86,17 +114,27 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
           updateData.priority = priorityMap[formData.priority as keyof typeof priorityMap];
         }
 
+        console.log('EditCardModal - Updating wishlist card with data:', { cardId: card.id, updateData });
+
         const { error } = await supabase
           .from('card_wishlist')
           .update(updateData)
-          .eq('user_id', card.user_id || '')
-          .eq('id', card.id);
+          .eq('card_id', card.card_id)
+          .eq('user_id', user?.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('EditCardModal - Supabase wishlist error:', error);
+          throw error;
+        }
 
         // Invalidate wishlist queries
-        await queryClient.invalidateQueries({ queryKey: ['wishlist', card.user_id] });
-        await queryClient.invalidateQueries({ queryKey: ['wishlist-count', card.user_id] });
+        if (user?.id) {
+          console.log('EditCardModal - Invalidating wishlist queries for user:', user.id);
+          await queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
+          await queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
+        } else {
+          console.warn('EditCardModal - No user found for wishlist query invalidation');
+        }
 
         toast({
           title: t('messages.updated'),
@@ -108,10 +146,10 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
       onClose();
 
     } catch (error) {
-      console.error('Error updating card:', error);
+      console.error('EditCardModal - Error updating card:', error);
       toast({
         title: t('messages.error'),
-        description: t('messages.updateError'),
+        description: error instanceof Error ? error.message : t('messages.updateError'),
         variant: 'destructive'
       });
     } finally {
