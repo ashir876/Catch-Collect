@@ -617,10 +617,7 @@
     "title": "Shop",
     "subtitle": "Browse and purchase Pokemon cards and accessories",
     "shopFromCards": "Shop from Cards",
-    "shopFromSets": "Shop from Sets", 
-    "shopFromSeries": "Shop from Series",
-    "buyCompleteSet": "Buy Complete Set",
-    "buyCompleteSeries": "Buy Complete Series",
+    
     "completeSet": "Complete Set",
     "completeSeries": "Complete Series",
     "setAddedToCart": "complete set added to cart",

@@ -55,31 +55,6 @@ export const useCartActions = () => {
 
       // Now try to add to cart - using type assertion to bypass TypeScript issues
       try {
-        // First, ensure the product exists in the products table
-        console.log('Ensuring product exists in products table...');
-        const { error: productError } = await (supabase as any)
-          .from('products')
-          .upsert({
-            article_number: item.article_number,
-            card_id: item.article_number,
-            name: item.article_number, // Use article_number as name for now
-            price: item.price,
-            language: 'en',
-            set_id: 'shop',
-            set_name: 'Shop Item',
-            condition_symbol: 'NM',
-            on_stock: true,
-            stock: 999
-          }, {
-            onConflict: 'article_number'
-          });
-
-        if (productError) {
-          console.error('Error creating/updating product:', productError);
-          throw new Error(`Failed to create product: ${productError.message}`);
-        }
-        console.log('Product created/updated successfully');
-
         console.log('Checking for existing cart item...');
         const { data: existingItems, error: fetchError } = await (supabase as any)
           .from('carts_with_id')
