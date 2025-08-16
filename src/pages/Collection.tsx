@@ -169,7 +169,9 @@ const Collection = () => {
       id: ownedCards[0].id,
       collectionItemId: ownedCards[0].collectionItemId,
       cardId: ownedCards[0].cardId,
-      name: ownedCards[0].name
+      name: ownedCards[0].name,
+      itemId: collectionItems[0]?.id,
+      itemIdType: typeof collectionItems[0]?.id
     });
   }
 

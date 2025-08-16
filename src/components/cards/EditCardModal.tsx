@@ -40,7 +40,13 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
   // Initialize form data when card changes
   useEffect(() => {
     if (card) {
-      console.log('EditCardModal - Card data received:', card);
+      console.log('EditCardModal - Card data received:', {
+        id: card.id,
+        card_id: card.card_id,
+        name: card.name,
+        type: type,
+        fullCard: card
+      });
       setFormData({
         condition: card.condition || '',
         price: card.myPrice?.toString() || '',
@@ -50,7 +56,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         acquiredDate: card.acquiredDate ? new Date(card.acquiredDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
       });
     }
-  }, [card]);
+  }, [card, type]);
 
   // Helper function to get language display names
   function getLanguageDisplayName(langCode: string): string {
@@ -95,7 +101,12 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         if (formData.price) updateData.price = parseFloat(formData.price);
         if (formData.notes !== undefined) updateData.notes = formData.notes;
         if (formData.language && formData.language !== 'all') updateData.language = formData.language;
-        if (formData.acquiredDate) updateData.acquiredDate = formData.acquiredDate;
+        // Temporarily disable date update until database migration is applied
+        // if (formData.acquiredDate) {
+        //   // Convert the date string to a proper date format for PostgreSQL
+        //   const dateObj = new Date(formData.acquiredDate);
+        //   updateData.acquired_date = dateObj.toISOString().split('T')[0];
+        // }
 
         console.log('EditCardModal - Updating collection card with data:', { 
           cardId: card.id, 
@@ -105,6 +116,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
           formData 
         });
 
+        // Use card_id and user_id to identify the record since the collection item ID might be null
         const { error } = await supabase
           .from('card_collections')
           .update(updateData)
@@ -112,7 +124,12 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
           .eq('user_id', user?.id);
 
         if (error) {
-          console.error('EditCardModal - Supabase error:', error);
+          console.error('EditCardModal - Supabase error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           throw error;
         }
         
@@ -152,7 +169,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         const { error } = await supabase
           .from('card_wishlist')
           .update(updateData)
-          .eq('card_id', card.card_id)
+          .eq('id', card.id)
           .eq('user_id', user?.id);
 
         if (error) {
@@ -264,15 +281,16 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="acquiredDate">{t('collection.date')}</Label>
-                <Input
-                  id="acquiredDate"
-                  type="date"
-                  value={formData.acquiredDate}
-                  onChange={(e) => handleInputChange('acquiredDate', e.target.value)}
-                />
-              </div>
+                                                                                         {/* Temporarily hide date field until database migration is applied */}
+                                             {/* <div className="space-y-2">
+                  <Label htmlFor="acquiredDate">{t('collection.date')}</Label>
+                  <Input
+                    id="acquiredDate"
+                    type="date"
+                    value={formData.acquiredDate}
+                    onChange={(e) => handleInputChange('acquiredDate', e.target.value)}
+                  />
+                </div> */}
             </>
           )}
 
