@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguagesData } from '@/hooks/useLanguagesData';
 
 interface EditCardModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { data: availableLanguages = [] } = useLanguagesData();
   
   const [formData, setFormData] = useState({
     condition: '',
@@ -47,6 +49,34 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
       });
     }
   }, [card]);
+
+  // Helper function to get language display names
+  function getLanguageDisplayName(langCode: string): string {
+    const languageMap: { [key: string]: string } = {
+      'en': 'English',
+      'de': 'Deutsch',
+      'fr': 'Français',
+      'es': 'Español',
+      'it': 'Italiano',
+      'pt': 'Português',
+      'nl': 'Nederlands',
+      'ja': '日本語',
+      'ko': '한국어',
+      'zh': '中文',
+      'ru': 'Русский'
+    };
+    
+    return languageMap[langCode] || langCode.toUpperCase();
+  }
+
+  // Create dynamic languages array from database data
+  const languages = [
+    { code: 'all', name: t('filters.allLanguages') },
+    ...availableLanguages.map(lang => ({
+      code: lang,
+      name: getLanguageDisplayName(lang)
+    }))
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,25 +234,29 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
                     <SelectValue placeholder={t('collection.selectCondition')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Near Mint">{t('collection.nearMint')}</SelectItem>
-                    <SelectItem value="Lightly Played">{t('collection.lightlyPlayed')}</SelectItem>
-                    <SelectItem value="Played">{t('collection.played')}</SelectItem>
-                    <SelectItem value="Poor">{t('collection.poor')}</SelectItem>
+                    <SelectItem value="Mint">{t('collection.conditionMint')}</SelectItem>
+                    <SelectItem value="Near Mint">{t('collection.conditionNearMint')}</SelectItem>
+                    <SelectItem value="Excellent">{t('collection.conditionExcellent')}</SelectItem>
+                    <SelectItem value="Good">{t('collection.conditionGood')}</SelectItem>
+                    <SelectItem value="Light Played">{t('collection.conditionLightPlayed')}</SelectItem>
+                    <SelectItem value="Played">{t('collection.conditionPlayed')}</SelectItem>
+                    <SelectItem value="Poor">{t('collection.conditionPoor')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language">{t('collection.language')}</Label>
+                <Label htmlFor="language">{t('cards.language')}</Label>
                 <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('collection.selectLanguage')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t('collection.allLanguages')}</SelectItem>
-                    <SelectItem value="en">{t('collection.english')}</SelectItem>
-                    <SelectItem value="de">{t('collection.german')}</SelectItem>
-                    <SelectItem value="nl">{t('collection.dutch')}</SelectItem>
+                    {languages.map((language) => (
+                      <SelectItem key={language.code} value={language.code}>
+                        {language.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

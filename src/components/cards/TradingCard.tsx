@@ -572,9 +572,8 @@ const TradingCard = ({
           }}
           type={owned ? 'collection' : 'wishlist'}
           onSuccess={() => {
-            // Don't call onAddToCollection here as it's actually the remove function
             // The query invalidation in EditCardModal will handle refreshing the data
-            if (onAddToWishlist) onAddToWishlist();
+            // Don't call onAddToWishlist here as it might be the remove function
           }}
         />
       </>
@@ -621,9 +620,8 @@ const TradingCard = ({
         }}
         type={owned ? 'collection' : 'wishlist'}
         onSuccess={() => {
-          // Don't call onAddToCollection here as it's actually the remove function
           // The query invalidation in EditCardModal will handle refreshing the data
-          if (onAddToWishlist) onAddToWishlist();
+          // Don't call onAddToWishlist here as it might be the remove function
         }}
       />
     </>
