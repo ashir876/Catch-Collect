@@ -77,6 +77,7 @@ interface TradingCardProps {
   marketSource?: string;
   marketCurrency?: string;
   marketRecordedAt?: string;
+  acquiredDate?: string;
 }
 
 const rarityConfig = {
@@ -171,6 +172,7 @@ const TradingCard = ({
   marketSource,
   marketCurrency,
   marketRecordedAt,
+  acquiredDate,
 }: TradingCardProps) => {
   console.log('TradingCard component rendering with props:', { 
     id, 
@@ -568,7 +570,8 @@ const TradingCard = ({
             myPrice: myPrice,
             notes: notes || (cardData as any)?.notes,
             priority: priority,
-            language: language || (cardData as any)?.language
+            language: language || (cardData as any)?.language,
+            acquiredDate: acquiredDate || (cardData as any)?.acquiredDate
           }}
           type={owned ? 'collection' : 'wishlist'}
           onSuccess={() => {
@@ -616,7 +619,8 @@ const TradingCard = ({
           myPrice: myPrice,
           notes: notes || (cardData as any)?.notes,
           priority: priority,
-          language: language || (cardData as any)?.language
+          language: language || (cardData as any)?.language,
+          acquiredDate: acquiredDate || (cardData as any)?.acquiredDate
         }}
         type={owned ? 'collection' : 'wishlist'}
         onSuccess={() => {

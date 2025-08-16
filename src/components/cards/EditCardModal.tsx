@@ -32,7 +32,8 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
     price: '',
     notes: '',
     priority: '',
-    language: ''
+    language: '',
+    acquiredDate: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -45,7 +46,8 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         price: card.myPrice?.toString() || '',
         notes: card.notes || '',
         priority: card.priority || 'medium',
-        language: card.language || 'all'
+        language: card.language || 'all',
+        acquiredDate: card.acquiredDate ? new Date(card.acquiredDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
       });
     }
   }, [card]);
@@ -93,6 +95,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         if (formData.price) updateData.price = parseFloat(formData.price);
         if (formData.notes !== undefined) updateData.notes = formData.notes;
         if (formData.language && formData.language !== 'all') updateData.language = formData.language;
+        if (formData.acquiredDate) updateData.acquiredDate = formData.acquiredDate;
 
         console.log('EditCardModal - Updating collection card with data:', { 
           cardId: card.id, 
@@ -259,6 +262,16 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="acquiredDate">{t('collection.date')}</Label>
+                <Input
+                  id="acquiredDate"
+                  type="date"
+                  value={formData.acquiredDate}
+                  onChange={(e) => handleInputChange('acquiredDate', e.target.value)}
+                />
               </div>
             </>
           )}
