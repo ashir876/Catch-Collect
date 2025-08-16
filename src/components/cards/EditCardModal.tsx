@@ -101,12 +101,11 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         if (formData.price) updateData.price = parseFloat(formData.price);
         if (formData.notes !== undefined) updateData.notes = formData.notes;
         if (formData.language && formData.language !== 'all') updateData.language = formData.language;
-        // Temporarily disable date update until database migration is applied
-        // if (formData.acquiredDate) {
-        //   // Convert the date string to a proper date format for PostgreSQL
-        //   const dateObj = new Date(formData.acquiredDate);
-        //   updateData.acquired_date = dateObj.toISOString().split('T')[0];
-        // }
+        if (formData.acquiredDate) {
+          // Convert the date string to a proper date format for PostgreSQL
+          const dateObj = new Date(formData.acquiredDate);
+          updateData.acquired_date = dateObj.toISOString().split('T')[0];
+        }
 
         console.log('EditCardModal - Updating collection card with data:', { 
           cardId: card.id, 
@@ -281,8 +280,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
                 </Select>
               </div>
 
-                                                                                         {/* Temporarily hide date field until database migration is applied */}
-                                             {/* <div className="space-y-2">
+                                                                                                                                                                                                                                <div className="space-y-2">
                   <Label htmlFor="acquiredDate">{t('collection.date')}</Label>
                   <Input
                     id="acquiredDate"
@@ -290,7 +288,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
                     value={formData.acquiredDate}
                     onChange={(e) => handleInputChange('acquiredDate', e.target.value)}
                   />
-                </div> */}
+                </div>
             </>
           )}
 

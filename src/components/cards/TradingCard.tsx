@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 import CardDetailModal from "./CardDetailModal";
 import AddToCollectionModal from "./AddToCollectionModal";
 import AddToWishlistModal from "./AddToWishlistModal";
@@ -184,6 +185,7 @@ const TradingCard = ({
   });
   
   const { t } = useTranslation();
+  const { toast } = useToast();
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
   
@@ -490,11 +492,17 @@ const TradingCard = ({
             size="sm"
             variant={wishlisted ? "destructive" : "secondary"}
             className="w-full"
-            onClick={owned ? handleCollectionToggle : handleWishlistToggle}
+            onClick={owned ? () => {
+              toast({
+                title: t('messages.error'),
+                description: t('messages.alreadyInCollection'),
+                variant: 'destructive'
+              });
+            } : handleWishlistToggle}
             disabled={isAddingToWishlist || isRemovingFromWishlist || isAddingToCollection || isRemovingFromCollection}
           >
             <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
-            {owned ? t('cards.removeFromCollection') : (wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist'))}
+            {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
           </Button>
 
           {/* Edit Card Button - Only show if card is in collection or wishlist */}
