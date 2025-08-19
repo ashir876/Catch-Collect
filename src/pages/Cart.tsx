@@ -224,8 +224,8 @@ const Cart = () => {
                     {/* Card Image */}
                     <div className="w-20 h-28 flex-shrink-0">
                       <img
-                        src="/placeholder.svg"
-                        alt={item.article_number}
+                        src={item.product_image || "/placeholder.svg"}
+                        alt={item.product_name || item.article_number}
                         className="w-full h-full object-cover rounded-lg"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -237,7 +237,7 @@ const Cart = () => {
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-semibold text-lg">{item.article_number || 'Unknown Item'}</h3>
+                          <h3 className="font-semibold text-lg">{item.product_name || item.article_number || 'Unknown Item'}</h3>
                         </div>
                         <Button
                           variant="ghost"
@@ -264,9 +264,7 @@ const Cart = () => {
                             {item.product_rarity}
                           </Badge>
                         )}
-                        {item.product_condition && (
-                          <Badge variant="secondary">{item.product_condition}</Badge>
-                        )}
+
                       </div>
 
                       {/* Quantity Controls and Price */}

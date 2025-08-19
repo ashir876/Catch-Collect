@@ -10,6 +10,10 @@ export interface CartItem {
   price: number;
   quantity: number;
   created_at: string;
+  // Product information from join
+  product_name?: string;
+  product_image?: string;
+  product_rarity?: string;
 }
 
 export const useNewCartData = () => {
@@ -22,7 +26,14 @@ export const useNewCartData = () => {
 
       const { data, error } = await (supabase as any)
         .from('carts_with_id')
-        .select('*')
+        .select(`
+          *,
+          products!carts_article_number_fkey (
+            name,
+            image_url,
+            rarity
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -31,7 +42,20 @@ export const useNewCartData = () => {
         throw error;
       }
 
-      return data as CartItem[];
+      // Transform the data to flatten the joined product information
+      const transformedData = data?.map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        article_number: item.article_number,
+        price: item.price,
+        quantity: item.quantity,
+        created_at: item.created_at,
+        product_name: item.products?.name,
+        product_image: item.products?.image_url,
+        product_rarity: item.products?.rarity,
+      })) || [];
+
+      return transformedData as CartItem[];
     },
     enabled: !!user,
   });

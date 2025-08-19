@@ -97,6 +97,14 @@ const Sets = () => {
     setCurrentPage(1);
   };
 
+  // Initialize and update language filter from URL parameters
+  useEffect(() => {
+    const urlLanguage = searchParams.get("language");
+    if (urlLanguage) {
+      setLanguageFilter(urlLanguage);
+    }
+  }, [searchParams]);
+
   // Reset page when language filter changes
   useEffect(() => {
     setCurrentPage(1);

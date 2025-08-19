@@ -36,7 +36,15 @@
     "myWishlist": "Meine Wunschliste",
     "mainTitle": "TRADING CARDS SAMMELN!",
     "mainSubtitle": "ENTDECKE SELTENE TRADING CARDS UND ERWEITERE DEINE SAMMLUNG",
-    "shopNow": "JETZT EINKAUFEN"
+    "shopNow": "JETZT EINKAUFEN",
+    "shopProducts": "Shop Produkte",
+    "quickStats": "Schnelle Statistiken",
+    "totalCards": "Gesamte Karten",
+    "series": "Serien",
+    "sets": "Sets",
+    "collectors": "Sammler",
+    "yourProgress": "Dein Fortschritt",
+    "community": "Community"
   },
   "cards": {
     "title": "Karten",
@@ -442,7 +450,9 @@
     "stock": "Lager",
     "left": "übrig",
     "noCardsFound": "Keine Karten gefunden",
-    "noCardsSubtitle": "Versuche andere Suchbegriffe oder ändere deine Filter."
+    "noCardsSubtitle": "Versuche andere Suchbegriffe oder ändere deine Filter.",
+    "noProductsFound": "Keine Produkte gefunden",
+    "noProductsSubtitle": "Versuche deine Suchbegriffe oder Filter anzupassen, um zu finden, was du suchst."
   },
   "orders": {
     "title": "Meine Bestellungen",

@@ -35,7 +35,15 @@
     "myWishlist": "Mijn verlanglijst",
     "mainTitle": "RUILKAARTEN VERZAMELEN!",
     "mainSubtitle": "ONTDEK ZELDZAME RUILKAARTEN EN BREID JE COLLECTIE UIT",
-    "shopNow": "NU WINKELEN"
+    "shopNow": "NU WINKELEN",
+    "shopProducts": "Winkel Producten",
+    "quickStats": "Snelle Statistieken",
+    "totalCards": "Totaal Kaarten",
+    "series": "Series",
+    "sets": "Sets",
+    "collectors": "Verzamelaars",
+    "yourProgress": "Jouw Voortgang",
+    "community": "Community"
   },
   "series": {
     "title": "Series",
@@ -128,7 +136,9 @@
     "stock": "Voorraad",
     "left": "over",
     "noCardsFound": "Geen kaarten gevonden",
-    "noCardsSubtitle": "Probeer andere zoektermen of wijzig je filters."
+    "noCardsSubtitle": "Probeer andere zoektermen of wijzig je filters.",
+    "noProductsFound": "Geen producten gevonden",
+    "noProductsSubtitle": "Probeer je zoektermen of filters aan te passen om te vinden wat je zoekt."
   },
   "collection": {
     "title": "Mijn Collectie",

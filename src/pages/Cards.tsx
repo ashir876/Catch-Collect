@@ -125,6 +125,14 @@ const Cards = () => {
     setCurrentPage(1);
   };
 
+  // Initialize and update language filter from URL parameters
+  React.useEffect(() => {
+    const urlLanguage = searchParams.get("language");
+    if (urlLanguage) {
+      setLanguageFilter(urlLanguage);
+    }
+  }, [searchParams]);
+
   const handleRarityFilterChange = (newRarityFilter: string) => {
     setRarityFilter(newRarityFilter);
     setCurrentPage(1);
@@ -585,7 +593,7 @@ const CardListItem = ({
               <img
                 src={card.image_url || "/placeholder.svg"}
                 alt={card.name}
-                className="w-full h-full object-contain rounded-lg"
+                className="w-full h-full object-contain rounded-lg pointer-events-none"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/placeholder.svg";
                 }}

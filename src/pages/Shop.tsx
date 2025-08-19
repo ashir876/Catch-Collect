@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, ShoppingCart, Filter, Grid3X3, List } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useCartActions } from "@/hooks/useCartActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
-import { useProductsData } from "@/hooks/useProductsData";
+import { useProductsData, useProductsCount } from "@/hooks/useProductsData";
+import { useProductsFilterOptions } from "@/hooks/useProductsFilterOptions";
 import { useCartCount } from "@/hooks/useCartCount";
+import { useQueryClient } from "@tanstack/react-query";
+import AdvancedFilters from "@/components/filters/AdvancedFilters";
 
 const Shop = () => {
   const { t } = useTranslation();
@@ -55,9 +58,24 @@ const Shop = () => {
 // Component for shopping individual cards
 const ShopFromCards = () => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [priceFilter, setPriceFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("en");
   const [rarityFilter, setRarityFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [hpRange, setHpRange] = useState({ min: "", max: "" });
+  const [illustratorFilter, setIllustratorFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [evolveFromFilter, setEvolveFromFilter] = useState("all");
+  const [retreatCostFilter, setRetreatCostFilter] = useState("all");
+  const [regulationMarkFilter, setRegulationMarkFilter] = useState("all");
+  const [formatLegalityFilter, setFormatLegalityFilter] = useState("all");
+  const [weaknessTypeFilter, setWeaknessTypeFilter] = useState("all");
+  const [setsFilter, setSetsFilter] = useState("all");
+  const [collectionFilter, setCollectionFilter] = useState("all");
+  const [wishlistFilter, setWishlistFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toast } = useToast();
@@ -98,65 +116,122 @@ const ShopFromCards = () => {
     return Math.floor(random * 20) + 1; // 1-20 stock
   };
 
-  // Use products data from Supabase
-  const { data: productsData = [], isLoading: productsLoading } = useProductsData('en', 100);
+  // Filter change handlers
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+  };
 
-  // Filter products based on price and rarity
-  let filteredProducts = productsData.filter(product => {
-    // Use actual product price from database
-    const productPrice = product.price || 0;
-    
-    let matchesPrice = true;
-    switch (priceFilter) {
-      case "under25":
-        matchesPrice = productPrice < 25;
-        break;
-      case "25to50":
-        matchesPrice = productPrice >= 25 && productPrice <= 50;
-        break;
-      case "50to100":
-        matchesPrice = productPrice >= 50 && productPrice <= 100;
-        break;
-      case "over100":
-        matchesPrice = productPrice > 100;
-        break;
-      default:
-        matchesPrice = true; // Show all products when no price filter is selected
-    }
+  const handleLanguageFilterChange = (newLanguageFilter: string) => {
+    setLanguageFilter(newLanguageFilter);
+  };
 
-    // Filter by rarity if specified
-    let matchesRarity = true;
-    if (rarityFilter !== "all" && product.rarity) {
-      matchesRarity = product.rarity.toLowerCase() === rarityFilter.toLowerCase();
+  const handleRarityFilterChange = (newRarityFilter: string) => {
+    setRarityFilter(newRarityFilter);
+  };
+
+  const handleTypeFilterChange = (newTypeFilter: string) => {
+    setTypeFilter(newTypeFilter);
+  };
+
+  const handleHpRangeChange = (newHpRange: { min: string; max: string }) => {
+    setHpRange(newHpRange);
+  };
+
+  const handleIllustratorFilterChange = (newIllustratorFilter: string) => {
+    setIllustratorFilter(newIllustratorFilter);
+  };
+
+  const handleCategoryFilterChange = (newCategoryFilter: string) => {
+    setCategoryFilter(newCategoryFilter);
+  };
+
+  const handleStageFilterChange = (newStageFilter: string) => {
+    setStageFilter(newStageFilter);
+  };
+
+  const handleEvolveFromFilterChange = (newEvolveFromFilter: string) => {
+    setEvolveFromFilter(newEvolveFromFilter);
+  };
+
+  const handleRetreatCostFilterChange = (newRetreatCostFilter: string) => {
+    setRetreatCostFilter(newRetreatCostFilter);
+  };
+
+  const handleRegulationMarkFilterChange = (newRegulationMarkFilter: string) => {
+    setRegulationMarkFilter(newRegulationMarkFilter);
+  };
+
+  const handleFormatLegalityFilterChange = (newFormatLegalityFilter: string) => {
+    setFormatLegalityFilter(newFormatLegalityFilter);
+  };
+
+  const handleWeaknessTypeFilterChange = (newWeaknessTypeFilter: string) => {
+    setWeaknessTypeFilter(newWeaknessTypeFilter);
+  };
+
+  const handleSetsFilterChange = (newSetsFilter: string) => {
+    setSetsFilter(newSetsFilter);
+  };
+
+  const handleCollectionFilterChange = (newCollectionFilter: string) => {
+    setCollectionFilter(newCollectionFilter);
+  };
+
+  const handleWishlistFilterChange = (newWishlistFilter: string) => {
+    setWishlistFilter(newWishlistFilter);
+  };
+
+  const handleReloadCollection = () => {
+    queryClient.invalidateQueries({ queryKey: ['collection', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
+    toast({
+      title: t('messages.collectionReloaded'),
+      description: t('messages.collectionReloadedDescription'),
+    });
+  };
+
+  // Initialize and update language filter from URL parameters
+  useEffect(() => {
+    const urlLanguage = searchParams.get("language");
+    if (urlLanguage) {
+      setLanguageFilter(urlLanguage);
     }
-    
-    return matchesPrice && matchesRarity;
+  }, [searchParams]);
+
+  // Get filter options data
+  const { data: filterOptions } = useProductsFilterOptions(languageFilter);
+
+  // Use products data from Supabase with all filters applied
+  const { data: productsData = [], isLoading: productsLoading } = useProductsData({
+    language: languageFilter,
+    limit: 100,
+    searchTerm: searchTerm || undefined,
+    rarity: rarityFilter !== 'all' ? rarityFilter : undefined,
+    type: typeFilter !== 'all' ? typeFilter : undefined,
+    illustrator: illustratorFilter !== 'all' ? illustratorFilter : undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    stage: stageFilter !== 'all' ? stageFilter : undefined,
+    evolveFrom: evolveFromFilter !== 'all' ? evolveFromFilter : undefined,
+    setsFilter: setsFilter !== 'all' ? setsFilter : undefined,
+    sortBy
   });
 
-  // Sort products
-  filteredProducts = filteredProducts.sort((a, b) => {
-    const priceA = a.price || 0;
-    const priceB = b.price || 0;
-    
-    switch (sortBy) {
-      case "price-low":
-        return priceA - priceB;
-      case "price-high":
-        return priceB - priceA;
-      case "name":
-        return (a.name || '').localeCompare(b.name || '');
-      case "rarity":
-        const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
-        const rarityA = rarityOrder[(a.rarity || 'common').toLowerCase() as keyof typeof rarityOrder] || 0;
-        const rarityB = rarityOrder[(b.rarity || 'common').toLowerCase() as keyof typeof rarityOrder] || 0;
-        return rarityB - rarityA;
-      default:
-        return 0;
-    }
+  // Get total count for pagination
+  const { data: totalCount = 0 } = useProductsCount({
+    language: languageFilter,
+    searchTerm: searchTerm || undefined,
+    rarity: rarityFilter !== 'all' ? rarityFilter : undefined,
+    type: typeFilter !== 'all' ? typeFilter : undefined,
+    illustrator: illustratorFilter !== 'all' ? illustratorFilter : undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    stage: stageFilter !== 'all' ? stageFilter : undefined,
+    evolveFrom: evolveFromFilter !== 'all' ? evolveFromFilter : undefined,
+    setsFilter: setsFilter !== 'all' ? setsFilter : undefined
   });
 
-  // Apply pagination to filtered and sorted products
-  const displayProducts = filteredProducts;
+  // Display products
+  const displayProducts = productsData;
 
   const handleAddToCart = async (product: any) => {
     if (!user) {
@@ -219,139 +294,49 @@ const ShopFromCards = () => {
 
   return (
     <div>
-      {/* Search and Filters */}
-      <div className="space-y-4 mb-8">
-        {/* Search Bar and View Toggle */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 sm:h-5 sm:w-5 z-10" />
-            <Input
-              placeholder={t('shop.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 sm:pl-12 pr-4 py-2 sm:py-3 text-base sm:text-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg"
-            />
-          </div>
-          
-          <div className="flex gap-2 justify-center sm:justify-start">
-            <Button
-              variant={viewMode === "grid" ? "default" : "outline"}
-              onClick={() => setViewMode("grid")}
-              size="sm"
-              className="flex-1 sm:flex-none"
-            >
-              <Grid3X3 className="h-4 w-4" />
-              <span className="ml-1 sm:hidden">Grid</span>
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              onClick={() => setViewMode("list")}
-              size="sm"
-              className="flex-1 sm:flex-none"
-            >
-              <List className="h-4 w-4" />
-              <span className="ml-1 sm:hidden">List</span>
-            </Button>
-          </div>
-        </div>
+      {/* Advanced Search and Filters */}
+      <AdvancedFilters
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        languageFilter={languageFilter}
+        onLanguageChange={handleLanguageFilterChange}
+        rarityFilter={rarityFilter}
+        onRarityChange={handleRarityFilterChange}
+        typeFilter={typeFilter}
+        onTypeChange={handleTypeFilterChange}
+        hpRange={hpRange}
+        onHpRangeChange={handleHpRangeChange}
+        illustratorFilter={illustratorFilter}
+        onIllustratorChange={handleIllustratorFilterChange}
+        collectionFilter={collectionFilter}
+        onCollectionChange={handleCollectionFilterChange}
+        wishlistFilter={wishlistFilter}
+        onWishlistChange={handleWishlistFilterChange}
+        onReloadCollection={handleReloadCollection}
+        categoryFilter={categoryFilter}
+        onCategoryChange={handleCategoryFilterChange}
+        stageFilter={stageFilter}
+        onStageChange={handleStageFilterChange}
+        evolveFromFilter={evolveFromFilter}
+        onEvolveFromChange={handleEvolveFromFilterChange}
+        retreatCostFilter={retreatCostFilter}
+        onRetreatCostChange={handleRetreatCostFilterChange}
+        regulationMarkFilter={regulationMarkFilter}
+        onRegulationMarkChange={handleRegulationMarkFilterChange}
+        formatLegalityFilter={formatLegalityFilter}
+        onFormatLegalityChange={handleFormatLegalityFilterChange}
+        weaknessTypeFilter={weaknessTypeFilter}
+        onWeaknessTypeChange={handleWeaknessTypeFilterChange}
+        setsFilter={setsFilter}
+        onSetsChange={handleSetsFilterChange}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        totalCount={totalCount}
+      />
 
-        {/* Filter Buttons - Responsive Layout */}
-        <div className="space-y-3">
-          {/* Price Filters */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <span className="text-sm font-semibold text-gray-700 sm:hidden">Price Range:</span>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={priceFilter === "all" ? "default" : "outline"}
-                onClick={() => setPriceFilter("all")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.allPrices')}
-              </Button>
-              <Button
-                variant={priceFilter === "under25" ? "default" : "outline"}
-                onClick={() => setPriceFilter("under25")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.under25')}
-              </Button>
-              <Button
-                variant={priceFilter === "25to50" ? "default" : "outline"}
-                onClick={() => setPriceFilter("25to50")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.25to50')}
-              </Button>
-              <Button
-                variant={priceFilter === "50to100" ? "default" : "outline"}
-                onClick={() => setPriceFilter("50to100")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.50to100')}
-              </Button>
-              <Button
-                variant={priceFilter === "over100" ? "default" : "outline"}
-                onClick={() => setPriceFilter("over100")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.over100')}
-              </Button>
-            </div>
-          </div>
 
-          {/* Sort Options */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <span className="text-sm font-semibold text-gray-700 sm:hidden">Sort By:</span>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={sortBy === "newest" ? "default" : "outline"}
-                onClick={() => setSortBy("newest")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.newest')}
-              </Button>
-              <Button
-                variant={sortBy === "price-low" ? "default" : "outline"}
-                onClick={() => setSortBy("price-low")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.priceLow')}
-              </Button>
-              <Button
-                variant={sortBy === "price-high" ? "default" : "outline"}
-                onClick={() => setSortBy("price-high")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.priceHigh')}
-              </Button>
-              <Button
-                variant={sortBy === "name" ? "default" : "outline"}
-                onClick={() => setSortBy("name")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.name')}
-              </Button>
-              <Button
-                variant={sortBy === "rarity" ? "default" : "outline"}
-                onClick={() => setSortBy("rarity")}
-                size="sm"
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                {t('shop.rarity')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Products Display */}
       {productsLoading ? (
@@ -503,7 +488,7 @@ const ShopFromCards = () => {
       )}
 
       {/* Empty State */}
-      {!productsLoading && filteredProducts.length === 0 && (
+      {!productsLoading && displayProducts.length === 0 && (
         <div className="text-center py-12">
           <Filter className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{t('shop.noProductsFound')}</h3>

@@ -327,7 +327,7 @@ const TradingCard = ({
   const cardContent = (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 flex flex-col",
+        "group relative overflow-hidden transition-all duration-300 flex flex-col cursor-pointer",
         owned && "ring-2 ring-accent ring-opacity-50"
       )}
     >
@@ -348,13 +348,7 @@ const TradingCard = ({
           <img
             src={cardImage}
             alt={name}
-            className="w-full h-full object-contain transition-transform duration-300 cursor-pointer hover:scale-105"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onViewDetails) {
-                onViewDetails(id);
-              }
-            }}
+            className="w-full h-full object-contain transition-transform duration-300 hover:scale-105 pointer-events-none"
           />
           
           {/* Status Badges */}

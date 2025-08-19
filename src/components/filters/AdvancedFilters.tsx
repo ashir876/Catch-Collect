@@ -48,6 +48,11 @@ interface AdvancedFiltersProps {
   onWeaknessTypeChange?: (value: string) => void;
   setsFilter?: string;
   onSetsChange?: (value: string) => void;
+  sortBy?: string;
+  onSortChange?: (value: string) => void;
+  viewMode?: "grid" | "list";
+  onViewModeChange?: (mode: "grid" | "list") => void;
+  totalCount?: number;
 }
 
 const AdvancedFilters = ({
@@ -84,7 +89,12 @@ const AdvancedFilters = ({
   weaknessTypeFilter = "all",
   onWeaknessTypeChange = () => {},
   setsFilter = "all",
-  onSetsChange = () => {}
+  onSetsChange = () => {},
+  sortBy = "newest",
+  onSortChange = () => {},
+  viewMode = "grid",
+  onViewModeChange = () => {},
+  totalCount = 0
 }: AdvancedFiltersProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();

@@ -211,9 +211,10 @@
     "adventureSubtitle": "Discover rare cards, complete your collection and become the ultimate Catch Collect Champion!",
     "myCollection": "My Collection",
     "myWishlist": "My Wishlist",
-    "mainTitle": "TRADING CARDS SAMMELN!",
+    "mainTitle": "COLLECT TRADING CARDS!",
     "mainSubtitle": "DISCOVER RARE TRADING CARDS AND EXPAND YOUR COLLECTION",
     "shopNow": "SHOP NOW",
+    "shopProducts": "Shop Products",
     "quickStats": "Quick Stats",
     "totalCards": "Total Cards",
     "series": "Series",
@@ -649,7 +650,9 @@
     "stock": "Stock",
     "left": "left",
     "noCardsFound": "No cards found",
-    "noCardsSubtitle": "Try different search terms or change your filters."
+    "noCardsSubtitle": "Try different search terms or change your filters.",
+    "noProductsFound": "No products found",
+    "noProductsSubtitle": "Try adjusting your search terms or filters to find what you're looking for."
   },
   "orders": {
     "title": "My Orders",
