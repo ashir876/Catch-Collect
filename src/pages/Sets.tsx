@@ -196,15 +196,22 @@ const Sets = () => {
         </div>
       </div>
 
-      {/* Pagination Info */}
+      {/* Pagination Info and Controls */}
       {totalCount > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-4">
           <PaginationInfo
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalCount}
             itemsPerPage={itemsPerPage}
           />
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
 
@@ -359,17 +366,6 @@ const Sets = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-8">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
-
       {/* Empty State */}
       {!isLoading && sortedSets.length === 0 && (
         <div className="text-center py-12">
@@ -380,6 +376,8 @@ const Sets = () => {
           </p>
         </div>
       )}
+
+
     </div>
   );
 };

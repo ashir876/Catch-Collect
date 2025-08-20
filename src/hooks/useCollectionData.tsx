@@ -58,13 +58,42 @@ export const useCollectionData = () => {
       }
 
       // Then, get the card details for each collection item
-      const cardIds = collectionItems.map(item => item.card_id);
-      console.log('useCollectionData - Card IDs to fetch:', cardIds);
+      // Create a more specific query to get the exact cards we need
+      const cardQueries = collectionItems.map(item => 
+        supabase
+          .from('cards')
+          .select('*')
+          .eq('card_id', item.card_id)
+          .eq('language', item.language)
+          .single()
+      );
       
-      const { data: cards, error: cardsError } = await supabase
-        .from('cards')
-        .select('*')
-        .in('card_id', cardIds);
+      console.log('useCollectionData - Fetching cards for collection items:', collectionItems.length);
+      
+      const cardResults = await Promise.all(cardQueries);
+      const cards = cardResults
+        .map(result => result.data)
+        .filter(card => card !== null); // Filter out any null results
+      
+      const cardsError = cardResults.find(result => result.error)?.error;
+
+      // Fetch series information for the cards
+      const setIds = cards.map(card => card.set_id).filter(Boolean);
+      let seriesData = {};
+      
+      if (setIds.length > 0) {
+        const { data: seriesResults, error: seriesError } = await supabase
+          .from('series_sets')
+          .select('set_id, series_name')
+          .in('set_id', setIds);
+        
+        if (!seriesError && seriesResults) {
+          seriesData = seriesResults.reduce((acc, item) => {
+            acc[item.set_id] = item.series_name;
+            return acc;
+          }, {});
+        }
+      }
 
       if (cardsError) {
         console.error('Error fetching cards:', cardsError);
@@ -82,16 +111,42 @@ export const useCollectionData = () => {
       }
 
       // Combine collection items with card data
-      const data = collectionItems.map(collectionItem => {
-        const card = cards?.find(c => c.card_id === collectionItem.card_id);
+      const data = collectionItems.map((collectionItem, index) => {
+        const card = cards[index]; // Since we fetched cards in the same order as collection items
         console.log('useCollectionData - Combining data for card_id:', collectionItem.card_id, {
           foundCard: !!card,
           cardName: card?.name,
-          cardSet: card?.set_name
+          cardSet: card?.set_name,
+          collectionName: collectionItem.name,
+          language: collectionItem.language
         });
+        
+        // Use the card data from the cards table if available, otherwise fall back to collection data
+        const finalCardData = card ? {
+          ...card,
+          series_name: seriesData[card.set_id] || null
+        } : {
+          card_id: collectionItem.card_id,
+          name: collectionItem.name,
+          set_name: collectionItem.set_name,
+          set_id: collectionItem.set_id,
+          card_number: collectionItem.card_number,
+          rarity: collectionItem.rarity,
+          image_url: collectionItem.image_url,
+          description: collectionItem.description,
+          illustrator: collectionItem.illustrator,
+          hp: collectionItem.hp,
+          types: collectionItem.types,
+          attacks: collectionItem.attacks,
+          weaknesses: collectionItem.weaknesses,
+          retreat: collectionItem.retreat,
+          language: collectionItem.language,
+          series_name: null
+        };
+        
         return {
           ...collectionItem,
-          cards: card
+          cards: finalCardData
         };
       });
 

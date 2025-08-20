@@ -118,7 +118,7 @@ const Collection = () => {
       id: item.card_id, // Use the card_id for the TradingCard component
       cardId: item.card_id, // Keep the original card ID for reference
       name: item.cards?.name || 'Unknown Card',
-      series: item.cards?.series_name || 'Unknown Series',
+      series: item.series_name || item.cards?.series_name || 'Unknown Series',
       set: item.cards?.set_name || 'Unknown Set',
       number: item.cards?.card_number || '',
       rarity: (item.cards?.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
@@ -298,13 +298,13 @@ const Collection = () => {
       previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user.id));
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), (old: any) => {
         if (!old) return old;
-        return old.filter((item: any) => item.id !== collectionItemId);
+        return old.filter((item: any) => item.card_id !== collectionItemId);
       });
     }
     
     try {
-      // Extract card_id from the composite key
-      const cardId = collectionItemId.split('_')[1]; // Get the card_id part from the composite key
+      // Since collectionItemId is actually the card_id in this case
+      const cardId = collectionItemId;
       
       const { error } = await supabase
         .from('card_collections')
@@ -444,7 +444,7 @@ const Collection = () => {
                 {mostExpensiveCard && (
                   <div className="mt-3 p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0">
+                       <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0 relative">
                         <img
                           src={mostExpensiveCard.image}
                           alt={mostExpensiveCard.name}
@@ -453,12 +453,21 @@ const Collection = () => {
                             (e.target as HTMLImageElement).src = '/placeholder.svg';
                           }}
                         />
+                         {/* Highest Value Tag */}
+                         <div className="absolute -top-1 -right-1">
+                           <Badge className="bg-yellow-500 text-black text-xs px-1 py-0 h-4">
+                             💎
+                           </Badge>
+                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{mostExpensiveCard.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {(mostExpensiveCard.marketPrice || mostExpensiveCard.myPrice || 0).toFixed(2)} CHF
                         </p>
+                         <p className="text-xs text-green-600 font-medium">
+                           Highest Value Card
+                         </p>
                       </div>
                     </div>
                   </div>
@@ -478,7 +487,7 @@ const Collection = () => {
                 <p className="text-xs text-muted-foreground">
                   {t('collection.differentSets')}
                 </p>
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-2 max-h-72 overflow-y-auto">
                   {setNames.map((setName) => {
                     const setCards = ownedCards.filter(card => card.set === setName);
                     const cardCount = setCards.length;
@@ -803,36 +812,37 @@ const Collection = () => {
            </div>
 
                      {/* Cards Display */}
-           {cardViewMode === "grid" ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-               {filteredCards.map((card) => (
-                 <div key={card.instanceId || card.id} className="relative">
-                                        <TradingCard
-                       {...card}
-                       inCollection={true}
-                       inWishlist={false}
-                       isOwned={true}
-                       isWishlisted={false}
-                       onAddToCollection={(e) => {
-                         e?.stopPropagation?.();
-                         handleRemoveFromCollection(card.collectionItemId, card.name);
-                       }}
-                       onAddToWishlist={() => {}}
-                       onAddToCart={() => {}}
-                       onViewDetails={() => handleCardClick(card)}
-                       hidePriceAndBuy={false}
-                       disableHoverEffects={true}
-                       cardData={card.cardData}
-                       collectionItemId={card.collectionItemId}
-                     />
-                   <div className="absolute top-2 right-2 z-30">
-                     <Badge variant="secondary" className="text-xs">
-                       {card.condition}
-                     </Badge>
-                   </div>
-                 </div>
-               ))}
-             </div>
+                       {cardViewMode === "grid" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {filteredCards.map((card) => (
+                  <div key={card.instanceId || card.id} className="flex flex-col">
+                    <div className="relative">
+                                             <TradingCard
+                         {...card}
+                         inCollection={true}
+                         inWishlist={false}
+                         isOwned={true}
+                         isWishlisted={false}
+                         onAddToCollection={() => handleRemoveFromCollection(card.id, card.name)}
+                         onAddToWishlist={() => {}}
+                         onAddToCart={() => {}}
+                         onViewDetails={() => handleCardClick(card)}
+                         hidePriceAndBuy={false}
+                         disableHoverEffects={true}
+                         cardData={card.cardData}
+                         collectionItemId={card.collectionItemId}
+                       />
+                      {/* Condition Badge */}
+                      <div className="absolute top-2 right-2 z-30">
+                        <Badge variant="secondary" className="text-xs">
+                          {card.condition}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                  </div>
+                ))}
+              </div>
                      ) : (
              <div className="space-y-2">
                {filteredCards.map((card) => (
@@ -881,17 +891,17 @@ const Collection = () => {
                          </div>
                        </div>
                        <div className="flex flex-col items-end gap-2">
-                         <Button
-                           variant="outline"
-                           size="sm"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             handleRemoveFromCollection(card.collectionItemId, card.name);
-                           }}
-                           className="h-8 px-2"
-                         >
-                           {t('collection.remove')}
-                         </Button>
+                                                   <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveFromCollection(card.id, card.name);
+                            }}
+                            className="h-8 px-2"
+                          >
+                            {t('collection.remove')}
+                          </Button>
                        </div>
                      </div>
                    </div>

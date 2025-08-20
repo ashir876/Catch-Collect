@@ -10,6 +10,7 @@ import { useSeriesData, useSeriesCount } from "@/hooks/useSeriesData";
 import { useProductsData } from "@/hooks/useProductsData";
 import { useSetsData, useSetsCount } from "@/hooks/useSetsData";
 import { useUsersCount } from "@/hooks/useProfilesCount";
+import { useCardsCount } from "@/hooks/useCardsData";
 import { useTranslation } from 'react-i18next';
 import SearchBar from "@/components/SearchBar";
 import UserStats from "@/components/user/UserStats";
@@ -29,12 +30,11 @@ const Home = () => {
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   
   const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
-  const { data: productsData, isLoading: productsLoading } = useProductsData(i18n.language, 10);
+  const { data: productsData, isLoading: productsLoading } = useProductsData({ language: i18n.language, limit: 10 });
   const { data: setsData, isLoading: setsLoading } = useSetsData({ language: 'en' });
   
   // Get actual counts for quick stats - count all languages
-  const { data: totalProductsData = [] } = useProductsData('en', 1000); // Use products count as approximation
-  const totalCardsCount = totalProductsData.length;
+  const { data: totalCardsCount = 0 } = useCardsCount({}); // Get total count of all cards
   const { data: totalSeriesCount = 0 } = useSeriesCount({});
   const { data: totalSetsCount = 0 } = useSetsCount({});
   const { data: totalCollectorsCount = 0 } = useUsersCount();

@@ -99,7 +99,8 @@ const Wishlist = () => {
     } : null;
     
     return {
-      id: item.card_id,
+      id: item.id?.toString() || item.card_id, // Use item.id if available, fallback to card_id
+      card_id: item.card_id, // Add the card_id as a separate field for reference
       name: item.card.name || t("cards.unknownCard"),
       series: item.card.series_name || "",
       set: item.card.set_name || "",
@@ -219,7 +220,7 @@ const Wishlist = () => {
   // Get set names with card counts
   const setNames = Array.from(new Set(wishlistCards.map(card => card.set))).sort();
 
-  const handleRemoveFromWishlist = async (cardId: string, cardName: string) => {
+  const handleRemoveFromWishlist = async (wishlistItemId: string, cardName: string) => {
     if (!user) return;
     
     // Optimistic update - remove the card from all wishlist caches immediately
@@ -228,15 +229,28 @@ const Wishlist = () => {
     
     queryClient.setQueryData(wishlistQueryKey, (old: any) => {
       if (!old) return old;
-      return old.filter((item: any) => item.card_id !== cardId);
+      return old.filter((item: any) => {
+        const itemId = item.id?.toString() || item.card_id;
+        return itemId !== wishlistItemId;
+      });
     });
     
     try {
-      const { error } = await supabase
+      // Check if wishlistItemId is a number (wishlist item ID) or string (card_id)
+      const isNumericId = !isNaN(parseInt(wishlistItemId));
+      
+      let deleteQuery = supabase
         .from('card_wishlist')
         .delete()
-        .eq('user_id', user.id)
-        .eq('card_id', cardId);
+        .eq('user_id', user.id);
+      
+      if (isNumericId) {
+        deleteQuery = deleteQuery.eq('id', parseInt(wishlistItemId));
+      } else {
+        deleteQuery = deleteQuery.eq('card_id', wishlistItemId);
+      }
+      
+      const { error } = await deleteQuery;
         
       if (error) throw error;
       
@@ -366,7 +380,7 @@ const Wishlist = () => {
                 {mostExpensiveCard && (
                   <div className="mt-3 p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0">
+                      <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0 relative">
                         <img
                           src={mostExpensiveCard.image}
                           alt={mostExpensiveCard.name}
@@ -375,11 +389,20 @@ const Wishlist = () => {
                             (e.target as HTMLImageElement).src = '/placeholder.svg';
                           }}
                         />
+                        {/* Highest Value Tag */}
+                        <div className="absolute -top-1 -right-1">
+                          <Badge className="bg-yellow-500 text-black text-xs px-1 py-0 h-4">
+                            💎
+                          </Badge>
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{mostExpensiveCard.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {(mostExpensiveCard.marketPrice || 0).toFixed(2)} CHF
+                        </p>
+                        <p className="text-xs text-green-600 font-medium">
+                          Highest Value Card
                         </p>
                       </div>
                     </div>
@@ -400,8 +423,8 @@ const Wishlist = () => {
                 <p className="text-xs text-muted-foreground">
                   {t('wishlist.differentSets')}
                 </p>
-                <div className="mt-3 space-y-2">
-                  {setNames.map((setName) => {
+                <div className="mt-3 space-y-2 max-h-72 overflow-y-auto">
+                  {setNames.slice(0, 6).map((setName) => {
                     const setCards = wishlistCards.filter(card => card.set === setName);
                     const cardCount = setCards.length;
                     const setImage = setCards[0]?.image || '/placeholder.svg';
@@ -441,13 +464,13 @@ const Wishlist = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('wishlist.highPriority')}</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('wishlist.legendaryCards')}</CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{wishlistStats.priorityBreakdown.high}</div>
+                <div className="text-2xl font-bold">{wishlistStats.rarityBreakdown.legendary}</div>
                 <p className="text-xs text-muted-foreground">
-                  {t('wishlist.highPriorityCards')}
+                  {t('wishlist.rarestCards')}
                 </p>
               </CardContent>
             </Card>

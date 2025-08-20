@@ -165,11 +165,21 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
 
         console.log('EditCardModal - Updating wishlist card with data:', { cardId: card.id, updateData });
 
-        const { error } = await supabase
+        // Check if card.id is a numeric wishlist item ID or a card_id
+        const isNumericId = !isNaN(parseInt(card.id)) && card.id !== card.card_id;
+        
+        let updateQuery = supabase
           .from('card_wishlist')
           .update(updateData)
-          .eq('id', card.id)
           .eq('user_id', user?.id);
+        
+        if (isNumericId) {
+          updateQuery = updateQuery.eq('id', parseInt(card.id));
+        } else {
+          updateQuery = updateQuery.eq('card_id', card.id);
+        }
+        
+        const { error } = await updateQuery;
 
         if (error) {
           console.error('EditCardModal - Supabase wishlist error:', error);

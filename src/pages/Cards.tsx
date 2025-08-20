@@ -19,6 +19,7 @@ import LanguageFilter from "@/components/LanguageFilter";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import CardDetailModal from "@/components/cards/CardDetailModal";
 import AddToCollectionModal from "@/components/cards/AddToCollectionModal";
+import BulkAddToCollectionModal from "@/components/cards/BulkAddToCollectionModal";
 import React from "react"; // Added missing import
 import { useIsCardInCollection } from "@/hooks/useCollectionData";
 import { useIsCardInWishlist } from "@/hooks/useWishlistData";
@@ -49,9 +50,14 @@ const Cards = () => {
   const [itemsPerPage] = useState(50); // Show 50 items per page for more compact view
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
+  // Selection state for bulk actions
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
+  const [isBulkSelectionMode, setIsBulkSelectionMode] = useState(false);
+  
   // Modal state
   const [isAddToCollectionModalOpen, setIsAddToCollectionModalOpen] = useState(false);
   const [selectedCardForCollection, setSelectedCardForCollection] = useState<any>(null);
+  const [isBulkAddToCollectionModalOpen, setIsBulkAddToCollectionModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -214,6 +220,124 @@ const Cards = () => {
     });
   };
 
+  // Bulk selection handlers
+  const handleCardSelection = (cardId: string, isSelected: boolean) => {
+    setSelectedCards(prev => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        newSet.add(cardId);
+      } else {
+        newSet.delete(cardId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCards.size === filteredCards.length) {
+      setSelectedCards(new Set());
+    } else {
+      setSelectedCards(new Set(filteredCards.map(card => `${card.card_id}-${card.language}`)));
+    }
+  };
+
+  const handleBulkAddToCollection = () => {
+    if (selectedCards.size === 0) {
+      toast({
+        title: t('messages.noCardsSelected'),
+        description: t('messages.pleaseSelectCards'),
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsBulkAddToCollectionModalOpen(true);
+  };
+
+  const handleBulkAddToCollectionWithDetails = async (cardDetails: { [cardId: string]: {
+    condition: string;
+    price: number;
+    date: string;
+    notes: string;
+    quantity: number;
+  }}) => {
+    if (!user || selectedCards.size === 0) return;
+
+    try {
+      const selectedCardData = filteredCards.filter(card => 
+        selectedCards.has(`${card.card_id}-${card.language}`)
+      );
+
+      // Insert records with individual details for each card
+      const insertData = [];
+      for (const card of selectedCardData) {
+        const cardId = `${card.card_id}-${card.language}`;
+        const details = cardDetails[cardId];
+        
+        if (details) {
+          for (let i = 0; i < details.quantity; i++) {
+            insertData.push({
+              user_id: user.id,
+              card_id: card.card_id,
+              language: card.language || 'en',
+                             // Store full card details for proper display
+               name: card.name,
+               set_name: card.set_name,
+               set_id: card.set_id,
+               card_number: card.card_number,
+               rarity: card.rarity,
+               image_url: card.image_url,
+               description: card.description,
+               illustrator: card.illustrator,
+               hp: card.hp,
+               types: card.types,
+               attacks: card.attacks,
+               weaknesses: card.weaknesses,
+               retreat: card.retreat,
+               series_name: card.series_name,
+              condition: details.condition,
+              price: details.price,
+              notes: details.notes || `Acquired on: ${details.date}`,
+            });
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from('card_collections')
+        .insert(insertData);
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      setIsBulkAddToCollectionModalOpen(false);
+      setSelectedCards(new Set());
+      setIsBulkSelectionMode(false);
+      
+      const totalCards = selectedCardData.length;
+      const totalCopies = insertData.length;
+      
+      toast({
+        title: t('messages.addedToCollection'),
+        description: `${totalCards} cards added to collection (${totalCopies} total copies).`,
+      });
+    } catch (error) {
+      console.error('Error adding cards to collection:', error);
+      toast({
+        title: t('messages.error'),
+        description: t('messages.collectionError'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleBulkSelectionMode = () => {
+    setIsBulkSelectionMode(!isBulkSelectionMode);
+    if (isBulkSelectionMode) {
+      setSelectedCards(new Set());
+    }
+  };
+
 
 
   // Use cards data directly since we're filtering by language at the database level
@@ -249,6 +373,21 @@ const Cards = () => {
         user_id: user.id,
         card_id: selectedCardForCollection.card_id,
         language: selectedCardForCollection.language || 'en',
+                 // Store full card details for proper display
+         name: selectedCardForCollection.name,
+         set_name: selectedCardForCollection.set_name,
+         set_id: selectedCardForCollection.set_id,
+         card_number: selectedCardForCollection.card_number,
+         rarity: selectedCardForCollection.rarity,
+         image_url: selectedCardForCollection.image_url,
+         description: selectedCardForCollection.description,
+         illustrator: selectedCardForCollection.illustrator,
+         hp: selectedCardForCollection.hp,
+         types: selectedCardForCollection.types,
+         attacks: selectedCardForCollection.attacks,
+         weaknesses: selectedCardForCollection.weaknesses,
+         retreat: selectedCardForCollection.retreat,
+         series_name: selectedCardForCollection.series_name,
         condition: data.condition,
         price: data.price,
         notes: data.notes || `Acquired on: ${data.date}`,
@@ -420,9 +559,48 @@ const Cards = () => {
          onSetsChange={handleSetsFilterChange}
        />
 
-      {/* View Mode Toggle */}
-      <div className="flex justify-end mb-6">
-        <div className="flex gap-2">
+      {/* View Mode Toggle and Bulk Actions */}
+      <div className="flex justify-between items-center mb-6">
+        {/* Bulk Selection Controls */}
+        {isBulkSelectionMode && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSelectAll}
+            >
+              {selectedCards.size === filteredCards.length ? 'Deselect All' : 'Select All'}
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {selectedCards.size} of {filteredCards.length} selected
+            </span>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleBulkAddToCollection}
+              disabled={selectedCards.size === 0}
+            >
+              Add {selectedCards.size} to Collection
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleBulkSelectionMode}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+        
+        {/* View Mode Toggle */}
+        <div className="flex gap-2 ml-auto">
+          <Button
+            variant={isBulkSelectionMode ? "outline" : "default"}
+            size="sm"
+            onClick={toggleBulkSelectionMode}
+          >
+            {isBulkSelectionMode ? 'Exit Selection' : 'Select Multiple'}
+          </Button>
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
             onClick={() => setViewMode("grid")}
@@ -440,15 +618,22 @@ const Cards = () => {
         </div>
       </div>
 
-      {/* Pagination Info */}
+      {/* Pagination Info and Controls */}
       {totalCount > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-4">
           <PaginationInfo
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalCount}
             itemsPerPage={itemsPerPage}
           />
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
 
@@ -487,43 +672,66 @@ const Cards = () => {
       ) : viewMode === "grid" ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
            {filteredCards.map((card) => (
-             <CardWithWishlist
-               key={`${card.card_id}-${card.language}`}
-               card={card}
-               hidePriceAndBuy={true}
-               onAddToCollection={handleAddToCollection}
-             />
+             <div key={`${card.card_id}-${card.language}`} className="relative">
+               {/* Selection Checkbox */}
+               {isBulkSelectionMode && (
+                 <div className="absolute top-2 left-2 z-50">
+                   <input
+                     type="checkbox"
+                     checked={selectedCards.has(`${card.card_id}-${card.language}`)}
+                     onChange={(e) => {
+                       e.stopPropagation();
+                       handleCardSelection(`${card.card_id}-${card.language}`, e.target.checked);
+                     }}
+                     onClick={(e) => e.stopPropagation()}
+                     className="w-4 h-4 text-primary bg-background border-2 border-primary rounded focus:ring-primary focus:ring-2 cursor-pointer"
+                   />
+                 </div>
+               )}
+               <CardWithWishlist
+                 card={card}
+                 hidePriceAndBuy={true}
+                 onAddToCollection={handleAddToCollection}
+               />
+             </div>
            ))}
          </div>
       ) : (
         <div className="space-y-2">
           {filteredCards.map((card) => (
-            <CardListItem
-              key={`${card.card_id}-${card.language}`}
-              card={card}
-              addToCollection={addToCollection}
-              removeFromCollection={removeFromCollection}
-              isAddingToCollection={isAddingToCollection}
-              isRemovingFromCollection={isRemovingFromCollection}
-              addToWishlist={addToWishlist}
-              removeFromWishlist={removeFromWishlist}
-              isAddingToWishlist={isAddingToWishlist}
-              isRemovingFromWishlist={isRemovingFromWishlist}
-            />
+            <div key={`${card.card_id}-${card.language}`} className="relative">
+              {/* Selection Checkbox */}
+              {isBulkSelectionMode && (
+                <div className="absolute top-2 left-2 z-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedCards.has(`${card.card_id}-${card.language}`)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleCardSelection(`${card.card_id}-${card.language}`, e.target.checked);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 text-primary bg-background border-2 border-primary rounded focus:ring-primary focus:ring-2 cursor-pointer"
+                  />
+                </div>
+              )}
+              <CardListItem
+                card={card}
+                addToCollection={addToCollection}
+                removeFromCollection={removeFromCollection}
+                isAddingToCollection={isAddingToCollection}
+                isRemovingFromCollection={isRemovingFromCollection}
+                addToWishlist={addToWishlist}
+                removeFromWishlist={removeFromWishlist}
+                isAddingToWishlist={isAddingToWishlist}
+                isRemovingFromWishlist={isRemovingFromWishlist}
+              />
+            </div>
           ))}
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-8">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
+
 
       {/* Empty State */}
       {!isLoading && filteredCards.length === 0 && (
@@ -545,6 +753,19 @@ const Cards = () => {
         }}
         onAdd={handleAddToCollectionWithDetails}
         cardName={selectedCardForCollection?.name || ''}
+        isLoading={isAddingToCollection}
+      />
+
+      {/* Bulk Add to Collection Modal */}
+      <BulkAddToCollectionModal
+        isOpen={isBulkAddToCollectionModalOpen}
+        onClose={() => {
+          setIsBulkAddToCollectionModalOpen(false);
+        }}
+        onAdd={handleBulkAddToCollectionWithDetails}
+        selectedCards={filteredCards.filter(card => 
+          selectedCards.has(`${card.card_id}-${card.language}`)
+        )}
         isLoading={isAddingToCollection}
       />
     </div>

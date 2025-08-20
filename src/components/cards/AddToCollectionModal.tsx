@@ -22,6 +22,7 @@ interface AddToCollectionModalProps {
   }) => void;
   cardName: string;
   isLoading?: boolean;
+  isBulkMode?: boolean;
 }
 
 const AddToCollectionModal = ({
@@ -29,7 +30,8 @@ const AddToCollectionModal = ({
   onClose,
   onAdd,
   cardName,
-  isLoading = false
+  isLoading = false,
+  isBulkMode = false
 }: AddToCollectionModalProps) => {
   const { t } = useTranslation();
   const [condition, setCondition] = useState("Mint");
@@ -68,10 +70,10 @@ const AddToCollectionModal = ({
       <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader className="pb-3">
           <DialogTitle className="text-lg font-bold">
-            {t('collection.addCardToCollection')}
+            {isBulkMode ? `Add ${cardName} to Collection` : t('collection.addCardToCollection')}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {t('collection.provideCardDetails')}
+            {isBulkMode ? 'Provide details for all selected cards' : t('collection.provideCardDetails')}
           </p>
         </DialogHeader>
         
@@ -121,7 +123,9 @@ const AddToCollectionModal = ({
 
           {/* Quantity */}
           <div className="space-y-2">
-            <Label htmlFor="quantity">{t('collection.quantity')}</Label>
+            <Label htmlFor="quantity">
+              {isBulkMode ? 'Quantity per card' : t('collection.quantity')}
+            </Label>
             <Input
               id="quantity"
               type="number"
@@ -130,6 +134,11 @@ const AddToCollectionModal = ({
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="1"
             />
+            {isBulkMode && (
+              <p className="text-xs text-muted-foreground">
+                Each selected card will be added with this quantity
+              </p>
+            )}
           </div>
 
           {/* Price */}

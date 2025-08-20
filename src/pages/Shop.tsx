@@ -14,6 +14,7 @@ import { useProductsFilterOptions } from "@/hooks/useProductsFilterOptions";
 import { useCartCount } from "@/hooks/useCartCount";
 import { useQueryClient } from "@tanstack/react-query";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
+import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 
 const Shop = () => {
   const { t } = useTranslation();
@@ -78,9 +79,97 @@ const ShopFromCards = () => {
   const [wishlistFilter, setWishlistFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50); // Show 50 items per page
   const { toast } = useToast();
   const { user } = useAuth();
   const { addToCart, isLoading } = useCartActions();
+
+  // Reset page when filters change
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    setCurrentPage(1);
+  };
+
+  const handleLanguageFilterChange = (newLanguageFilter: string) => {
+    setLanguageFilter(newLanguageFilter);
+    setCurrentPage(1);
+  };
+
+  const handleRarityFilterChange = (newRarityFilter: string) => {
+    setRarityFilter(newRarityFilter);
+    setCurrentPage(1);
+  };
+
+  const handleTypeFilterChange = (newTypeFilter: string) => {
+    setTypeFilter(newTypeFilter);
+    setCurrentPage(1);
+  };
+
+  const handleHpRangeChange = (newHpRange: { min: string; max: string }) => {
+    setHpRange(newHpRange);
+    setCurrentPage(1);
+  };
+
+  const handleIllustratorFilterChange = (newIllustratorFilter: string) => {
+    setIllustratorFilter(newIllustratorFilter);
+    setCurrentPage(1);
+  };
+
+  const handleCollectionFilterChange = (newCollectionFilter: string) => {
+    setCollectionFilter(newCollectionFilter);
+    setCurrentPage(1);
+  };
+
+  const handleWishlistFilterChange = (newWishlistFilter: string) => {
+    setWishlistFilter(newWishlistFilter);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryFilterChange = (newCategoryFilter: string) => {
+    setCategoryFilter(newCategoryFilter);
+    setCurrentPage(1);
+  };
+
+  const handleStageFilterChange = (newStageFilter: string) => {
+    setStageFilter(newStageFilter);
+    setCurrentPage(1);
+  };
+
+  const handleEvolveFromFilterChange = (newEvolveFromFilter: string) => {
+    setEvolveFromFilter(newEvolveFromFilter);
+    setCurrentPage(1);
+  };
+
+  const handleRetreatCostFilterChange = (newRetreatCostFilter: string) => {
+    setRetreatCostFilter(newRetreatCostFilter);
+    setCurrentPage(1);
+  };
+
+  const handleRegulationMarkFilterChange = (newRegulationMarkFilter: string) => {
+    setRegulationMarkFilter(newRegulationMarkFilter);
+    setCurrentPage(1);
+  };
+
+  const handleFormatLegalityFilterChange = (newFormatLegalityFilter: string) => {
+    setFormatLegalityFilter(newFormatLegalityFilter);
+    setCurrentPage(1);
+  };
+
+  const handleWeaknessTypeFilterChange = (newWeaknessTypeFilter: string) => {
+    setWeaknessTypeFilter(newWeaknessTypeFilter);
+    setCurrentPage(1);
+  };
+
+  const handleSetsFilterChange = (newSetsFilter: string) => {
+    setSetsFilter(newSetsFilter);
+    setCurrentPage(1);
+  };
+
+  const handleReloadCollection = () => {
+    // This function can be used to reload collection data if needed
+    console.log('Reloading collection data...');
+  };
 
   // Helper function to get consistent mock price based on rarity and card ID
   const getMockPrice = (rarity: string, cardId: string) => {
@@ -116,80 +205,7 @@ const ShopFromCards = () => {
     return Math.floor(random * 20) + 1; // 1-20 stock
   };
 
-  // Filter change handlers
-  const handleSearchChange = (newSearchTerm: string) => {
-    setSearchTerm(newSearchTerm);
-  };
 
-  const handleLanguageFilterChange = (newLanguageFilter: string) => {
-    setLanguageFilter(newLanguageFilter);
-  };
-
-  const handleRarityFilterChange = (newRarityFilter: string) => {
-    setRarityFilter(newRarityFilter);
-  };
-
-  const handleTypeFilterChange = (newTypeFilter: string) => {
-    setTypeFilter(newTypeFilter);
-  };
-
-  const handleHpRangeChange = (newHpRange: { min: string; max: string }) => {
-    setHpRange(newHpRange);
-  };
-
-  const handleIllustratorFilterChange = (newIllustratorFilter: string) => {
-    setIllustratorFilter(newIllustratorFilter);
-  };
-
-  const handleCategoryFilterChange = (newCategoryFilter: string) => {
-    setCategoryFilter(newCategoryFilter);
-  };
-
-  const handleStageFilterChange = (newStageFilter: string) => {
-    setStageFilter(newStageFilter);
-  };
-
-  const handleEvolveFromFilterChange = (newEvolveFromFilter: string) => {
-    setEvolveFromFilter(newEvolveFromFilter);
-  };
-
-  const handleRetreatCostFilterChange = (newRetreatCostFilter: string) => {
-    setRetreatCostFilter(newRetreatCostFilter);
-  };
-
-  const handleRegulationMarkFilterChange = (newRegulationMarkFilter: string) => {
-    setRegulationMarkFilter(newRegulationMarkFilter);
-  };
-
-  const handleFormatLegalityFilterChange = (newFormatLegalityFilter: string) => {
-    setFormatLegalityFilter(newFormatLegalityFilter);
-  };
-
-  const handleWeaknessTypeFilterChange = (newWeaknessTypeFilter: string) => {
-    setWeaknessTypeFilter(newWeaknessTypeFilter);
-  };
-
-  const handleSetsFilterChange = (newSetsFilter: string) => {
-    setSetsFilter(newSetsFilter);
-  };
-
-  const handleCollectionFilterChange = (newCollectionFilter: string) => {
-    setCollectionFilter(newCollectionFilter);
-  };
-
-  const handleWishlistFilterChange = (newWishlistFilter: string) => {
-    setWishlistFilter(newWishlistFilter);
-  };
-
-  const handleReloadCollection = () => {
-    queryClient.invalidateQueries({ queryKey: ['collection', user?.id] });
-    queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
-    queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
-    toast({
-      title: t('messages.collectionReloaded'),
-      description: t('messages.collectionReloadedDescription'),
-    });
-  };
 
   // Initialize and update language filter from URL parameters
   useEffect(() => {
@@ -202,10 +218,14 @@ const ShopFromCards = () => {
   // Get filter options data
   const { data: filterOptions } = useProductsFilterOptions(languageFilter);
 
+  // Calculate offset for pagination
+  const offset = (currentPage - 1) * itemsPerPage;
+
   // Use products data from Supabase with all filters applied
   const { data: productsData = [], isLoading: productsLoading } = useProductsData({
     language: languageFilter,
-    limit: 100,
+    limit: itemsPerPage,
+    offset,
     searchTerm: searchTerm || undefined,
     rarity: rarityFilter !== 'all' ? rarityFilter : undefined,
     type: typeFilter !== 'all' ? typeFilter : undefined,
@@ -229,6 +249,9 @@ const ShopFromCards = () => {
     evolveFrom: evolveFromFilter !== 'all' ? evolveFromFilter : undefined,
     setsFilter: setsFilter !== 'all' ? setsFilter : undefined
   });
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   // Display products
   const displayProducts = productsData;
@@ -336,7 +359,24 @@ const ShopFromCards = () => {
         totalCount={totalCount}
       />
 
-
+      {/* Pagination Info and Controls */}
+      {totalCount > 0 && (
+        <div className="mb-4 space-y-4">
+          <PaginationInfo
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={itemsPerPage}
+          />
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </div>
+      )}
 
       {/* Products Display */}
       {productsLoading ? (

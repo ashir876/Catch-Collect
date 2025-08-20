@@ -481,23 +481,34 @@ const TradingCard = ({
             </Button>
           )}
 
-          {/* Add to Wishlist Button */}
-          <Button
-            size="sm"
-            variant={wishlisted ? "destructive" : "secondary"}
-            className="w-full"
-            onClick={owned ? () => {
-              toast({
-                title: t('messages.error'),
-                description: t('messages.alreadyInCollection'),
-                variant: 'destructive'
-              });
-            } : handleWishlistToggle}
-            disabled={isAddingToWishlist || isRemovingFromWishlist || isAddingToCollection || isRemovingFromCollection}
-          >
-            <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
-            {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
-          </Button>
+                     {/* Show Remove from Collection button if owned, otherwise show Add to Wishlist */}
+           {owned ? (
+             <Button
+               size="sm"
+               variant="destructive"
+               className="w-full"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 // Call the remove function passed from Collection page
+                 onAddToCollection?.(id);
+               }}
+               disabled={isAddingToCollection || isRemovingFromCollection}
+             >
+               <Star className="w-4 h-4 mr-2" />
+               Remove from Collection
+             </Button>
+           ) : (
+            <Button
+              size="sm"
+              variant={wishlisted ? "destructive" : "secondary"}
+              className="w-full"
+              onClick={handleWishlistToggle}
+              disabled={isAddingToWishlist || isRemovingFromWishlist || isAddingToCollection || isRemovingFromCollection}
+            >
+              <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
+              {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
+            </Button>
+          )}
 
           {/* Edit Card Button - Only show if card is in collection or wishlist */}
           {(owned || wishlisted) && (
