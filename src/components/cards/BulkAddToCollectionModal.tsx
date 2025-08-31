@@ -14,7 +14,6 @@ interface CardDetails {
   price: number;
   date: string;
   notes: string;
-  quantity: number;
 }
 
 interface BulkAddToCollectionModalProps {
@@ -45,8 +44,7 @@ const BulkAddToCollectionModal = ({
           condition: 'Near Mint',
           price: 0,
           date: new Date().toISOString().split('T')[0],
-          notes: '',
-          quantity: 1
+          notes: ''
         };
       });
       setCardDetails(initialDetails);
@@ -93,8 +91,7 @@ const BulkAddToCollectionModal = ({
                 condition: 'Near Mint',
                 price: 0,
                 date: new Date().toISOString().split('T')[0],
-                notes: '',
-                quantity: 1
+                notes: ''
               };
 
               return (
@@ -160,19 +157,7 @@ const BulkAddToCollectionModal = ({
                           />
                         </div>
 
-                        {/* Quantity */}
-                        <div className="space-y-1">
-                          <Label htmlFor={`quantity-${cardId}`} className="text-xs">Quantity</Label>
-                          <Input
-                            id={`quantity-${cardId}`}
-                            type="number"
-                            min="1"
-                            value={details.quantity}
-                            onChange={(e) => handleCardDetailChange(cardId, 'quantity', parseInt(e.target.value) || 1)}
-                            className="h-8 text-xs"
-                            placeholder="1"
-                          />
-                        </div>
+
 
                         {/* Date */}
                         <div className="space-y-1">

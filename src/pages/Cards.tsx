@@ -258,7 +258,6 @@ const Cards = () => {
     price: number;
     date: string;
     notes: string;
-    quantity: number;
   }}) => {
     if (!user || selectedCards.size === 0) return;
 
@@ -267,38 +266,36 @@ const Cards = () => {
         selectedCards.has(`${card.card_id}-${card.language}`)
       );
 
-      // Insert records with individual details for each card
+      // Insert records with individual details for each card (one copy per card)
       const insertData = [];
       for (const card of selectedCardData) {
         const cardId = `${card.card_id}-${card.language}`;
         const details = cardDetails[cardId];
         
         if (details) {
-          for (let i = 0; i < details.quantity; i++) {
-            insertData.push({
-              user_id: user.id,
-              card_id: card.card_id,
-              language: card.language || 'en',
-                             // Store full card details for proper display
-               name: card.name,
-               set_name: card.set_name,
-               set_id: card.set_id,
-               card_number: card.card_number,
-               rarity: card.rarity,
-               image_url: card.image_url,
-               description: card.description,
-               illustrator: card.illustrator,
-               hp: card.hp,
-               types: card.types,
-               attacks: card.attacks,
-               weaknesses: card.weaknesses,
-               retreat: card.retreat,
-               series_name: card.series_name,
-              condition: details.condition,
-              price: details.price,
-              notes: details.notes || `Acquired on: ${details.date}`,
-            });
-          }
+          insertData.push({
+            user_id: user.id,
+            card_id: card.card_id,
+            language: card.language || 'en',
+            // Store full card details for proper display
+            name: card.name,
+            set_name: card.set_name,
+            set_id: card.set_id,
+            card_number: card.card_number,
+            rarity: card.rarity,
+            image_url: card.image_url,
+            description: card.description,
+            illustrator: card.illustrator,
+            hp: card.hp,
+            types: card.types,
+            attacks: card.attacks,
+            weaknesses: card.weaknesses,
+            retreat: card.retreat,
+            series_name: card.series_name,
+            condition: details.condition,
+            price: details.price,
+            notes: details.notes || `Acquired on: ${details.date}`,
+          });
         }
       }
 
@@ -358,39 +355,41 @@ const Cards = () => {
   };
 
   // Handler for adding to collection with modal data
-  const handleAddToCollectionWithDetails = async (data: {
+  const handleAddToCollectionWithDetails = async (entries: Array<{
+    id: string;
     condition: string;
     price: number;
     date: string;
     notes: string;
-    quantity: number;
-  }) => {
+    language: string;
+    acquiredDate: string;
+  }>) => {
     if (!user || !selectedCardForCollection) return;
 
     try {
-      // Insert multiple records if quantity > 1
-      const insertData = Array.from({ length: data.quantity }, () => ({
+      // Create insert data for all entries (each entry represents one card copy)
+      const insertData = entries.map(entry => ({
         user_id: user.id,
         card_id: selectedCardForCollection.card_id,
-        language: selectedCardForCollection.language || 'en',
-                 // Store full card details for proper display
-         name: selectedCardForCollection.name,
-         set_name: selectedCardForCollection.set_name,
-         set_id: selectedCardForCollection.set_id,
-         card_number: selectedCardForCollection.card_number,
-         rarity: selectedCardForCollection.rarity,
-         image_url: selectedCardForCollection.image_url,
-         description: selectedCardForCollection.description,
-         illustrator: selectedCardForCollection.illustrator,
-         hp: selectedCardForCollection.hp,
-         types: selectedCardForCollection.types,
-         attacks: selectedCardForCollection.attacks,
-         weaknesses: selectedCardForCollection.weaknesses,
-         retreat: selectedCardForCollection.retreat,
-         series_name: selectedCardForCollection.series_name,
-        condition: data.condition,
-        price: data.price,
-        notes: data.notes || `Acquired on: ${data.date}`,
+        language: entry.language || selectedCardForCollection.language || 'en',
+        // Store full card details for proper display
+        name: selectedCardForCollection.name,
+        set_name: selectedCardForCollection.set_name,
+        set_id: selectedCardForCollection.set_id,
+        card_number: selectedCardForCollection.card_number,
+        rarity: selectedCardForCollection.rarity,
+        image_url: selectedCardForCollection.image_url,
+        description: selectedCardForCollection.description,
+        illustrator: selectedCardForCollection.illustrator,
+        hp: selectedCardForCollection.hp,
+        types: selectedCardForCollection.types,
+        attacks: selectedCardForCollection.attacks,
+        weaknesses: selectedCardForCollection.weaknesses,
+        retreat: selectedCardForCollection.retreat,
+        series_name: selectedCardForCollection.series_name,
+        condition: entry.condition,
+        price: entry.price,
+        notes: entry.notes || `Acquired on: ${entry.date}`,
       }));
 
       const { error } = await supabase
@@ -404,9 +403,10 @@ const Cards = () => {
       setIsAddToCollectionModalOpen(false);
       setSelectedCardForCollection(null);
       
+      const totalCopies = entries.length;
       toast({
         title: t('messages.addedToCollection'),
-        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()} (${data.quantity} ${data.quantity === 1 ? 'copy' : 'copies'}).`,
+        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()} (${totalCopies} ${totalCopies === 1 ? 'copy' : 'copies'}).`,
       });
     } catch (error) {
       console.error('Error adding to collection:', error);

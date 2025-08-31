@@ -532,24 +532,26 @@ const SetDetail = () => {
   };
 
   // Handler for adding to collection with modal data
-  const handleAddToCollectionWithDetails = async (data: {
+  const handleAddToCollectionWithDetails = async (entries: Array<{
+    id: string;
     condition: string;
     price: number;
     date: string;
     notes: string;
-    quantity: number;
-  }) => {
+    language: string;
+    acquiredDate: string;
+  }>) => {
     if (!user || !selectedCardForCollection) return;
 
     try {
-      // Insert multiple records if quantity > 1
-      const insertData = Array.from({ length: data.quantity }, () => ({
+      // Create insert data for all entries (each entry represents one card copy)
+      const insertData = entries.map(entry => ({
         user_id: user.id,
         card_id: selectedCardForCollection.card_id,
-        language: selectedCardForCollection.language || 'en',
-        condition: data.condition,
-        price: data.price,
-        notes: data.notes || `Acquired on: ${data.date}`,
+        language: entry.language || selectedCardForCollection.language || 'en',
+        condition: entry.condition,
+        price: entry.price,
+        notes: entry.notes || `Acquired on: ${entry.date}`,
       }));
 
       const { error } = await supabase
@@ -558,16 +560,17 @@ const SetDetail = () => {
       
       if (error) throw error;
       
-             queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
-       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
-       queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
-       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
-       setIsAddToCollectionModalOpen(false);
-       setSelectedCardForCollection(null);
+      queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
+      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+      setIsAddToCollectionModalOpen(false);
+      setSelectedCardForCollection(null);
       
+      const totalCopies = entries.length;
       toast({
         title: t('messages.addedToCollection'),
-        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()} (${data.quantity} ${data.quantity === 1 ? 'copy' : 'copies'}).`,
+        description: `${selectedCardForCollection.name} ${t('messages.addedToCollection').toLowerCase()} (${totalCopies} ${totalCopies === 1 ? 'copy' : 'copies'}).`,
       });
     } catch (error) {
       console.error('Error adding to collection:', error);

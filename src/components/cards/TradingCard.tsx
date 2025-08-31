@@ -7,6 +7,9 @@ import { Heart, ShoppingCart, Star, Edit3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import CardDetailModal from "./CardDetailModal";
 import AddToCollectionModal from "./AddToCollectionModal";
 import AddToWishlistModal from "./AddToWishlistModal";
@@ -188,6 +191,8 @@ const TradingCard = ({
   
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
   
@@ -249,45 +254,138 @@ const TradingCard = ({
   const normalizedRarity = normalizeRarity(rarity);
   const rarityInfo = rarityConfig[normalizedRarity];
 
-  // Handle collection toggle
+  // Handle collection toggle - always open modal to add card
   const handleCollectionToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (owned) {
-      // Optimistic update - immediately update UI
-      setLocalOwned(false);
-      removeFromCollection({ cardId: id });
-    } else {
-      // Open collection modal
-      setIsCollectionModalOpen(true);
-    }
+    // Always open collection modal to add card (even if already in collection)
+    setIsCollectionModalOpen(true);
   };
 
   // Handle collection modal submit
-  const handleCollectionModalSubmit = (data: {
+  const handleCollectionModalSubmit = async (entries: Array<{
     condition: string;
     price: number;
     date: string;
     notes: string;
-    quantity: number;
     language: string;
-  }) => {
-    // Always use the default collection action for modal submissions
-    // The onAddToCollection prop is for direct button clicks, not modal submissions
-    setOnCollectionSuccess(() => () => {
+    acquiredDate: string;
+  }>) => {
+    if (!user) {
+      toast({
+        title: t('auth.loginRequired'),
+        description: t('auth.loginRequiredCollection'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get card data first - use the cardData prop if available, otherwise fetch from DB
+      let cardDataFromDB;
+      
+      if (cardData) {
+        // Use the cardData prop if available
+        cardDataFromDB = cardData;
+      } else {
+        // Fetch from database
+        const { data, error: cardError } = await supabase
+          .from('cards')
+          .select('*')
+          .eq('card_id', id)
+          .single();
+
+        if (cardError) {
+          throw cardError;
+        }
+        cardDataFromDB = data;
+      }
+
+      // Insert entries one by one to avoid batch insert issues
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const entry of entries) {
+        try {
+          const insertData = {
+            user_id: user.id,
+            card_id: id,
+            language: entry.language === 'all' ? (cardDataFromDB.language || 'en') : entry.language,
+            name: cardDataFromDB.name,
+            set_name: cardDataFromDB.set_name,
+            set_id: cardDataFromDB.set_id,
+            card_number: cardDataFromDB.card_number,
+            rarity: cardDataFromDB.rarity,
+            image_url: cardDataFromDB.image_url,
+            description: cardDataFromDB.description,
+            illustrator: cardDataFromDB.illustrator,
+            hp: cardDataFromDB.hp,
+            types: cardDataFromDB.types,
+            attacks: cardDataFromDB.attacks,
+            weaknesses: cardDataFromDB.weaknesses,
+            retreat: cardDataFromDB.retreat,
+            condition: entry.condition,
+            price: entry.price,
+            notes: entry.notes || `Acquired on: ${entry.date}`,
+            created_at: entry.date ? new Date(entry.date).toISOString() : new Date().toISOString()
+          };
+
+          const { error } = await supabase
+            .from('card_collections')
+            .insert(insertData);
+          
+          if (error) {
+            console.error('Error inserting entry:', error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (entryError) {
+          console.error('Error inserting entry:', entryError);
+          errorCount++;
+        }
+      }
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+      
+      // Close modal
       setIsCollectionModalOpen(false);
-      setLocalOwned(true);
-    });
-    
-    addToCollection({ 
-      cardId: id, 
-      cardName: name, 
-      cardLanguage: data.language === 'all' ? cardData?.language : data.language,
-      condition: data.condition,
-      price: data.price,
-      date: data.date,
-      notes: data.notes,
-      quantity: data.quantity
-    });
+      
+      // Show appropriate toast message
+      if (successCount > 0 && errorCount === 0) {
+        toast({
+          title: t('messages.addedToCollection'),
+          description: `${name} ${t('messages.addedToCollection').toLowerCase()} (${successCount} ${successCount === 1 ? 'copy' : 'copies'}).`,
+        });
+      } else if (successCount > 0 && errorCount > 0) {
+        toast({
+          title: t('messages.partialSuccess'),
+          description: `Added ${successCount} copies, ${errorCount} failed.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: t('messages.error'),
+          description: `Failed to add any copies. Please try again.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error adding to collection:', error);
+      console.error('Error details:', {
+        cardId: id,
+        cardData: cardData,
+        entries: entries,
+        user: user?.id
+      });
+      toast({
+        title: t('messages.error'),
+        description: t('messages.collectionError'),
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle wishlist toggle
@@ -473,13 +571,13 @@ const TradingCard = ({
           {(hidePriceAndBuy || (!hidePriceAndBuy && !onAddToCart)) && (
             <Button
               size="sm"
-              variant={owned ? "destructive" : "outline"}
+              variant="outline"
               className="w-full"
               onClick={handleCollectionToggle}
               disabled={isAddingToCollection || isRemovingFromCollection || wishlisted}
             >
-              <Star className={cn("w-4 h-4 mr-2", owned && "fill-current")} />
-              {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
+              <Star className="w-4 h-4 mr-2" />
+              {t('cards.addToCollection')}
             </Button>
           )}
 

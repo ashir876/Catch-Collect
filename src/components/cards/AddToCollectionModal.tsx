@@ -8,18 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 
+interface CollectionEntry {
+  condition: string;
+  price: number;
+  date: string;
+  notes: string;
+  language: string;
+  acquiredDate: string;
+}
+
 interface AddToCollectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (data: {
-    condition: string;
-    price: number;
-    date: string;
-    notes: string;
-    quantity: number;
-    language: string;
-    acquiredDate: string;
-  }) => void;
+  onAdd: (data: CollectionEntry[]) => void;
   cardName: string;
   isLoading?: boolean;
   isBulkMode?: boolean;
@@ -34,40 +35,40 @@ const AddToCollectionModal = ({
   isBulkMode = false
 }: AddToCollectionModalProps) => {
   const { t } = useTranslation();
-  const [condition, setCondition] = useState("Mint");
-  const [price, setPrice] = useState("0.00");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [selectedLanguage, setSelectedLanguage] = useState("all");
+  const [entry, setEntry] = useState<CollectionEntry>({
+    condition: "Mint",
+    price: 0,
+    date: new Date().toISOString().split('T')[0],
+    notes: "",
+    language: "en",
+    acquiredDate: new Date().toISOString().split('T')[0]
+  });
+
+  const updateEntry = (field: keyof CollectionEntry, value: any) => {
+    setEntry(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd({
-      condition,
-      price: parseFloat(price) || 0,
-      date,
-      notes,
-      quantity: parseInt(quantity) || 1,
-      language: selectedLanguage,
-      acquiredDate: date
-    });
+    onAdd([entry]);
   };
 
   const handleClose = () => {
     // Reset form when closing
-    setCondition("Mint");
-    setPrice("0.00");
-    setDate(new Date().toISOString().split('T')[0]);
-    setNotes("");
-    setQuantity("1");
-    setSelectedLanguage("all");
+    setEntry({
+      condition: "Mint",
+      price: 0,
+      date: new Date().toISOString().split('T')[0],
+      notes: "",
+      language: "en",
+      acquiredDate: new Date().toISOString().split('T')[0]
+    });
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader className="pb-3">
           <DialogTitle className="text-lg font-bold">
             {isBulkMode ? `Add ${cardName} to Collection` : t('collection.addCardToCollection')}
@@ -77,112 +78,104 @@ const AddToCollectionModal = ({
           </p>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Language Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="language">{t('cards.language')}</Label>
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('filters.allLanguages')}</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="de">Deutsch</SelectItem>
-                <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-                <SelectItem value="it">Italiano</SelectItem>
-                <SelectItem value="pt">Português</SelectItem>
-                <SelectItem value="nl">Nederlands</SelectItem>
-                <SelectItem value="ja">日本語</SelectItem>
-                <SelectItem value="ko">한국어</SelectItem>
-                <SelectItem value="zh">中文</SelectItem>
-                <SelectItem value="ru">Русский</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="border rounded-lg p-4 space-y-3">
 
-          {/* Condition */}
-          <div className="space-y-2">
-            <Label htmlFor="condition">{t('collection.condition')}</Label>
-            <Select value={condition} onValueChange={setCondition}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Mint">{t('collection.conditionMint')}</SelectItem>
-                <SelectItem value="Near Mint">{t('collection.conditionNearMint')}</SelectItem>
-                <SelectItem value="Excellent">{t('collection.conditionExcellent')}</SelectItem>
-                <SelectItem value="Good">{t('collection.conditionGood')}</SelectItem>
-                <SelectItem value="Light Played">{t('collection.conditionLightPlayed')}</SelectItem>
-                <SelectItem value="Played">{t('collection.conditionPlayed')}</SelectItem>
-                <SelectItem value="Poor">{t('collection.conditionPoor')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Language Filter */}
+                <div className="space-y-2">
+                  <Label htmlFor="language">{t('cards.language')}</Label>
+                  <Select 
+                    value={entry.language} 
+                    onValueChange={(value) => updateEntry('language', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="de">Deutsch</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="it">Italiano</SelectItem>
+                      <SelectItem value="pt">Português</SelectItem>
+                      <SelectItem value="nl">Nederlands</SelectItem>
+                      <SelectItem value="ja">日本語</SelectItem>
+                      <SelectItem value="ko">한국어</SelectItem>
+                      <SelectItem value="zh">中文</SelectItem>
+                      <SelectItem value="ru">Русский</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          {/* Quantity */}
-          <div className="space-y-2">
-            <Label htmlFor="quantity">
-              {isBulkMode ? 'Quantity per card' : t('collection.quantity')}
-            </Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="1"
-            />
-            {isBulkMode && (
-              <p className="text-xs text-muted-foreground">
-                Each selected card will be added with this quantity
-              </p>
-            )}
-          </div>
+                {/* Condition */}
+                <div className="space-y-2">
+                  <Label htmlFor="condition">{t('collection.condition')}</Label>
+                  <Select 
+                    value={entry.condition} 
+                    onValueChange={(value) => updateEntry('condition', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mint">{t('collection.conditionMint')}</SelectItem>
+                      <SelectItem value="Near Mint">{t('collection.conditionNearMint')}</SelectItem>
+                      <SelectItem value="Excellent">{t('collection.conditionExcellent')}</SelectItem>
+                      <SelectItem value="Good">{t('collection.conditionGood')}</SelectItem>
+                      <SelectItem value="Light Played">{t('collection.conditionLightPlayed')}</SelectItem>
+                      <SelectItem value="Played">{t('collection.conditionPlayed')}</SelectItem>
+                      <SelectItem value="Poor">{t('collection.conditionPoor')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          {/* Price */}
-          <div className="space-y-2">
-            <Label htmlFor="price">{t('collection.price')} (CHF)</Label>
-            <div className="relative">
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="pr-12"
-                placeholder="0.00"
-              />
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                CHF
-              </span>
+                {/* Price */}
+                <div className="space-y-2">
+                  <Label htmlFor="price">{t('collection.price')} (CHF)</Label>
+                  <div className="relative">
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={entry.price}
+                      onChange={(e) => updateEntry('price', parseFloat(e.target.value) || 0)}
+                      className="pr-12"
+                      placeholder="0.00"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                      CHF
+                    </span>
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="date">{t('collection.date')}</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={entry.date}
+                    onChange={(e) => updateEntry('date', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">{t('collection.notes')}</Label>
+                <Textarea
+                  id="notes"
+                  value={entry.notes}
+                  onChange={(e) => updateEntry('notes', e.target.value)}
+                  placeholder={t('collection.notesPlaceholder')}
+                  rows={2}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="date">{t('collection.date')}</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">{t('collection.notes')}</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('collection.notesPlaceholder')}
-              rows={2}
-            />
-          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-3">

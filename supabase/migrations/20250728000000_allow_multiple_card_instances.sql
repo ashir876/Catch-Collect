@@ -51,11 +51,9 @@ BEGIN
   END IF;
 END $$;
 
--- Create a new unique constraint that allows multiple instances of the same card
--- but prevents exact duplicates (same user, card, condition, price, date, notes)
-ALTER TABLE public.card_collections 
-ADD CONSTRAINT card_collections_unique_instance 
-UNIQUE (user_id, card_id, condition, price, acquired_date, notes);
+-- Remove the unique constraint entirely to allow multiple instances of the same card
+-- Users should be able to add multiple copies of the same card with identical details
+-- if they want to track multiple physical copies
 
 -- Add indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_card_collections_user_id ON public.card_collections(user_id);

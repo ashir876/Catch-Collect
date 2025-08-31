@@ -192,15 +192,14 @@ export const useIsCardInCollection = (cardId: string) => {
         .from('card_collections')
         .select('id')
         .eq('user_id', user.id)
-        .eq('card_id', cardId)
-        .single();
+        .eq('card_id', cardId);
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (error) {
         console.error('Error checking collection:', error);
         throw error;
       }
 
-      return !!data;
+      return data && data.length > 0;
     },
     enabled: !!user && !!cardId,
   });
