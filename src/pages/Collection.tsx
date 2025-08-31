@@ -831,9 +831,11 @@ const Collection = () => {
                          disableHoverEffects={true}
                          cardData={card.cardData}
                          collectionItemId={card.collectionItemId}
+                         showRemoveButton={true}
+                         onRemove={(id) => handleRemoveFromCollection(id, card.name)}
                        />
                       {/* Condition Badge */}
-                      <div className="absolute top-2 right-2 z-30">
+                      <div className="absolute top-2 right-10 z-30">
                         <Badge variant="secondary" className="text-xs">
                           {card.condition}
                         </Badge>

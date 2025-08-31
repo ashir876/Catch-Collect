@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, ShoppingCart, Star, Edit3 } from "lucide-react";
+import { Heart, ShoppingCart, Star, Edit3, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +83,9 @@ interface TradingCardProps {
   marketRecordedAt?: string;
   acquiredDate?: string;
   showEditButton?: boolean;
+  // New prop for showing remove button
+  showRemoveButton?: boolean;
+  onRemove?: (id: string) => void;
 }
 
 const rarityConfig = {
@@ -179,6 +182,8 @@ const TradingCard = ({
   marketRecordedAt,
   acquiredDate,
   showEditButton = true,
+  showRemoveButton = false,
+  onRemove,
 }: TradingCardProps) => {
   console.log('TradingCard component rendering with props:', { 
     id, 
@@ -474,6 +479,22 @@ const TradingCard = ({
             )}
           </div>
 
+          {/* Remove Button - Top Right Corner */}
+          {owned && showRemoveButton && onRemove && (
+            <div className="absolute top-2 right-2 z-30">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-6 w-6 p-0 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(id);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
 
         </div>
 
@@ -615,6 +636,22 @@ const TradingCard = ({
             >
               <Edit3 className="w-4 h-4 mr-2" />
               {t('common.edit')}
+            </Button>
+          )}
+
+          {/* Remove from Collection Button - Only show if owned and showRemoveButton is true */}
+          {owned && showRemoveButton && onRemove && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full text-red-600 border-red-600 hover:bg-red-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(id);
+              }}
+            >
+              <X className="w-4 h-4 mr-2" />
+              {t('cards.removeFromCollection')}
             </Button>
           )}
         </div>

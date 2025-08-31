@@ -144,3 +144,8 @@ DROP TABLE temp_card_collections;
 
 -- Success! The card_collections table has been fixed.
 -- All duplicate IDs have been resolved and the table now supports multiple copies.
+
+
+
+
+
