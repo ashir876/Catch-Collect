@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Grid3X3, List } from "lucide-react";
+import { ArrowLeft, Search, Grid3X3, List, Package, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from 'react-i18next';
@@ -13,6 +14,8 @@ import AddToCollectionModal from "@/components/cards/AddToCollectionModal";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
+import { useSingleSetProgress } from "@/hooks/useSetProgress";
+import { cn } from "@/lib/utils";
 
 interface SetData {
   set_id: string;
@@ -68,6 +71,9 @@ const SetDetail = () => {
   // Fetch collection data to show owned status
   const { data: collectionItems = [] } = useCollectionData();
 
+  // Fetch set progress data
+  const setProgress = useSingleSetProgress(setId || "");
+
   // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
@@ -109,7 +115,47 @@ const SetDetail = () => {
 
         // Apply filters
         if (searchTerm) {
-          query = query.ilike('name', `%${searchTerm}%`);
+          console.log('🔍 Searching for:', searchTerm);
+          
+          // Enhanced search logic to support specific card number patterns and cross-language search
+          const trimmedSearchTerm = searchTerm.trim();
+          
+          // Check if it's a pure card number pattern (e.g., "123" or "123/456")
+          const pureCardNumberPattern = /^(\d+)(?:\/(\d+))?$/;
+          const pureCardNumberMatch = trimmedSearchTerm.match(pureCardNumberPattern);
+          
+          if (pureCardNumberMatch) {
+            // Pure card number search
+            const cardNumber = pureCardNumberMatch[1];
+            const setTotal = pureCardNumberMatch[2];
+            
+            if (setTotal) {
+              // Full card number format (e.g., "123/456") - use exact match
+              console.log('🔍 Searching for exact card number:', `${cardNumber}/${setTotal}`);
+              query = query.eq('card_number', `${cardNumber}/${setTotal}`);
+            } else {
+              // Partial card number (e.g., "123") - use word boundary matching
+              console.log('🔍 Searching for partial card number:', cardNumber);
+              // Use regex to match word boundaries to avoid partial matches
+              query = query.or(`card_number.eq.${cardNumber},card_number.ilike.${cardNumber}/%`);
+            }
+          } else {
+            // Check if it's a name + number pattern (e.g., "Pikachu 123/456")
+            const nameNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+            const nameNumberMatch = trimmedSearchTerm.match(nameNumberPattern);
+            
+            if (nameNumberMatch) {
+              // Name + card number search
+              const cardName = nameNumberMatch[1].trim();
+              const cardNumber = nameNumberMatch[2].trim();
+              console.log('🔍 Searching for name + exact number:', cardName, cardNumber);
+              query = query.ilike('name', `%${cardName}%`).eq('card_number', cardNumber);
+            } else {
+              // General search across multiple fields
+              console.log('🔍 General search across name, card_number, and localid');
+              query = query.or(`name.ilike.%${trimmedSearchTerm}%,card_number.ilike.%${trimmedSearchTerm}%,localid.ilike.%${trimmedSearchTerm}%`);
+            }
+          }
         }
 
         if (languageFilter !== "all") {
@@ -183,7 +229,47 @@ const SetDetail = () => {
 
         // Apply same filters as the main query
         if (searchTerm) {
-          countQuery = countQuery.ilike('name', `%${searchTerm}%`);
+          console.log('🔍 Count query - Searching for:', searchTerm);
+          
+          // Enhanced search logic to support specific card number patterns and cross-language search
+          const trimmedSearchTerm = searchTerm.trim();
+          
+          // Check if it's a pure card number pattern (e.g., "123" or "123/456")
+          const pureCardNumberPattern = /^(\d+)(?:\/(\d+))?$/;
+          const pureCardNumberMatch = trimmedSearchTerm.match(pureCardNumberPattern);
+          
+          if (pureCardNumberMatch) {
+            // Pure card number search
+            const cardNumber = pureCardNumberMatch[1];
+            const setTotal = pureCardNumberMatch[2];
+            
+            if (setTotal) {
+              // Full card number format (e.g., "123/456") - use exact match
+              console.log('🔍 Count query - Searching for exact card number:', `${cardNumber}/${setTotal}`);
+              countQuery = countQuery.eq('card_number', `${cardNumber}/${setTotal}`);
+            } else {
+              // Partial card number (e.g., "123") - use word boundary matching
+              console.log('🔍 Count query - Searching for partial card number:', cardNumber);
+              // Use regex to match word boundaries to avoid partial matches
+              countQuery = countQuery.or(`card_number.eq.${cardNumber},card_number.ilike.${cardNumber}/%`);
+            }
+          } else {
+            // Check if it's a name + number pattern (e.g., "Pikachu 123/456")
+            const nameNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+            const nameNumberMatch = trimmedSearchTerm.match(nameNumberPattern);
+            
+            if (nameNumberMatch) {
+              // Name + card number search
+              const cardName = nameNumberMatch[1].trim();
+              const cardNumber = nameNumberMatch[2].trim();
+              console.log('🔍 Count query - Searching for name + exact number:', cardName, cardNumber);
+              countQuery = countQuery.ilike('name', `%${cardName}%`).eq('card_number', cardNumber);
+            } else {
+              // General search across multiple fields
+              console.log('🔍 Count query - General search across name, card_number, and localid');
+              countQuery = countQuery.or(`name.ilike.%${trimmedSearchTerm}%,card_number.ilike.%${trimmedSearchTerm}%,localid.ilike.%${trimmedSearchTerm}%`);
+            }
+          }
         }
 
         if (languageFilter !== "all") {
@@ -417,6 +503,8 @@ const SetDetail = () => {
     queryClient.invalidateQueries({ queryKey: ['collection', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
+    queryClient.invalidateQueries({ queryKey: ['set-progress'] });
     toast({
       title: t('messages.collectionReloaded'),
       description: t('messages.collectionReloadedDescription'),
@@ -435,6 +523,12 @@ const SetDetail = () => {
     }
     setSelectedCardForCollection(card);
     setIsAddToCollectionModalOpen(true);
+  };
+
+  // Handler for refreshing set progress data
+  const handleRefreshSetProgress = () => {
+    queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
+    queryClient.invalidateQueries({ queryKey: ['set-progress'] });
   };
 
   // Handler for adding to collection with modal data
@@ -464,10 +558,12 @@ const SetDetail = () => {
       
       if (error) throw error;
       
-      queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
-      setIsAddToCollectionModalOpen(false);
-      setSelectedCardForCollection(null);
+             queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+       queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
+       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+       setIsAddToCollectionModalOpen(false);
+       setSelectedCardForCollection(null);
       
       toast({
         title: t('messages.addedToCollection'),
@@ -554,6 +650,59 @@ const SetDetail = () => {
           {setData.release_date && `${t('setDetail.released')}: ${new Date(setData.release_date).toLocaleDateString()} • `}
           {totalCount} {t('setDetail.cards')}
         </p>
+        
+        {/* Set Progress Information - Horizontal Layout */}
+        {setProgress && (
+          <div className="mt-6 max-w-4xl mx-auto">
+            <div className="flex items-center justify-between gap-8">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-muted-foreground" />
+                <div className="text-center">
+                  <div className="font-bold text-xl">{setProgress.total_cards}</div>
+                  <div className="text-sm text-muted-foreground uppercase font-bold">
+                    {t('sets.totalCards')}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-accent" />
+                <div className="text-center">
+                  <div className="font-bold text-xl">{setProgress.collected_cards}</div>
+                  <div className="text-sm text-muted-foreground uppercase font-bold">
+                    {t('sets.collected')}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                <div className="text-center">
+                  <div className="font-bold text-xl">{setProgress.wishlist_cards}</div>
+                  <div className="text-sm text-muted-foreground uppercase font-bold">
+                    {t('sets.wishlist')}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Completion Progress Bar */}
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between text-sm font-bold">
+                <span>{t('sets.completionProgress')}</span>
+                <span>{setProgress.completion_percentage}%</span>
+              </div>
+              <Progress 
+                value={setProgress.completion_percentage} 
+                className="h-3"
+                indicatorClassName={cn(
+                  "bg-gradient-to-r",
+                  setProgress.is_completed ? "from-green-500 to-green-600" : "from-blue-500 to-blue-600"
+                )}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Advanced Search and Filters - same as Cards page */}
@@ -657,14 +806,16 @@ const SetDetail = () => {
         )
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {cardsData.map((card) => (
-            <CardWithWishlist
-              key={`${card.card_id}-${card.language}`}
-              card={card}
-              hidePriceAndBuy={true}
-              onAddToCollection={handleAddToCollection}
-            />
-          ))}
+                     {cardsData.map((card) => (
+             <CardWithWishlist
+               key={`${card.card_id}-${card.language}`}
+               card={card}
+               hidePriceAndBuy={true}
+               onAddToCollection={handleAddToCollection}
+               onCollectionChange={handleRefreshSetProgress}
+               onWishlistChange={handleRefreshSetProgress}
+             />
+           ))}
         </div>
       ) : (
         <div className="space-y-2">

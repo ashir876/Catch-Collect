@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient } from "@tanstack/react-query";
 import SetsFilters from "@/components/filters/SetsFilters";
+import { useSetProgress } from "@/hooks/useSetProgress";
+import SetProgressDisplay from "@/components/cards/SetProgressDisplay";
 
 const Sets = () => {
   const { t } = useTranslation();
@@ -27,6 +29,7 @@ const Sets = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 items per page
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [completionFilter, setCompletionFilter] = useState<'all' | 'completed' | 'incomplete'>('all');
 
 
 
@@ -53,6 +56,9 @@ const Sets = () => {
     language: languageFilter,
     searchTerm: searchTerm || undefined
   });
+
+  // Fetch set progress data
+  const { data: setProgressData = [] } = useSetProgress();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -110,29 +116,46 @@ const Sets = () => {
     setCurrentPage(1);
   }, [languageFilter]);
 
-  // Sort sets (client-side sorting since we can't sort in the database query easily)
-  const sortedSets = setsData?.slice().sort((a, b) => {
-    let primary = 0;
-    switch (sortBy) {
-      case "newest":
-        primary = new Date(b.release_date || 0).getTime() - new Date(a.release_date || 0).getTime();
-        break;
-      case "oldest":
-        primary = new Date(a.release_date || 0).getTime() - new Date(b.release_date || 0).getTime();
-        break;
-      case "name":
-        primary = (a.name || '').localeCompare(b.name || '');
-        break;
-      default:
-        primary = 0;
-    }
-    if (primary !== 0) return primary;
-    // Secondary sort by unique set_id
-    return (a.set_id || '').localeCompare(b.set_id || '');
-  }) || [];
+  // Filter and sort sets
+  const filteredAndSortedSets = setsData?.slice()
+    .filter(set => {
+      if (completionFilter === 'all') return true;
+      const progress = getSetProgress(set.set_id);
+      if (completionFilter === 'completed') {
+        return progress?.is_completed || false;
+      }
+      if (completionFilter === 'incomplete') {
+        return progress && !progress.is_completed;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      let primary = 0;
+      switch (sortBy) {
+        case "newest":
+          primary = new Date(b.release_date || 0).getTime() - new Date(a.release_date || 0).getTime();
+          break;
+        case "oldest":
+          primary = new Date(a.release_date || 0).getTime() - new Date(b.release_date || 0).getTime();
+          break;
+        case "name":
+          primary = (a.name || '').localeCompare(b.name || '');
+          break;
+        default:
+          primary = 0;
+      }
+      if (primary !== 0) return primary;
+      // Secondary sort by unique set_id
+      return (a.set_id || '').localeCompare(b.set_id || '');
+    }) || [];
 
   const getCompletionPercentage = (owned: number, total: number) => {
     return Math.round((owned / total) * 100);
+  };
+
+  // Helper function to get progress data for a specific set
+  const getSetProgress = (setId: string) => {
+    return setProgressData.find(progress => progress.set_id === setId);
   };
 
   if (error) {
@@ -170,7 +193,11 @@ const Sets = () => {
         onSeriesFilterChange={handleSeriesFilterChange}
         sortBy={sortBy}
         onSortChange={handleSortChange}
+        completionFilter={completionFilter}
+        onCompletionFilterChange={setCompletionFilter}
       />
+
+      
 
       {/* View Toggle */}
       <div className="flex justify-center mb-6">
@@ -251,7 +278,7 @@ const Sets = () => {
         )
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedSets.map((set, index) => {
+          {filteredAndSortedSets.map((set, index) => {
             // Create unique key combining set_id and language to handle duplicates
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
@@ -297,9 +324,28 @@ const Sets = () => {
                       </div>
                     )}
                   </div>
-                  <div className="font-bold text-primary text-sm mt-auto flex-shrink-0">
-                    {t('sets.cardCount')}: {set.total || 0}
-                  </div>
+                  
+                  {/* Set Progress Information */}
+                  {(() => {
+                    const progress = getSetProgress(set.set_id);
+                    if (progress) {
+                      return (
+                        <div className="mt-3 space-y-2">
+                          <SetProgressDisplay 
+                            progress={progress} 
+                            variant="compact" 
+                            showProgressBar={false}
+                            className="text-xs"
+                          />
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="font-bold text-primary text-sm mt-auto flex-shrink-0">
+                        {t('sets.cardCount')}: {set.total || 0}
+                      </div>
+                    );
+                  })()}
                 </CardHeader>
               </Card>
             );
@@ -307,7 +353,7 @@ const Sets = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedSets.map((set, index) => {
+          {filteredAndSortedSets.map((set, index) => {
             // Create unique key combining set_id and language to handle duplicates
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
@@ -352,12 +398,31 @@ const Sets = () => {
                     )}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="font-black text-lg text-primary">
-                      {set.total || 0}
-                    </div>
-                    <div className="font-bold text-muted-foreground text-sm uppercase">
-                      {t('sets.cards', 'Cards')}
-                    </div>
+                    {(() => {
+                      const progress = getSetProgress(set.set_id);
+                      if (progress) {
+                        return (
+                          <div className="space-y-2">
+                            <SetProgressDisplay 
+                              progress={progress} 
+                              variant="compact" 
+                              showProgressBar={false}
+                              className="text-sm"
+                            />
+                          </div>
+                        );
+                      }
+                      return (
+                        <>
+                          <div className="font-black text-lg text-primary">
+                            {set.total || 0}
+                          </div>
+                          <div className="font-bold text-muted-foreground text-sm uppercase">
+                            {t('sets.cards', 'Cards')}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </Card>
@@ -367,7 +432,7 @@ const Sets = () => {
       )}
 
       {/* Empty State */}
-      {!isLoading && sortedSets.length === 0 && (
+      {!isLoading && filteredAndSortedSets.length === 0 && (
         <div className="text-center py-12">
           <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{t('sets.noSetsFound')}</h3>

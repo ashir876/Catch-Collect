@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, ShoppingCart, Star } from "lucide-react";
+import { Heart, ShoppingCart, Star, Edit3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +79,7 @@ interface TradingCardProps {
   marketCurrency?: string;
   marketRecordedAt?: string;
   acquiredDate?: string;
+  showEditButton?: boolean;
 }
 
 const rarityConfig = {
@@ -174,6 +175,7 @@ const TradingCard = ({
   marketCurrency,
   marketRecordedAt,
   acquiredDate,
+  showEditButton = true,
 }: TradingCardProps) => {
   console.log('TradingCard component rendering with props:', { 
     id, 
@@ -452,20 +454,20 @@ const TradingCard = ({
 
         {/* Bottom Action Buttons */}
         <div className="mt-4 space-y-2">
-                     {/* Add to Cart Button */}
-           {!hidePriceAndBuy && inStock && !owned && !wishlisted && onAddToCart && (
-             <Button
-               size="sm"
-               className="w-full bg-gradient-primary hover:shadow-card transition-all duration-200"
-               onClick={(e) => {
-                 e.stopPropagation();
-                 onAddToCart?.(id);
-               }}
-             >
-               <ShoppingCart className="w-4 h-4 mr-2" />
-               Kaufen
-             </Button>
-           )}
+          {/* Add to Cart Button */}
+          {!hidePriceAndBuy && inStock && !owned && !wishlisted && onAddToCart && (
+            <Button
+              size="sm"
+              className="w-full bg-gradient-primary hover:shadow-card transition-all duration-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart?.(id);
+              }}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Kaufen
+            </Button>
+          )}
 
           {/* Add to Collection Button */}
           {(hidePriceAndBuy || (!hidePriceAndBuy && !onAddToCart)) && (
@@ -474,44 +476,27 @@ const TradingCard = ({
               variant={owned ? "destructive" : "outline"}
               className="w-full"
               onClick={handleCollectionToggle}
-              disabled={isAddingToCollection || isRemovingFromCollection}
+              disabled={isAddingToCollection || isRemovingFromCollection || wishlisted}
             >
-              <Star className="w-4 h-4 mr-2" />
+              <Star className={cn("w-4 h-4 mr-2", owned && "fill-current")} />
               {owned ? t('cards.removeFromCollection') : t('cards.addToCollection')}
             </Button>
           )}
 
-                     {/* Show Remove from Collection button if owned, otherwise show Add to Wishlist */}
-           {owned ? (
-             <Button
-               size="sm"
-               variant="destructive"
-               className="w-full"
-               onClick={(e) => {
-                 e.stopPropagation();
-                 // Call the remove function passed from Collection page
-                 onAddToCollection?.(id);
-               }}
-               disabled={isAddingToCollection || isRemovingFromCollection}
-             >
-               <Star className="w-4 h-4 mr-2" />
-               Remove from Collection
-             </Button>
-           ) : (
-            <Button
-              size="sm"
-              variant={wishlisted ? "destructive" : "secondary"}
-              className="w-full"
-              onClick={handleWishlistToggle}
-              disabled={isAddingToWishlist || isRemovingFromWishlist || isAddingToCollection || isRemovingFromCollection}
-            >
-              <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
-              {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
-            </Button>
-          )}
+          {/* Add to Wishlist Button */}
+          <Button
+            size="sm"
+            variant={wishlisted ? "destructive" : "secondary"}
+            className="w-full"
+            onClick={handleWishlistToggle}
+            disabled={isAddingToWishlist || isRemovingFromWishlist || isAddingToCollection || isRemovingFromCollection || owned}
+          >
+            <Heart className={cn("w-4 h-4 mr-2", wishlisted && "fill-current")} />
+            {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
+          </Button>
 
           {/* Edit Card Button - Only show if card is in collection or wishlist */}
-          {(owned || wishlisted) && (
+          {(owned || wishlisted) && showEditButton && (
             <Button
               size="sm"
               variant="outline"
@@ -530,9 +515,7 @@ const TradingCard = ({
                 setIsEditModalOpen(true);
               }}
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Edit3 className="w-4 h-4 mr-2" />
               {t('common.edit')}
             </Button>
           )}

@@ -206,7 +206,17 @@
     "sortByName": "Name A-Z",
     "advancedLanguageFilter": "Sprache",
     "advancedSeriesFilter": "Serie",
-    "advancedSortFilter": "Sortierreihenfolge"
+    "advancedSortFilter": "Sortierreihenfolge",
+    "completed": "Vollständig",
+    "incomplete": "Unvollständig",
+    "total": "Gesamt",
+    "collected": "Gesammelt",
+    "wishlist": "Wunschliste",
+    "progress": "Fortschritt",
+    "completionProgress": "Vollständigkeitsfortschritt",
+    "completionStatus": "Vollständigkeitsstatus",
+    "totalCards": "Gesamte Karten",
+    "cards": "Karten"
   },
   "collection": {
     "title": "Meine Sammlung",

@@ -73,7 +73,17 @@
     "sortByName": "Naam A-Z",
     "advancedLanguageFilter": "Taal",
     "advancedSeriesFilter": "Serie",
-    "advancedSortFilter": "Sorteervolgorde"
+    "advancedSortFilter": "Sorteervolgorde",
+    "completed": "Voltooid",
+    "incomplete": "Onvoltooid",
+    "total": "Totaal",
+    "collected": "Verzameld",
+    "wishlist": "Verlanglijst",
+    "progress": "Voortgang",
+    "completionProgress": "Voltooiingsvoortgang",
+    "completionStatus": "Voltooiingsstatus",
+    "totalCards": "Totaal Kaarten",
+    "cards": "Kaarten"
   },
   "cards": {
     "title": "Kaarten",

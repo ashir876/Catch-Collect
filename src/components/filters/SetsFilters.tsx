@@ -14,6 +14,8 @@ interface SetsFiltersProps {
   onSeriesFilterChange: (value: string | null) => void;
   sortBy: string;
   onSortChange: (value: string) => void;
+  completionFilter: 'all' | 'completed' | 'incomplete';
+  onCompletionFilterChange: (value: 'all' | 'completed' | 'incomplete') => void;
 }
 
 const SetsFilters = ({
@@ -24,7 +26,9 @@ const SetsFilters = ({
   seriesFilter,
   onSeriesFilterChange,
   sortBy,
-  onSortChange
+  onSortChange,
+  completionFilter,
+  onCompletionFilterChange
 }: SetsFiltersProps) => {
   const { t } = useTranslation();
   
@@ -52,6 +56,12 @@ const SetsFilters = ({
     { value: 'newest', label: t('sets.sortByNewest') },
     { value: 'oldest', label: t('sets.sortByOldest') },
     { value: 'name', label: t('sets.sortByName') }
+  ];
+
+  const completionOptions = [
+    { value: 'all', label: t('common.all') },
+    { value: 'completed', label: t('sets.completed') },
+    { value: 'incomplete', label: t('sets.incomplete') }
   ];
 
   return (
@@ -126,6 +136,22 @@ const SetsFilters = ({
             </SelectTrigger>
             <SelectContent>
               {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">{t('sets.completionStatus')}:</span>
+          <Select value={completionFilter} onValueChange={onCompletionFilterChange}>
+            <SelectTrigger className="w-32 h-8 text-sm border border-gray-300 rounded-md">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {completionOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>

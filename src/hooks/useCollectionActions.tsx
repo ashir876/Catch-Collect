@@ -138,6 +138,9 @@ export const useCollectionActions = () => {
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
       
+      // Invalidate set progress queries to update statistics
+      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+      
       // Close modal if callback is set
       if (onCollectionSuccess) {
         onCollectionSuccess();
@@ -192,6 +195,9 @@ export const useCollectionActions = () => {
       queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
+      
+      // Invalidate set progress queries to update statistics
+      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
       toast({
         title: t('messages.removedFromCollection'),
@@ -356,6 +362,9 @@ export const useWishlistActions = () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
       
+      // Invalidate set progress queries to update statistics
+      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+      
       // Close modal if callback is set
       if (onWishlistSuccess) {
         onWishlistSuccess();
@@ -410,6 +419,9 @@ export const useWishlistActions = () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
+      
+      // Invalidate set progress queries to update statistics
+      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
       toast({
         title: t('messages.removedFromWishlist'),

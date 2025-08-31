@@ -385,7 +385,17 @@
     "sortByName": "Name A-Z",
     "advancedLanguageFilter": "Language",
     "advancedSeriesFilter": "Series",
-    "advancedSortFilter": "Sort Order"
+    "advancedSortFilter": "Sort Order",
+    "completed": "Completed",
+    "incomplete": "Incomplete",
+    "total": "Total",
+    "collected": "Collected",
+    "wishlist": "Wishlist",
+    "progress": "Progress",
+    "completionProgress": "Completion Progress",
+    "completionStatus": "Completion Status",
+    "totalCards": "Total Cards",
+    "cards": "Cards"
   },
   "setDetail": {
     "setNotFound": "Set not found",

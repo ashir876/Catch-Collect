@@ -69,18 +69,46 @@ export const useCardsData = (options: CardsDataOptions = {}) => {
       }
 
       if (searchTerm) {
-        // Enhanced search logic to support specific card number patterns and cross-language search
-        const cardNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
-        const cardNumberMatch = searchTerm.match(cardNumberPattern);
+        console.log('🔍 Searching for:', searchTerm);
         
-        if (cardNumberMatch) {
-          // Specific card number search - search by name and card number combination
-          const cardName = cardNumberMatch[1].trim();
-          const cardNumber = cardNumberMatch[2].trim();
-          query = query.ilike('name', `%${cardName}%`).ilike('card_number', `%${cardNumber}%`);
+        // Enhanced search logic to support specific card number patterns and cross-language search
+        const trimmedSearchTerm = searchTerm.trim();
+        
+        // Check if it's a pure card number pattern (e.g., "123" or "123/456")
+        const pureCardNumberPattern = /^(\d+)(?:\/(\d+))?$/;
+        const pureCardNumberMatch = trimmedSearchTerm.match(pureCardNumberPattern);
+        
+        if (pureCardNumberMatch) {
+          // Pure card number search
+          const cardNumber = pureCardNumberMatch[1];
+          const setTotal = pureCardNumberMatch[2];
+          
+          if (setTotal) {
+            // Full card number format (e.g., "123/456") - use exact match
+            console.log('🔍 Searching for exact card number:', `${cardNumber}/${setTotal}`);
+            query = query.eq('card_number', `${cardNumber}/${setTotal}`);
+          } else {
+            // Partial card number (e.g., "123") - use word boundary matching
+            console.log('🔍 Searching for partial card number:', cardNumber);
+            // Use regex to match word boundaries to avoid partial matches
+            query = query.or(`card_number.eq.${cardNumber},card_number.ilike.${cardNumber}/%`);
+          }
         } else {
-          // Enhanced multi-field search including localid for better cross-language support
-          query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%,localid.ilike.%${searchTerm}%`);
+          // Check if it's a name + number pattern (e.g., "Pikachu 123/456")
+          const nameNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+          const nameNumberMatch = trimmedSearchTerm.match(nameNumberPattern);
+          
+          if (nameNumberMatch) {
+            // Name + card number search
+            const cardName = nameNumberMatch[1].trim();
+            const cardNumber = nameNumberMatch[2].trim();
+            console.log('🔍 Searching for name + exact number:', cardName, cardNumber);
+            query = query.ilike('name', `%${cardName}%`).eq('card_number', cardNumber);
+          } else {
+            // General search across multiple fields
+            console.log('🔍 General search across name, card_number, and localid');
+            query = query.or(`name.ilike.%${trimmedSearchTerm}%,card_number.ilike.%${trimmedSearchTerm}%,localid.ilike.%${trimmedSearchTerm}%`);
+          }
         }
       }
 
@@ -264,18 +292,46 @@ export const useCardsCount = (options: Omit<CardsDataOptions, 'limit' | 'offset'
       }
 
       if (searchTerm) {
-        // Enhanced search logic to support specific card number patterns and cross-language search
-        const cardNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
-        const cardNumberMatch = searchTerm.match(cardNumberPattern);
+        console.log('🔍 Counting search for:', searchTerm);
         
-        if (cardNumberMatch) {
-          // Specific card number search - search by name and card number combination
-          const cardName = cardNumberMatch[1].trim();
-          const cardNumber = cardNumberMatch[2].trim();
-          query = query.ilike('name', `%${cardName}%`).ilike('card_number', `%${cardNumber}%`);
+        // Enhanced search logic to support specific card number patterns and cross-language search
+        const trimmedSearchTerm = searchTerm.trim();
+        
+        // Check if it's a pure card number pattern (e.g., "123" or "123/456")
+        const pureCardNumberPattern = /^(\d+)(?:\/(\d+))?$/;
+        const pureCardNumberMatch = trimmedSearchTerm.match(pureCardNumberPattern);
+        
+        if (pureCardNumberMatch) {
+          // Pure card number search
+          const cardNumber = pureCardNumberMatch[1];
+          const setTotal = pureCardNumberMatch[2];
+          
+          if (setTotal) {
+            // Full card number format (e.g., "123/456") - use exact match
+            console.log('🔍 Counting for exact card number:', `${cardNumber}/${setTotal}`);
+            query = query.eq('card_number', `${cardNumber}/${setTotal}`);
+          } else {
+            // Partial card number (e.g., "123") - use word boundary matching
+            console.log('🔍 Counting for partial card number:', cardNumber);
+            // Use regex to match word boundaries to avoid partial matches
+            query = query.or(`card_number.eq.${cardNumber},card_number.ilike.${cardNumber}/%`);
+          }
         } else {
-          // Enhanced multi-field search including localid for better cross-language support
-          query = query.or(`name.ilike.%${searchTerm}%,card_number.ilike.%${searchTerm}%,localid.ilike.%${searchTerm}%`);
+          // Check if it's a name + number pattern (e.g., "Pikachu 123/456")
+          const nameNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
+          const nameNumberMatch = trimmedSearchTerm.match(nameNumberPattern);
+          
+          if (nameNumberMatch) {
+            // Name + card number search
+            const cardName = nameNumberMatch[1].trim();
+            const cardNumber = nameNumberMatch[2].trim();
+            console.log('🔍 Counting for name + exact number:', cardName, cardNumber);
+            query = query.ilike('name', `%${cardName}%`).eq('card_number', cardNumber);
+          } else {
+            // General search across multiple fields
+            console.log('🔍 General count search across name, card_number, and localid');
+            query = query.or(`name.ilike.%${trimmedSearchTerm}%,card_number.ilike.%${trimmedSearchTerm}%,localid.ilike.%${trimmedSearchTerm}%`);
+          }
         }
       }
 

@@ -7,11 +7,14 @@ import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 interface CardWithWishlistProps {
   card: any; // Card data from the database
   hidePriceAndBuy?: boolean;
+  showEditButton?: boolean; // New prop to control edit button visibility
   onAddToCollection?: (card: any) => void; // Custom handler for adding to collection
   onViewDetails?: (id: string) => void; // Handler for viewing card details
+  onCollectionChange?: () => void; // Callback when collection status changes
+  onWishlistChange?: () => void; // Callback when wishlist status changes
 }
 
-const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection, onViewDetails }: CardWithWishlistProps) => {
+const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false, onAddToCollection, onViewDetails, onCollectionChange, onWishlistChange }: CardWithWishlistProps) => {
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
   
@@ -30,6 +33,10 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection, onV
         cardLanguage: card.language 
       });
     }
+    // Call callback to refresh set progress
+    if (onCollectionChange) {
+      onCollectionChange();
+    }
   };
 
   const handleAddToWishlist = () => {
@@ -38,6 +45,10 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection, onV
       cardName: card.name, 
       cardLanguage: card.language 
     });
+    // Call callback to refresh set progress
+    if (onWishlistChange) {
+      onWishlistChange();
+    }
   };
 
   return (
@@ -54,6 +65,7 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, onAddToCollection, onV
       inWishlist={isInWishlist}
       description={card.description || ''}
       hidePriceAndBuy={hidePriceAndBuy}
+      showEditButton={showEditButton}
       cardData={card}
       onAddToCollection={handleAddToCollection}
       onAddToWishlist={handleAddToWishlist}

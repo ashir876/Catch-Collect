@@ -1,0 +1,97 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+export interface SetProgress {
+  set_id: string;
+  set_name: string;
+  total_cards: number;
+  collected_cards: number;
+  wishlist_cards: number;
+  completion_percentage: number;
+  is_completed: boolean;
+}
+
+export const useSetProgress = (setId?: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['set-progress', user?.id, setId],
+    queryFn: async (): Promise<SetProgress[]> => {
+      if (!user) return [];
+
+      try {
+        // Get all sets with their total card counts
+        const { data: setsData, error: setsError } = await supabase
+          .from('sets')
+          .select('set_id, name, total')
+          .order('name');
+
+        if (setsError) throw setsError;
+
+        // Filter by specific set if provided
+        const filteredSets = setId ? setsData.filter(set => set.set_id === setId) : setsData;
+
+        // Get collection counts per set
+        const { data: collectionData, error: collectionError } = await supabase
+          .from('card_collections')
+          .select('set_id')
+          .eq('user_id', user.id)
+          .not('set_id', 'is', null);
+
+        if (collectionError) throw collectionError;
+
+        // Get wishlist counts per set
+        const { data: wishlistData, error: wishlistError } = await supabase
+          .from('card_wishlist')
+          .select('set_id')
+          .eq('user_id', user.id)
+          .not('set_id', 'is', null);
+
+        if (wishlistError) throw wishlistError;
+
+        // Count cards per set for collection and wishlist
+        const collectionCounts = collectionData.reduce((acc, item) => {
+          acc[item.set_id] = (acc[item.set_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const wishlistCounts = wishlistData.reduce((acc, item) => {
+          acc[item.set_id] = (acc[item.set_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        // Calculate progress for each set
+        const progress: SetProgress[] = filteredSets.map(set => {
+          const totalCards = set.total || 0;
+          const collectedCards = collectionCounts[set.set_id] || 0;
+          const wishlistCards = wishlistCounts[set.set_id] || 0;
+          const completionPercentage = totalCards > 0 ? Math.round((collectedCards / totalCards) * 100) : 0;
+          const isCompleted = collectedCards >= totalCards && totalCards > 0;
+
+          return {
+            set_id: set.set_id,
+            set_name: set.name,
+            total_cards: totalCards,
+            collected_cards: collectedCards,
+            wishlist_cards: wishlistCards,
+            completion_percentage: completionPercentage,
+            is_completed: isCompleted
+          };
+        });
+
+        return progress;
+      } catch (error) {
+        console.error('Error fetching set progress:', error);
+        throw error;
+      }
+    },
+    enabled: !!user,
+  });
+};
+
+// Hook to get progress for a single set
+export const useSingleSetProgress = (setId: string) => {
+  const { data: allProgress = [] } = useSetProgress();
+  return allProgress.find(progress => progress.set_id === setId);
+};
