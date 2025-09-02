@@ -11,7 +11,8 @@ import {
   ShoppingCart,
   Filter,
   SortAsc,
-  SortDesc
+  SortDesc,
+  CheckCircle
 } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/contexts/AuthContext";
@@ -326,7 +327,14 @@ const CardGrid = ({
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredCards.map((card) => (
-            <Card key={card.card_id} className="pixel-card group transition-all duration-300 flex flex-col">
+            <Card key={card.card_id} className="pixel-card group transition-all duration-300 flex flex-col relative">
+              {/* Collection Status Icon - Top Right */}
+              {card.inCollection && (
+                <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="text-xs font-semibold">Collected</span>
+                </div>
+              )}
               <Link to={`/card/${card.card_id}`}>
                 <div className="aspect-[3/4] overflow-visible">
                   <img 
@@ -395,9 +403,16 @@ const CardGrid = ({
       ) : (
         <div className="space-y-4">
           {filteredCards.map((card) => (
-            <Card key={card.card_id} className="pixel-card flex flex-col">
+            <Card key={card.card_id} className="pixel-card flex flex-col relative">
               <CardContent className="p-4 flex flex-col flex-1">
                 <div className="flex items-center gap-4 flex-1">
+                  {/* Collection Status Icon - Top Right */}
+                  {card.inCollection && (
+                    <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-xs font-semibold">Collected</span>
+                    </div>
+                  )}
                   <div className="w-20 h-28 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                     <img 
                       src={card.image_url || '/placeholder.svg'} 

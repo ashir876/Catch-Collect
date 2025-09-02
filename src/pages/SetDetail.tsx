@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Grid3X3, List, Package, Star, Heart } from "lucide-react";
+import { ArrowLeft, Search, Grid3X3, List, Package, Star, Heart, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -527,8 +527,10 @@ const SetDetail = () => {
 
   // Handler for refreshing set progress data
   const handleRefreshSetProgress = () => {
-    queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
-    queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user.id, setId] });
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user.id] });
+    }
   };
 
   // Handler for adding to collection with modal data
@@ -560,10 +562,12 @@ const SetDetail = () => {
       
       if (error) throw error;
       
+      // Invalidate collection queries using the correct keys
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['set-progress', setId] });
-      queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+      // Invalidate set progress queries using the correct keys
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user.id, setId] });
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user.id] });
       setIsAddToCollectionModalOpen(false);
       setSelectedCardForCollection(null);
       
@@ -822,27 +826,37 @@ const SetDetail = () => {
         </div>
       ) : (
         <div className="space-y-2">
-          {cardsData.map((card) => (
-            <div key={`${card.card_id}-${card.language}`} className="flex gap-3 p-3 border rounded-lg">
-              <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black">
-                <img
-                  src={card.image_url || '/placeholder.svg'}
-                  alt={card.name}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
+          {cardsData.map((card) => {
+            const isInCollection = collectionItems.some(item => item.card_id === card.card_id);
+            return (
+              <div key={`${card.card_id}-${card.language}`} className="flex gap-3 p-3 border rounded-lg relative">
+                             {/* Collection Status Icon - Top Right */}
+             {isInCollection && (
+               <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
+                 <CheckCircle className="h-4 w-4" />
+                 <span className="text-xs font-semibold">Collected</span>
+               </div>
+             )}
+                <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black">
+                  <img
+                    src={card.image_url || '/placeholder.svg'}
+                    alt={card.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm">{card.name}</h3>
+                  <p className="text-muted-foreground text-xs">#{card.card_number}</p>
+                  {card.rarity && (
+                    <span className="text-xs bg-muted px-2 py-1 rounded">{card.rarity}</span>
+                  )}
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm">{card.name}</h3>
-                <p className="text-muted-foreground text-xs">#{card.card_number}</p>
-                {card.rarity && (
-                  <span className="text-xs bg-muted px-2 py-1 rounded">{card.rarity}</span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

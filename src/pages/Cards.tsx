@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Heart, ShoppingCart, Star, Filter, Grid3X3, List } from "lucide-react";
+import { Search, Heart, ShoppingCart, Star, Filter, Grid3X3, List, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -715,16 +715,10 @@ const Cards = () => {
                   />
                 </div>
               )}
-              <CardListItem
+              <CardWithWishlist
                 card={card}
-                addToCollection={addToCollection}
-                removeFromCollection={removeFromCollection}
-                isAddingToCollection={isAddingToCollection}
-                isRemovingFromCollection={isRemovingFromCollection}
-                addToWishlist={addToWishlist}
-                removeFromWishlist={removeFromWishlist}
-                isAddingToWishlist={isAddingToWishlist}
-                isRemovingFromWishlist={isRemovingFromWishlist}
+                hidePriceAndBuy={true}
+                onAddToCollection={handleAddToCollection}
               />
             </div>
           ))}
@@ -809,7 +803,14 @@ const CardListItem = ({
     <CardDetailModal key={`${card.card_id}-${card.language}`} card={card}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer">
         <CardContent className="p-3">
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center relative">
+            {/* Collection Status Icon - Top Right */}
+            {isInCollection && (
+              <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
+                <CheckCircle className="h-4 w-4" />
+                <span className="text-xs font-semibold">Collected</span>
+              </div>
+            )}
             <div className="w-20 h-28 flex-shrink-0">
               <img
                 src={card.image_url || "/placeholder.svg"}

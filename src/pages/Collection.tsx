@@ -289,27 +289,25 @@ const Collection = () => {
     };
   }).slice(0, 5); // Show top 5 sets
 
-  const handleRemoveFromCollection = async (collectionItemId: string, cardName: string) => {
+  const handleRemoveFromCollection = async (collectionItemId: string | number, cardName: string) => {
     if (!user) return;
     
-    // Optimistic update - remove the card from the cache immediately
+    // Optimistic update - remove the specific collection item from the cache immediately
     let previousData: any = null;
     if (user?.id) {
       previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user.id));
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), (old: any) => {
         if (!old) return old;
-        return old.filter((item: any) => item.card_id !== collectionItemId);
+        return old.filter((item: any) => item.id !== Number(collectionItemId));
       });
     }
     
     try {
-      // Since collectionItemId is actually the card_id in this case
-      const cardId = collectionItemId;
-      
+      // Delete the specific collection item by its ID
       const { error } = await supabase
         .from('card_collections')
         .delete()
-        .eq('card_id', cardId)
+        .eq('id', Number(collectionItemId))
         .eq('user_id', user.id as string);
         
       if (error) throw error;
@@ -823,7 +821,7 @@ const Collection = () => {
                          inWishlist={false}
                          isOwned={true}
                          isWishlisted={false}
-                         onAddToCollection={() => handleRemoveFromCollection(card.id, card.name)}
+                         onAddToCollection={() => {}} // No-op on collection page
                          onAddToWishlist={() => {}}
                          onAddToCart={() => {}}
                          onViewDetails={() => handleCardClick(card)}
@@ -832,7 +830,8 @@ const Collection = () => {
                          cardData={card.cardData}
                          collectionItemId={card.collectionItemId}
                          showRemoveButton={true}
-                         onRemove={(id) => handleRemoveFromCollection(id, card.name)}
+                         onRemove={(id) => handleRemoveFromCollection(card.collectionItemId, card.name)}
+                         hideCollectedLabel={true}
                        />
                       {/* Condition Badge */}
                       <div className="absolute top-2 right-10 z-30">
@@ -898,7 +897,7 @@ const Collection = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleRemoveFromCollection(card.id, card.name);
+                              handleRemoveFromCollection(card.collectionItemId, card.name);
                             }}
                             className="h-8 px-2"
                           >

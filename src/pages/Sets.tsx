@@ -58,7 +58,7 @@ const Sets = () => {
   });
 
   // Fetch set progress data
-  const { data: setProgressData = [] } = useSetProgress();
+  const { data: setProgressData = [], isLoading: progressLoading, error: progressError } = useSetProgress();
 
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, ShoppingCart, Star, Edit3, X } from "lucide-react";
+import { Heart, ShoppingCart, Star, Edit3, X, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +86,8 @@ interface TradingCardProps {
   // New prop for showing remove button
   showRemoveButton?: boolean;
   onRemove?: (id: string) => void;
+  // New prop to control whether to show "Collected" label (hide on collection page)
+  hideCollectedLabel?: boolean;
 }
 
 const rarityConfig = {
@@ -184,6 +186,7 @@ const TradingCard = ({
   showEditButton = true,
   showRemoveButton = false,
   onRemove,
+  hideCollectedLabel = false,
 }: TradingCardProps) => {
   console.log('TradingCard component rendering with props:', { 
     id, 
@@ -216,6 +219,17 @@ const TradingCard = ({
   // Define owned and wishlisted variables first
   const owned = localOwned;
   const wishlisted = localWishlisted;
+  
+  // Debug modal state changes
+  React.useEffect(() => {
+    console.log('TradingCard - Collection modal state changed:', {
+      id,
+      name,
+      isCollectionModalOpen,
+      owned,
+      wishlisted
+    });
+  }, [isCollectionModalOpen, id, name, owned, wishlisted]);
   
   // Update local state when props change
   React.useEffect(() => {
@@ -262,6 +276,15 @@ const TradingCard = ({
   // Handle collection toggle - always open modal to add card
   const handleCollectionToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('TradingCard - Collection button clicked:', {
+      id,
+      name,
+      owned,
+      wishlisted,
+      isCollectionModalOpen,
+      isAddingToCollection,
+      isRemovingFromCollection
+    });
     // Always open collection modal to add card (even if already in collection)
     setIsCollectionModalOpen(true);
   };
@@ -334,14 +357,28 @@ const TradingCard = ({
             created_at: entry.date ? new Date(entry.date).toISOString() : new Date().toISOString()
           };
 
+          console.log('TradingCard - Attempting to insert:', {
+            cardId: id,
+            cardName: cardDataFromDB.name,
+            insertData: insertData,
+            user: user.id
+          });
+
           const { error } = await supabase
             .from('card_collections')
             .insert(insertData);
           
           if (error) {
             console.error('Error inserting entry:', error);
+            console.error('Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
             errorCount++;
           } else {
+            console.log('Successfully inserted entry for card:', id);
             successCount++;
           }
         } catch (entryError) {
@@ -438,7 +475,7 @@ const TradingCard = ({
     >
       {/* Priority Badge (Wishlist) */}
       {priority && getPriorityText && getPriorityColor && (
-        <div className="absolute top-2 left-2 z-20">
+        <div className="absolute top-2 right-2 z-20">
           <Badge variant={getPriorityColor()} className="text-xs">
             {getPriorityText()}
           </Badge>
@@ -449,7 +486,7 @@ const TradingCard = ({
       
       <CardContent className="p-4 relative z-10 flex flex-col flex-1">
         {/* Card Image */}
-        <div className="relative mb-3 aspect-[3/4] overflow-visible rounded-lg bg-muted">
+        <div className="relative mb-3 aspect-[3/4] overflow-visible rounded-lg bg-muted" style={{ position: 'relative' }}>
           <img
             src={cardImage}
             alt={name}
@@ -457,17 +494,14 @@ const TradingCard = ({
           />
           
           {/* Status Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
+          <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
             <Badge 
               variant="secondary" 
-              className={cn(
-                "text-xs px-2 py-1",
-                `bg-${rarityInfo.color}/20 text-${rarityInfo.color} border-${rarityInfo.color}/30`
-              )}
+              className="text-xs px-2 py-1 bg-muted text-foreground border-border"
             >
               {rarityInfo.label}
             </Badge>
-            {owned && (
+            {owned && !hideCollectedLabel && (
               <Badge variant="outline" className="text-xs px-2 py-1 bg-accent/20 text-accent border-accent/30">
                 Besitzt
               </Badge>
@@ -479,9 +513,31 @@ const TradingCard = ({
             )}
           </div>
 
-          {/* Remove Button - Top Right Corner */}
-          {owned && showRemoveButton && onRemove && (
-            <div className="absolute top-2 right-2 z-30">
+          {/* Collection Status Icon - Top Right */}
+          {owned && !hideCollectedLabel && (
+            <div 
+              className="bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg z-30 border-2 border-white flex items-center gap-1"
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                zIndex: 30,
+                backgroundColor: '#059669',
+                color: 'white',
+                borderRadius: '8px',
+                padding: '4px 8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                border: '2px solid white'
+              }}
+            >
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-xs font-semibold">Collected</span>
+            </div>
+          )}
+
+          {/* Remove Button - Below Collection Status Icon */}
+          {owned && showRemoveButton && onRemove && !hideCollectedLabel && (
+            <div className="absolute top-16 right-2 z-30">
               <Button
                 size="sm"
                 variant="destructive"
@@ -516,14 +572,14 @@ const TradingCard = ({
         {!hidePriceAndBuy && (
           <>
             {typeof myPrice === 'number' && myPrice > 0 && typeof marketPrice === 'number' && marketPrice > 0 ? (
-              <div className="mt-2">
-                <div className="flex justify-between text-xs">
-                  <span>Your Price</span>
-                  <span>{myPrice} {marketCurrency || 'CHF'}</span>
+              <div className="mt-2 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-medium">Your Price</span>
+                  <span className="font-semibold">{myPrice} {marketCurrency || 'CHF'}</span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span>Market Price{marketSource ? ` (${marketSource})` : ''}</span>
-                  <span>{marketPrice} {marketCurrency || 'USD'}</span>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-medium">Market Price{marketSource ? ` (${marketSource})` : ''}</span>
+                  <span className="font-semibold">{marketPrice} {marketCurrency || 'USD'}</span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 rounded my-1">
                   <div
@@ -531,38 +587,38 @@ const TradingCard = ({
                     style={{ width: `${Math.min((myPrice / marketPrice) * 100, 100)}%` }}
                   />
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground text-center">
                   {myPrice > marketPrice
                     ? `+${(myPrice - marketPrice).toFixed(2)} above market`
                     : `-${(marketPrice - myPrice).toFixed(2)} below market`}
                 </div>
                 {marketRecordedAt && (
-                  <div className="text-[10px] text-muted-foreground mt-1">Market price as of {new Date(marketRecordedAt).toLocaleDateString()}</div>
+                  <div className="text-[10px] text-muted-foreground mt-1 text-center">Market price as of {new Date(marketRecordedAt).toLocaleDateString()}</div>
                 )}
               </div>
             ) : (
-              <div className="mt-2 space-y-1">
+              <div className="mt-2 space-y-2">
                 {typeof myPrice === 'number' && myPrice > 0 && (
-                  <div className="flex justify-between text-xs">
-                    <span>Your Price</span>
-                    <span>{myPrice} {marketCurrency || 'CHF'}</span>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-medium">Your Price</span>
+                    <span className="font-semibold">{myPrice} {marketCurrency || 'CHF'}</span>
                   </div>
                 )}
                 {typeof marketPrice === 'number' && marketPrice > 0 && (
-                  <div className="flex justify-between text-xs">
-                    <span>Market Price{marketSource ? ` (${marketSource})` : ''}</span>
-                    <span>{marketPrice} {marketCurrency || 'USD'}</span>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-medium">Market Price{marketSource ? ` (${marketSource})` : ''}</span>
+                    <span className="font-semibold">{marketPrice} {marketCurrency || 'USD'}</span>
                   </div>
                 )}
                 {(!myPrice || myPrice === 0) && (!marketPrice || marketPrice === 0) && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground text-center">
                     {!myPrice || myPrice === 0 ? "💡 Add your price when adding to collection" : ""}
                     {(!myPrice || myPrice === 0) && (!marketPrice || marketPrice === 0) ? " • " : ""}
                     {!marketPrice || marketPrice === 0 ? "Market price not available" : ""}
                   </div>
                 )}
                 {(!myPrice || myPrice === 0) && owned && (
-                  <div className="text-xs text-blue-600 mt-1">
+                  <div className="text-xs text-blue-600 mt-1 text-center">
                     💡 Click "Remove from Collection" and add again to set your price
                   </div>
                 )}
@@ -595,9 +651,9 @@ const TradingCard = ({
               variant="outline"
               className="w-full"
               onClick={handleCollectionToggle}
-              disabled={isAddingToCollection || isRemovingFromCollection || wishlisted}
+              disabled={isAddingToCollection || isRemovingFromCollection}
             >
-              <Star className="w-4 h-4 mr-2" />
+              <Heart className="w-4 h-4 mr-2" />
               {t('cards.addToCollection')}
             </Button>
           )}

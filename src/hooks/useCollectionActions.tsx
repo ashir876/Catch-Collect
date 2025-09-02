@@ -40,22 +40,6 @@ export const useCollectionActions = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-             // Check if already in collection
-       const { data: existingItem, error: checkError } = await supabase
-         .from('card_collections')
-         .select('id')
-         .eq('user_id', user.id)
-         .eq('card_id', cardId)
-         .single();
-
-       if (checkError && checkError.code !== 'PGRST116') {
-         throw checkError;
-       }
-
-       if (existingItem) {
-         throw new Error("Card already in collection");
-       }
-
       // Get card data
       let query = supabase.from('cards').select('*').eq('card_id', cardId);
       if (cardLanguage) {
@@ -124,13 +108,11 @@ export const useCollectionActions = () => {
         queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), context.previousData);
       }
       
-             toast({
-         title: t('messages.error'),
-         description: error.message === "Card already in collection" 
-           ? t('messages.alreadyInCollection') 
-           : t('messages.collectionError'),
-         variant: "destructive",
-       });
+      toast({
+        title: t('messages.error'),
+        description: t('messages.collectionError'),
+        variant: "destructive",
+      });
     },
     onSuccess: (data) => {
       // Refetch to ensure data consistency
@@ -138,7 +120,8 @@ export const useCollectionActions = () => {
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
       
-      // Invalidate set progress queries to update statistics
+      // Invalidate set progress queries to update statistics immediately
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
       // Close modal if callback is set
@@ -196,7 +179,8 @@ export const useCollectionActions = () => {
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
       
-      // Invalidate set progress queries to update statistics
+      // Invalidate set progress queries to update statistics immediately
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
       toast({
@@ -259,7 +243,7 @@ export const useWishlistActions = () => {
       }
 
       // Get card data
-      let query = supabase.from('cards').select('language').eq('card_id', cardId);
+      let query = supabase.from('cards').select('*').eq('card_id', cardId);
       if (cardLanguage) {
         query = query.eq('language', cardLanguage);
       }
@@ -291,6 +275,9 @@ export const useWishlistActions = () => {
         language: cardData.language || 'en',
         priority: priorityNumber
       };
+
+      // Add set_id for statistics to work properly
+      if (cardData.set_id) insertData.set_id = cardData.set_id;
 
       // Try to add price and notes if they exist
       if (price !== undefined) {
@@ -362,7 +349,8 @@ export const useWishlistActions = () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
       
-      // Invalidate set progress queries to update statistics
+      // Invalidate set progress queries to update statistics immediately
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
       // Close modal if callback is set
@@ -420,7 +408,8 @@ export const useWishlistActions = () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
       
-      // Invalidate set progress queries to update statistics
+      // Invalidate set progress queries to update statistics immediately
+      queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
       toast({

@@ -18,6 +18,9 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
   
+  // Debug logging
+  console.log('CardWithWishlist - Card:', card.card_id, 'isInCollection:', isInCollection);
+  
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
 

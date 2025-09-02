@@ -34,6 +34,7 @@ interface CardData {
   weaknesses: any; // Changed from any[] to any to match Json type
   retreat: number;
   set_symbol_url: string;
+  language: string;
 }
 
 const CardDetail = () => {
@@ -99,10 +100,31 @@ const CardDetail = () => {
         .insert({
           user_id: user.id,
           card_id: card.card_id,
-          language: 'en'
+          language: card.language || 'en',
+          name: card.name,
+          set_name: card.set_name,
+          set_id: card.set_id,
+          card_number: card.card_number,
+          rarity: card.rarity,
+          image_url: card.image_url,
+          description: card.description,
+          illustrator: card.illustrator,
+          hp: card.hp,
+          types: card.types,
+          attacks: card.attacks,
+          weaknesses: card.weaknesses,
+          retreat: card.retreat,
+          condition: 'Near Mint',
+          price: 0,
+          notes: '',
+          created_at: new Date().toISOString()
         });
 
       if (error) throw error;
+
+      // Invalidate collection queries to update navigation badge
+      queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
 
       toast({
         title: t('messages.addedToCollection'),

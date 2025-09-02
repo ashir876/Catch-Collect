@@ -16,7 +16,7 @@ export const useSetProgress = (setId?: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['set-progress', user?.id, setId],
+    queryKey: ['set-progress', user?.id, setId || 'all'],
     queryFn: async (): Promise<SetProgress[]> => {
       if (!user) return [];
 
@@ -32,34 +32,76 @@ export const useSetProgress = (setId?: string) => {
         // Filter by specific set if provided
         const filteredSets = setId ? setsData.filter(set => set.set_id === setId) : setsData;
 
-        // Get collection counts per set
+        // Get collection counts per set - fetch card details separately
         const { data: collectionData, error: collectionError } = await supabase
           .from('card_collections')
-          .select('set_id')
-          .eq('user_id', user.id)
-          .not('set_id', 'is', null);
+          .select('card_id')
+          .eq('user_id', user.id);
 
         if (collectionError) throw collectionError;
 
-        // Get wishlist counts per set
+        // Get wishlist counts per set - fetch card details separately
         const { data: wishlistData, error: wishlistError } = await supabase
           .from('card_wishlist')
-          .select('set_id')
-          .eq('user_id', user.id)
-          .not('set_id', 'is', null);
+          .select('card_id')
+          .eq('user_id', user.id);
 
         if (wishlistError) throw wishlistError;
+        
 
-        // Count cards per set for collection and wishlist
-        const collectionCounts = collectionData.reduce((acc, item) => {
-          acc[item.set_id] = (acc[item.set_id] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
 
-        const wishlistCounts = wishlistData.reduce((acc, item) => {
-          acc[item.set_id] = (acc[item.set_id] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+        // Get set_id for each card in collections - use a more direct approach
+        let collectionCounts: Record<string, number> = {};
+        
+        if (collectionData.length > 0) {
+          // Get all card details in one query to avoid duplicates
+          const cardIds = collectionData.map(item => item.card_id);
+          const { data: collectionCards, error: cardsError } = await supabase
+            .from('cards')
+            .select('set_id')
+            .in('card_id', cardIds);
+          
+          if (cardsError) throw cardsError;
+          
+          // Count cards per set - each card should only be counted once
+          collectionCounts = collectionCards.reduce((acc, card) => {
+            if (card.set_id) {
+              acc[card.set_id] = (acc[card.set_id] || 0) + 1;
+            }
+            return acc;
+          }, {} as Record<string, number>);
+        }
+
+        // Get set_id for each card in wishlist - use a more direct approach
+        let wishlistCounts: Record<string, number> = {};
+        
+        if (wishlistData.length > 0) {
+          // Get all card details in one query to avoid duplicates
+          const cardIds = wishlistData.map(item => item.card_id);
+          const { data: wishlistCards, error: cardsError } = await supabase
+            .from('cards')
+            .select('card_id, set_id')
+            .in('card_id', cardIds);
+          
+          if (cardsError) throw cardsError;
+          
+          // Count cards per set - each card should only be counted once
+          // Use a Set to ensure unique card IDs per set
+          const setCardMap = new Map<string, Set<string>>();
+          wishlistCards.forEach(card => {
+            if (card.set_id) {
+              if (!setCardMap.has(card.set_id)) {
+                setCardMap.set(card.set_id, new Set());
+              }
+              setCardMap.get(card.set_id)!.add(card.card_id);
+            }
+          });
+          
+          // Convert Set sizes to counts
+          setCardMap.forEach((cardSet, setId) => {
+            wishlistCounts[setId] = cardSet.size;
+          });
+        }
 
         // Calculate progress for each set
         const progress: SetProgress[] = filteredSets.map(set => {
@@ -68,6 +110,8 @@ export const useSetProgress = (setId?: string) => {
           const wishlistCards = wishlistCounts[set.set_id] || 0;
           const completionPercentage = totalCards > 0 ? Math.round((collectedCards / totalCards) * 100) : 0;
           const isCompleted = collectedCards >= totalCards && totalCards > 0;
+
+
 
           return {
             set_id: set.set_id,

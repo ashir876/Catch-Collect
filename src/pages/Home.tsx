@@ -21,6 +21,7 @@ import { useCartActions } from "@/hooks/useCartActions";
 import { useToast } from "@/hooks/use-toast";
 
 
+
 const Home = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -155,6 +156,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+            
 
       {/* Quick Stats Section */}
       <section className="py-12 px-4 bg-muted/20 relative z-10">

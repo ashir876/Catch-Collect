@@ -188,6 +188,8 @@ export const useIsCardInCollection = (cardId: string) => {
     queryFn: async () => {
       if (!user || !cardId) return false;
 
+      console.log('useIsCardInCollection - Checking card:', cardId, 'for user:', user.id);
+
       const { data, error } = await supabase
         .from('card_collections')
         .select('id')
@@ -199,7 +201,10 @@ export const useIsCardInCollection = (cardId: string) => {
         throw error;
       }
 
-      return data && data.length > 0;
+      const result = data && data.length > 0;
+      console.log('useIsCardInCollection - Result for card:', cardId, 'isInCollection:', result, 'data:', data);
+      
+      return result;
     },
     enabled: !!user && !!cardId,
   });
