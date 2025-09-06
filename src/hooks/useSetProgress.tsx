@@ -50,26 +50,32 @@ export const useSetProgress = (setId?: string) => {
         
 
 
-        // Get set_id for each card in collections - use a more direct approach
+        // Get set_id for each collected card, deduplicating by card_id per set
         let collectionCounts: Record<string, number> = {};
         
         if (collectionData.length > 0) {
-          // Get all card details in one query to avoid duplicates
           const cardIds = collectionData.map(item => item.card_id);
           const { data: collectionCards, error: cardsError } = await supabase
             .from('cards')
-            .select('set_id')
+            .select('card_id, set_id')
             .in('card_id', cardIds);
           
           if (cardsError) throw cardsError;
           
-          // Count cards per set - each card should only be counted once
-          collectionCounts = collectionCards.reduce((acc, card) => {
-            if (card.set_id) {
-              acc[card.set_id] = (acc[card.set_id] || 0) + 1;
-            }
-            return acc;
-          }, {} as Record<string, number>);
+          // Use a Set per set_id to ensure unique card_ids are counted only once
+          const setToUniqueCards = new Map<string, Set<string>>();
+          collectionCards.forEach(card => {
+            if (!card.set_id || !card.card_id) return;
+            if (!setToUniqueCards.has(card.set_id)) {
+              setToUniqueCards.set(card.set_id, new Set());
+          }
+            setToUniqueCards.get(card.set_id)!.add(card.card_id);
+          });
+          
+          // Convert Set sizes to counts
+          setToUniqueCards.forEach((cardSet, setId) => {
+            collectionCounts[setId] = cardSet.size;
+          });
         }
 
         // Get set_id for each card in wishlist - use a more direct approach

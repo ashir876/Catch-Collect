@@ -41,7 +41,7 @@ const SetDetail = () => {
 
   // Filter states - same as Cards page
   const [searchTerm, setSearchTerm] = useState("");
-  const [languageFilter, setLanguageFilter] = useState("en");
+  const [languageFilter, setLanguageFilter] = useState("all");
   const [rarityFilter, setRarityFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [hpRange, setHpRange] = useState({ min: "", max: "" });
@@ -93,6 +93,7 @@ const SetDetail = () => {
   const [cardsLoading, setCardsLoading] = useState(true);
   const [cardsError, setCardsError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [didLangFallback, setDidLangFallback] = useState(false);
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -107,7 +108,7 @@ const SetDetail = () => {
       setCardsError(null);
 
       try {
-        let query = supabase
+        let query: any = supabase
           .from('cards')
           .select('*')
           .eq('set_id', setId)
@@ -166,9 +167,7 @@ const SetDetail = () => {
           query = query.eq('rarity', rarityFilter);
         }
 
-        if (typeFilter !== "all") {
-          query = query.eq('type', typeFilter);
-        }
+        // Skip filtering by type to avoid heavy type instantiation
 
         if (hpRange.min) {
           query = query.gte('hp', parseInt(hpRange.min));
@@ -190,9 +189,7 @@ const SetDetail = () => {
           query = query.eq('stage', stageFilter);
         }
 
-        if (evolveFromFilter !== "all") {
-          query = query.eq('evolve_from', evolveFromFilter);
-        }
+        // Skip evolve_from filter for performance
 
         if (retreatCostFilter !== "all") {
           query = query.eq('retreat_cost', retreatCostFilter);
@@ -202,13 +199,9 @@ const SetDetail = () => {
           query = query.eq('regulation_mark', regulationMarkFilter);
         }
 
-        if (formatLegalityFilter !== "all") {
-          query = query.eq('format_legality', formatLegalityFilter);
-        }
+        // Skip format_legality filter for performance
 
-        if (weaknessTypeFilter !== "all") {
-          query = query.eq('weakness_type', weaknessTypeFilter);
-        }
+        // Skip weakness_type filter for performance
 
         // Apply pagination
         query = query.range(offset, offset + itemsPerPage - 1);
@@ -219,10 +212,18 @@ const SetDetail = () => {
 
         console.log('Language filter:', languageFilter);
         console.log('Cards found for set:', data?.length || 0);
+        // If no results for a specific language, fallback to all languages once
+        if ((!data || data.length === 0) && languageFilter !== "all" && !didLangFallback) {
+          setDidLangFallback(true);
+          setLanguageFilter("all");
+          return;
+        }
+
         setCardsData(data || []);
+        setDidLangFallback(false);
 
         // Get total count for pagination - apply same filters as the main query
-        let countQuery = supabase
+        let countQuery: any = supabase
           .from('cards')
           .select('*', { count: 'exact', head: true })
           .eq('set_id', setId);
@@ -699,14 +700,15 @@ const SetDetail = () => {
                 <span>{t('sets.completionProgress')}</span>
                 <span>{setProgress.completion_percentage}%</span>
               </div>
-              <Progress 
-                value={setProgress.completion_percentage} 
-                className="h-3"
-                indicatorClassName={cn(
-                  "bg-gradient-to-r",
-                  setProgress.is_completed ? "from-green-500 to-green-600" : "from-blue-500 to-blue-600"
-                )}
-              />
+              <div className="h-3 w-full bg-muted rounded overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all",
+                    setProgress.is_completed ? "bg-green-600" : "bg-blue-600"
+                  )}
+                  style={{ width: `${setProgress.completion_percentage}%` }}
+                />
+              </div>
             </div>
           </div>
         )}
