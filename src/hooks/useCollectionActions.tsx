@@ -81,11 +81,14 @@ export const useCollectionActions = () => {
       return { cardId, cardData };
     },
     onMutate: async ({ cardId, cardName }) => {
-      // Optimistic update
+      // Optimistic update for collection data
       await queryClient.cancelQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
+      await queryClient.cancelQueries({ queryKey: ['collection-check', user?.id, cardId] });
       
       const previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user?.id));
+      const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
       
+      // Optimistic update for collection list
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), (oldData: any) => {
         if (!oldData) return oldData;
         
@@ -100,12 +103,18 @@ export const useCollectionActions = () => {
         return [newCollectionItem, ...oldData];
       });
 
-      return { previousData };
+      // Optimistic update for collection check
+      queryClient.setQueryData(['collection-check', user?.id, cardId], true);
+
+      return { previousData, previousCheckData };
     },
     onError: (error, variables, context) => {
-      // Revert optimistic update
+      // Revert optimistic updates
       if (context?.previousData) {
         queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), context.previousData);
+      }
+      if (context?.previousCheckData !== undefined) {
+        queryClient.setQueryData(['collection-check', user?.id, variables.cardId], context.previousCheckData);
       }
       
       toast({
@@ -153,19 +162,28 @@ export const useCollectionActions = () => {
     },
     onMutate: async ({ cardId }) => {
       await queryClient.cancelQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
+      await queryClient.cancelQueries({ queryKey: ['collection-check', user?.id, cardId] });
       
       const previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user?.id));
+      const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
       
+      // Optimistic update for collection list
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.filter((item: any) => item.card_id !== cardId);
       });
 
-      return { previousData };
+      // Optimistic update for collection check
+      queryClient.setQueryData(['collection-check', user?.id, cardId], false);
+
+      return { previousData, previousCheckData };
     },
     onError: (error, variables, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), context.previousData);
+      }
+      if (context?.previousCheckData !== undefined) {
+        queryClient.setQueryData(['collection-check', user?.id, variables.cardId], context.previousCheckData);
       }
       
       toast({
@@ -302,11 +320,14 @@ export const useWishlistActions = () => {
       return { cardId, cardName };
     },
     onMutate: async ({ cardId, cardName }) => {
-      // Optimistic update
+      // Optimistic update for wishlist data
       await queryClient.cancelQueries({ queryKey: ['wishlist', user?.id] });
+      await queryClient.cancelQueries({ queryKey: ['wishlist-check', user?.id, cardId] });
       
       const previousData = queryClient.getQueryData(['wishlist', user?.id]);
+      const previousCheckData = queryClient.getQueryData(['wishlist-check', user?.id, cardId]);
       
+      // Optimistic update for wishlist list
       queryClient.setQueryData(['wishlist', user?.id], (oldData: any) => {
         if (!oldData) return oldData;
         
@@ -322,12 +343,18 @@ export const useWishlistActions = () => {
         return [newWishlistItem, ...oldData];
       });
 
-      return { previousData };
+      // Optimistic update for wishlist check
+      queryClient.setQueryData(['wishlist-check', user?.id, cardId], true);
+
+      return { previousData, previousCheckData };
     },
     onError: (error, variables, context) => {
-      // Revert optimistic update
+      // Revert optimistic updates
       if (context?.previousData) {
         queryClient.setQueryData(['wishlist', user?.id], context.previousData);
+      }
+      if (context?.previousCheckData !== undefined) {
+        queryClient.setQueryData(['wishlist-check', user?.id, variables.cardId], context.previousCheckData);
       }
       
       let errorMessage = t('messages.wishlistError');
@@ -382,19 +409,28 @@ export const useWishlistActions = () => {
     },
     onMutate: async ({ cardId }) => {
       await queryClient.cancelQueries({ queryKey: ['wishlist', user?.id] });
+      await queryClient.cancelQueries({ queryKey: ['wishlist-check', user?.id, cardId] });
       
       const previousData = queryClient.getQueryData(['wishlist', user?.id]);
+      const previousCheckData = queryClient.getQueryData(['wishlist-check', user?.id, cardId]);
       
+      // Optimistic update for wishlist list
       queryClient.setQueryData(['wishlist', user?.id], (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.filter((item: any) => item.card_id !== cardId);
       });
 
-      return { previousData };
+      // Optimistic update for wishlist check
+      queryClient.setQueryData(['wishlist-check', user?.id, cardId], false);
+
+      return { previousData, previousCheckData };
     },
     onError: (error, variables, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(['wishlist', user?.id], context.previousData);
+      }
+      if (context?.previousCheckData !== undefined) {
+        queryClient.setQueryData(['wishlist-check', user?.id, variables.cardId], context.previousCheckData);
       }
       
       toast({

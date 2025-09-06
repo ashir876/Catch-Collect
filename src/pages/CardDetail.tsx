@@ -7,7 +7,8 @@ import {
   ArrowLeft, 
   Star,
   Zap,
-  Shield
+  Shield,
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,8 @@ const CardDetail = () => {
   const navigate = useNavigate();
   const [card, setCard] = useState<CardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCollected, setIsCollected] = useState(false);
+  const [isAddingToCollection, setIsAddingToCollection] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -82,6 +85,44 @@ const CardDetail = () => {
     fetchCard();
   }, [id, toast, t]);
 
+  // Check if this card is already in the user's collection
+  useEffect(() => {
+    // Prefer cached collection-check if present for instant state
+    if (user && id) {
+      const cached = queryClient.getQueryData<boolean>(['collection-check', user.id, id]);
+      if (cached) {
+        setIsCollected(true);
+      }
+    }
+
+    const checkCollected = async () => {
+      if (!user || !id) {
+        setIsCollected(false);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from('card_collections')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('card_id', id);
+
+      if (error) {
+        console.error('Error checking collection status:', error);
+        // Do not override a true state with a failed check
+        return;
+      }
+
+      // Prevent stale checks from flipping true back to false
+      const isInCollection = (count || 0) > 0;
+      // Update shared cache for other components
+      queryClient.setQueryData(['collection-check', user.id, id], isInCollection);
+      setIsCollected((prev) => prev || isInCollection);
+    };
+
+    checkCollected();
+  }, [user, id, queryClient]);
+
   const handleAddToCollection = async () => {
     if (!user) {
       toast({
@@ -94,7 +135,14 @@ const CardDetail = () => {
 
     if (!card) return;
 
+    let previousCollected = isCollected;
+    setIsAddingToCollection(true);
     try {
+      previousCollected = isCollected;
+      // Optimistically mark as collected for immediate UI feedback
+      if (!isCollected) {
+        setIsCollected(true);
+      }
       const { error } = await supabase
         .from('card_collections')
         .insert({
@@ -125,18 +173,35 @@ const CardDetail = () => {
       // Invalidate collection queries to update navigation badge
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-check', user.id, card.card_id] });
+
+      // Update shared cache immediately
+      queryClient.setQueryData(['collection-check', user.id, card.card_id], true);
 
       toast({
         title: t('messages.addedToCollection'),
         description: `${card.name} ${t('messages.addedToCollection').toLowerCase()}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding to collection:', error);
+      // Handle duplicate insert gracefully by marking as collected
+      if (error && (error.code === '23505' || error.message?.toLowerCase().includes('duplicate'))) {
+        setIsCollected(true);
+        toast({
+          title: t('messages.addedToCollection'),
+          description: `${card.name} ${t('messages.addedToCollection').toLowerCase()}.`,
+        });
+        return;
+      }
+      // Revert optimistic update on real error
+      setIsCollected(previousCollected);
       toast({
         title: t('messages.error'),
         description: t('messages.collectionError'),
         variant: "destructive",
       });
+    } finally {
+      setIsAddingToCollection(false);
     }
   };
 
@@ -271,7 +336,13 @@ const CardDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Card Image */}
         <div className="flex justify-center">
-          <div className="pixel-card max-w-sm w-full">
+          <div className="pixel-card max-w-sm w-full relative">
+            {isCollected && (
+              <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
+                <CheckCircle className="h-4 w-4" />
+                <span className="text-xs font-semibold">{t('sets.collected')}</span>
+              </div>
+            )}
             <img 
               src={card.image_url || '/placeholder.svg'} 
               alt={card.name}
@@ -293,17 +364,34 @@ const CardDetail = () => {
                   {card.rarity}
                 </Badge>
               )}
+              {isCollected && (
+                <Badge variant="outline" className="pixel-badge bg-emerald-600/10 text-emerald-700 border-emerald-600/30">
+                  <CheckCircle className="mr-1 h-3 w-3" />
+                  {t('sets.collected')}
+                </Badge>
+              )}
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3">
             <Button 
-              onClick={handleAddToCollection}
+              onClick={!isCollected && !isAddingToCollection ? handleAddToCollection : undefined}
+              disabled={isCollected || isAddingToCollection}
               className="pixel-button flex-1 min-w-0"
+              variant={isCollected ? "secondary" : undefined}
             >
-              <Heart className="mr-2 h-4 w-4" />
-              {t('cardDetail.addToCollection')}
+              {isCollected ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  {t('sets.collected')}
+                </>
+              ) : (
+                <>
+                  <Heart className="mr-2 h-4 w-4" />
+                  {isAddingToCollection ? t('messages.loading') : t('cardDetail.addToCollection')}
+                </>
+              )}
             </Button>
             <Button 
               onClick={handleAddToWishlist}

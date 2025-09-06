@@ -42,9 +42,24 @@ export const useProductsData = (options: ProductsDataOptions = {}) => {
         .eq('language', language)
         .eq('on_stock', true);
 
-      // Apply search filter
+      // Apply search filter (support name or card_number/article_number)
       if (searchTerm) {
-        query = query.ilike('name', `%${searchTerm}%`);
+        const trimmed = searchTerm.trim();
+        // If looks like a pure card number pattern like 123 or 123/456, prioritize card_number
+        const pureNumberPattern = /^(\d+)(?:\/(\d+))?$/;
+        if (pureNumberPattern.test(trimmed)) {
+          const match = trimmed.match(pureNumberPattern)!;
+          if (match[2]) {
+            query = query.eq('card_number', `${match[1]}/${match[2]}`);
+          } else {
+            query = query.or(`card_number.eq.${match[1]},card_number.ilike.${match[1]}/%`);
+          }
+        } else {
+          // General search across key fields
+          query = query.or(
+            `name.ilike.%${trimmed}%,card_number.ilike.%${trimmed}%,article_number.ilike.%${trimmed}%`
+          );
+        }
       }
 
       // Apply rarity filter

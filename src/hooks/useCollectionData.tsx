@@ -202,10 +202,12 @@ export const useIsCardInCollection = (cardId: string) => {
       }
 
       const result = data && data.length > 0;
-      console.log('useIsCardInCollection - Result for card:', cardId, 'isInCollection:', result, 'data:', data);
+      console.log('useIsCardInCollection - Result for card:', cardId, 'isInCollection:', result, 'data:', data, 'timestamp:', new Date().toISOString());
       
       return result;
     },
     enabled: !!user && !!cardId,
+    staleTime: 0, // Always consider data stale to ensure fresh updates
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 };

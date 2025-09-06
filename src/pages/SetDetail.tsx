@@ -892,6 +892,8 @@ const SetDetail = () => {
         onAdd={handleAddToCollectionWithDetails}
         cardName={selectedCardForCollection?.name || ''}
         isLoading={isAddingToCollection}
+        cardId={selectedCardForCollection?.card_id}
+        defaultLanguage={selectedCardForCollection?.language}
       />
     </div>
   );

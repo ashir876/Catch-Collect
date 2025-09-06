@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import TradingCard from "@/components/cards/TradingCard";
+import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useWishlistData, useWishlistCount, WishlistItem } from "@/hooks/useWishlistData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -105,7 +106,7 @@ const Wishlist = () => {
       series: item.card.series_name || "",
       set: item.card.set_name || "",
       number: item.card.number || "",
-      rarity: (item.card.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
+      rarity: mapDatabaseRarityToComponent(item.card.rarity || "Common"),
       type: item.card.type || "",
       image: item.card.image_url || "/placeholder.svg",
       inCollection: false,
@@ -378,9 +379,9 @@ const Wishlist = () => {
                   {t('wishlist.cardsInWishlist')}
                 </p>
                 {mostExpensiveCard && (
-                  <div className="mt-3 p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0 relative">
+                  <div className="mt-4 p-4 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-24 h-36 sm:w-28 sm:h-40 bg-white rounded border overflow-hidden flex-shrink-0 relative">
                         <img
                           src={mostExpensiveCard.image}
                           alt={mostExpensiveCard.name}
@@ -391,17 +392,17 @@ const Wishlist = () => {
                         />
                         {/* Highest Value Tag */}
                         <div className="absolute -top-1 -right-1">
-                          <Badge className="bg-yellow-500 text-black text-xs px-1 py-0 h-4">
+                          <Badge className="bg-yellow-500 text-black text-xs px-1.5 py-0 h-5">
                             💎
                           </Badge>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{mostExpensiveCard.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-base sm:text-lg font-semibold truncate">{mostExpensiveCard.name}</p>
+                        <p className="text-base sm:text-lg text-muted-foreground">
                           {(mostExpensiveCard.marketPrice || 0).toFixed(2)} CHF
                         </p>
-                        <p className="text-xs text-green-600 font-medium">
+                        <p className="text-sm text-green-600 font-medium">
                           Highest Value Card
                         </p>
                       </div>

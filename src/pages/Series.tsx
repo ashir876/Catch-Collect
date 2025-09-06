@@ -269,7 +269,16 @@ const Series = () => {
           </div>
         )}
 
-
+        {/* Bottom Pagination Controls */}
+        {totalCount > 0 && totalPages > 1 && (
+          <div className="mt-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
 
         {/* Stats */}
         {seriesData && seriesData.length > 0 && (

@@ -115,12 +115,21 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
           formData 
         });
 
-        // Use card_id and user_id to identify the record since the collection item ID might be null
-        const { error } = await supabase
+        // Prefer updating by collection item id when available to avoid updating multiple copies
+        const isNumericCollectionId = !isNaN(parseInt(card.id)) && card.id !== card.card_id;
+        let updateQuery = supabase
           .from('card_collections')
           .update(updateData)
-          .eq('card_id', card.card_id)
           .eq('user_id', user?.id);
+
+        if (isNumericCollectionId) {
+          updateQuery = updateQuery.eq('id', parseInt(card.id));
+        } else {
+          // Fallback: update by card_id (may affect multiple rows if duplicates exist)
+          updateQuery = updateQuery.eq('card_id', card.card_id);
+        }
+
+        const { error } = await updateQuery;
 
         if (error) {
           console.error('EditCardModal - Supabase error details:', {

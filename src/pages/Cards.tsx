@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient } from "@tanstack/react-query";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
+import CompactCardListItem from "@/components/cards/CardListItem";
 import LanguageFilter from "@/components/LanguageFilter";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import CardDetailModal from "@/components/cards/CardDetailModal";
@@ -261,11 +262,20 @@ const Cards = () => {
   }}) => {
     if (!user || selectedCards.size === 0) return;
 
-    try {
-      const selectedCardData = filteredCards.filter(card => 
-        selectedCards.has(`${card.card_id}-${card.language}`)
-      );
+    // Optimistic updates for all selected cards
+    const selectedCardData = filteredCards.filter(card => 
+      selectedCards.has(`${card.card_id}-${card.language}`)
+    );
+    const previousCheckData: { [cardId: string]: any } = {};
+    
+    // Store previous data and set optimistic updates
+    selectedCardData.forEach(card => {
+      const cardId = card.card_id;
+      previousCheckData[cardId] = queryClient.getQueryData(['collection-check', user?.id, cardId]);
+      queryClient.setQueryData(['collection-check', user?.id, cardId], true);
+    });
 
+    try {
       // Insert records with individual details for each card (one copy per card)
       const insertData = [];
       for (const card of selectedCardData) {
@@ -307,6 +317,12 @@ const Cards = () => {
       
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      
+      // Invalidate collection check queries for all selected cards
+      selectedCardData.forEach(card => {
+        queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, card.card_id] });
+      });
+      
       setIsBulkAddToCollectionModalOpen(false);
       setSelectedCards(new Set());
       setIsBulkSelectionMode(false);
@@ -320,6 +336,13 @@ const Cards = () => {
       });
     } catch (error) {
       console.error('Error adding cards to collection:', error);
+      // Revert optimistic updates
+      selectedCardData.forEach(card => {
+        const cardId = card.card_id;
+        if (previousCheckData[cardId] !== undefined) {
+          queryClient.setQueryData(['collection-check', user?.id, cardId], previousCheckData[cardId]);
+        }
+      });
       toast({
         title: t('messages.error'),
         description: t('messages.collectionError'),
@@ -366,6 +389,12 @@ const Cards = () => {
   }>) => {
     if (!user || !selectedCardForCollection) return;
 
+    // Optimistic update for collection check
+    const cardId = selectedCardForCollection.card_id;
+    const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
+    console.log('Cards - Setting optimistic update for card:', cardId, 'previousData:', previousCheckData, 'timestamp:', new Date().toISOString());
+    queryClient.setQueryData(['collection-check', user?.id, cardId], true);
+
     try {
       // Create insert data for all entries (each entry represents one card copy)
       const insertData = entries.map(entry => ({
@@ -400,6 +429,7 @@ const Cards = () => {
       
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, selectedCardForCollection.card_id] });
       setIsAddToCollectionModalOpen(false);
       setSelectedCardForCollection(null);
       
@@ -410,6 +440,10 @@ const Cards = () => {
       });
     } catch (error) {
       console.error('Error adding to collection:', error);
+      // Revert optimistic update
+      if (previousCheckData !== undefined) {
+        queryClient.setQueryData(['collection-check', user?.id, cardId], previousCheckData);
+      }
       toast({
         title: t('messages.error'),
         description: t('messages.collectionError'),
@@ -715,9 +749,8 @@ const Cards = () => {
                   />
                 </div>
               )}
-              <CardWithWishlist
+              <CompactCardListItem
                 card={card}
-                hidePriceAndBuy={true}
                 onAddToCollection={handleAddToCollection}
               />
             </div>
@@ -738,6 +771,17 @@ const Cards = () => {
         </div>
       )}
 
+      {/* Bottom Pagination Controls */}
+      {totalCount > 0 && totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
+
       {/* Add to Collection Modal */}
       <AddToCollectionModal
         isOpen={isAddToCollectionModalOpen}
@@ -748,6 +792,8 @@ const Cards = () => {
         onAdd={handleAddToCollectionWithDetails}
         cardName={selectedCardForCollection?.name || ''}
         isLoading={isAddingToCollection}
+        cardId={selectedCardForCollection?.card_id}
+        defaultLanguage={selectedCardForCollection?.language}
       />
 
       {/* Bulk Add to Collection Modal */}
@@ -766,106 +812,5 @@ const Cards = () => {
   );
 };
 
-// CardListItem component for list view
-const CardListItem = ({
-  card,
-  addToCollection,
-  removeFromCollection,
-  isAddingToCollection,
-  isRemovingFromCollection,
-  addToWishlist,
-  removeFromWishlist,
-  isAddingToWishlist,
-  isRemovingFromWishlist,
-}) => {
-  const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
-  const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
-
-  const handleCollectionClick = (e) => {
-    e.stopPropagation();
-    if (isInCollection) {
-      removeFromCollection({ cardId: card.card_id });
-    } else {
-      addToCollection(card);
-    }
-  };
-
-  const handleWishlistClick = (e) => {
-    e.stopPropagation();
-    if (isInWishlist) {
-      removeFromWishlist({ cardId: card.card_id });
-    } else {
-      addToWishlist({ cardId: card.card_id, cardName: card.name, cardLanguage: card.language });
-    }
-  };
-
-  return (
-    <CardDetailModal key={`${card.card_id}-${card.language}`} card={card}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
-        <CardContent className="p-3">
-          <div className="flex gap-3 items-center relative">
-            {/* Collection Status Icon - Top Right */}
-            {isInCollection && (
-              <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
-                <CheckCircle className="h-4 w-4" />
-                <span className="text-xs font-semibold">Collected</span>
-              </div>
-            )}
-            <div className="w-20 h-28 flex-shrink-0">
-              <img
-                src={card.image_url || "/placeholder.svg"}
-                alt={card.name}
-                className="w-full h-full object-contain rounded-lg pointer-events-none"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                }}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm truncate">{card.name}</h3>
-                  <p className="text-muted-foreground text-xs">{card.set_name} • {card.card_number}</p>
-                  {card.rarity && (
-                    <div className="mt-1">
-                      <Badge variant="secondary" className="text-xs" key={`${card.card_id}-${card.rarity}`}>{card.rarity}</Badge>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-1 ml-2">
-                  <Button
-                    variant={isInCollection ? "destructive" : "outline"}
-                    size="sm"
-                    className="h-8 px-2"
-                    onClick={handleCollectionClick}
-                    disabled={isAddingToCollection || isRemovingFromCollection}
-                  >
-                    <Star className={`h-3 w-3 ${isInCollection ? 'fill-white stroke-red-500' : ''}`} strokeWidth={2} />
-                  </Button>
-                  <Button
-                    variant={isInWishlist ? "destructive" : "outline"}
-                    size="sm"
-                    className="h-8 px-2"
-                    onClick={handleWishlistClick}
-                    disabled={isAddingToWishlist || isRemovingFromWishlist}
-                  >
-                    <Heart className={`h-3 w-3 ${isInWishlist ? 'fill-white stroke-pink-500' : ''}`} strokeWidth={2} />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Badge variant="secondary" className="text-xs" key={`${card.card_id}-${card.language}`}>{card.language}</Badge>
-                {card.hp && <Badge variant="outline" className="text-xs" key={`${card.card_id}-hp`}>HP: {card.hp}</Badge>}
-                {card.types && card.types.length > 0 && (
-                  <Badge variant="outline" className="text-xs" key={`${card.card_id}-${card.types[0]}`}>{card.types[0]}</Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </CardDetailModal>
-  );
-};
 
 export default Cards;

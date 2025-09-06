@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Search, Package, TrendingUp, Calendar, Grid3X3, List } from "lucide-react";
+import { Search, Package, TrendingUp, Calendar, Grid3X3, List, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,8 @@ const Sets = () => {
     language: languageFilter,
     limit: itemsPerPage,
     offset,
-    searchTerm: searchTerm || undefined
+    searchTerm: searchTerm || undefined,
+    sortBy
   };
 
 
@@ -331,6 +332,12 @@ const Sets = () => {
                     if (progress) {
                       return (
                         <div className="mt-3 space-y-2">
+                          {progress.is_completed && (
+                            <div className="flex items-center gap-2 text-green-600 font-bold text-xs">
+                              <CheckCircle2 className="h-4 w-4" />
+                              {t('sets.completed', 'Completed')}
+                            </div>
+                          )}
                           <SetProgressDisplay 
                             progress={progress} 
                             variant="compact" 
@@ -428,6 +435,17 @@ const Sets = () => {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Bottom Pagination Controls */}
+      {totalCount > 0 && totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
 

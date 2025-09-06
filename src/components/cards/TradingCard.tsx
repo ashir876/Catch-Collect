@@ -220,6 +220,21 @@ const TradingCard = ({
   const owned = localOwned;
   const wishlisted = localWishlisted;
   
+  // Debug logging for owned status
+  React.useEffect(() => {
+    console.log('TradingCard - owned status changed:', {
+      id,
+      name,
+      owned,
+      localOwned,
+      inCollection,
+      isOwned,
+      hideCollectedLabel,
+      shouldShowCollected: owned && !hideCollectedLabel,
+      timestamp: new Date().toISOString()
+    });
+  }, [owned, localOwned, inCollection, isOwned, hideCollectedLabel, id, name]);
+  
   // Debug modal state changes
   React.useEffect(() => {
     console.log('TradingCard - Collection modal state changed:', {
@@ -233,12 +248,28 @@ const TradingCard = ({
   
   // Update local state when props change
   React.useEffect(() => {
+    console.log('TradingCard - inCollection prop changed:', {
+      id,
+      name,
+      inCollection,
+      isOwned,
+      newLocalOwned: inCollection || isOwned,
+      timestamp: new Date().toISOString()
+    });
     setLocalOwned(inCollection || isOwned);
-  }, [inCollection, isOwned]);
+  }, [inCollection, isOwned, id, name]);
   
   React.useEffect(() => {
+    console.log('TradingCard - inWishlist prop changed:', {
+      id,
+      name,
+      inWishlist,
+      isWishlisted,
+      newLocalWishlisted: inWishlist || isWishlisted,
+      timestamp: new Date().toISOString()
+    });
     setLocalWishlisted(inWishlist || isWishlisted);
-  }, [inWishlist, isWishlisted]);
+  }, [inWishlist, isWishlisted, id, name]);
 
   // Reset modal states when card status changes
   React.useEffect(() => {
@@ -380,6 +411,10 @@ const TradingCard = ({
           } else {
             console.log('Successfully inserted entry for card:', id);
             successCount++;
+            // Immediately update shared cache so other components reflect ownership
+            if (user) {
+              queryClient.setQueryData(['collection-check', user.id, id], true);
+            }
           }
         } catch (entryError) {
           console.error('Error inserting entry:', entryError);
@@ -387,10 +422,16 @@ const TradingCard = ({
         }
       }
       
+      // Mark owned locally for instant UI
+      if (successCount > 0) {
+        setLocalOwned(true);
+      }
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['collection-check', user.id, id] });
       
       // Close modal
       setIsCollectionModalOpen(false);
@@ -732,6 +773,8 @@ const TradingCard = ({
           onAdd={handleCollectionModalSubmit}
           cardName={name}
           isLoading={isAddingToCollection}
+          cardId={id}
+          defaultLanguage={cardData?.language || language}
         />
         
               {/* Add to Wishlist Modal */}
@@ -781,6 +824,8 @@ const TradingCard = ({
         onAdd={handleCollectionModalSubmit}
         cardName={name}
         isLoading={isAddingToCollection}
+        cardId={id}
+        defaultLanguage={cardData?.language || language}
       />
       
       {/* Add to Wishlist Modal */}

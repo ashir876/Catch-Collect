@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
+import React from "react";
 
 interface CollectionEntry {
   condition: string;
@@ -24,6 +26,8 @@ interface AddToCollectionModalProps {
   cardName: string;
   isLoading?: boolean;
   isBulkMode?: boolean;
+  cardId?: string;
+  defaultLanguage?: string;
 }
 
 const AddToCollectionModal = ({
@@ -32,21 +36,56 @@ const AddToCollectionModal = ({
   onAdd,
   cardName,
   isLoading = false,
-  isBulkMode = false
+  isBulkMode = false,
+  cardId,
+  defaultLanguage
 }: AddToCollectionModalProps) => {
   const { t } = useTranslation();
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [entry, setEntry] = useState<CollectionEntry>({
     condition: "Mint",
     price: 0,
     date: new Date().toISOString().split('T')[0],
     notes: "",
-    language: "en",
+    language: defaultLanguage || "en",
     acquiredDate: new Date().toISOString().split('T')[0]
   });
 
   const updateEntry = (field: keyof CollectionEntry, value: any) => {
     setEntry(prev => ({ ...prev, [field]: value }));
   };
+
+  // Fetch languages for this card from database when modal opens
+  React.useEffect(() => {
+    const fetchLanguages = async () => {
+      if (!cardId) return;
+      try {
+        const { data, error } = await supabase
+          .from('cards')
+          .select('language')
+          .eq('card_id', cardId);
+        if (error) throw error;
+        const langs = Array.from(new Set((data || []).map((row: any) => row.language).filter(Boolean)));
+        setAvailableLanguages(langs);
+        // Default to provided defaultLanguage or the first available
+        if (langs.length > 0) {
+          setEntry(prev => ({ ...prev, language: (defaultLanguage && langs.includes(defaultLanguage)) ? defaultLanguage : langs[0] }));
+        } else if (defaultLanguage) {
+          setEntry(prev => ({ ...prev, language: defaultLanguage }));
+        }
+      } catch (e) {
+        // If fetch fails, keep defaults
+      }
+    };
+    if (isOpen) {
+      // When opening, set language to defaultLanguage before fetching
+      if (defaultLanguage) {
+        setEntry(prev => ({ ...prev, language: defaultLanguage }));
+      }
+      fetchLanguages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, cardId, defaultLanguage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +99,7 @@ const AddToCollectionModal = ({
       price: 0,
       date: new Date().toISOString().split('T')[0],
       notes: "",
-      language: "en",
+      language: defaultLanguage || "en",
       acquiredDate: new Date().toISOString().split('T')[0]
     });
     onClose();
@@ -93,17 +132,23 @@ const AddToCollectionModal = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="de">Deutsch</SelectItem>
-                      <SelectItem value="fr">Français</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
-                      <SelectItem value="it">Italiano</SelectItem>
-                      <SelectItem value="pt">Português</SelectItem>
-                      <SelectItem value="nl">Nederlands</SelectItem>
-                      <SelectItem value="ja">日本語</SelectItem>
-                      <SelectItem value="ko">한국어</SelectItem>
-                      <SelectItem value="zh">中文</SelectItem>
-                      <SelectItem value="ru">Русский</SelectItem>
+                      {(availableLanguages.length > 0 ? availableLanguages : [
+                        'en','de','fr','es','it','pt','nl','ja','ko','zh','ru'
+                      ]).map((lang) => (
+                        <SelectItem key={lang} value={lang}>
+                          {lang === 'en' ? 'English' :
+                           lang === 'de' ? 'Deutsch' :
+                           lang === 'fr' ? 'Français' :
+                           lang === 'es' ? 'Español' :
+                           lang === 'it' ? 'Italiano' :
+                           lang === 'pt' ? 'Português' :
+                           lang === 'nl' ? 'Nederlands' :
+                           lang === 'ja' ? '日本語' :
+                           lang === 'ko' ? '한국어' :
+                           lang === 'zh' ? '中文' :
+                           lang === 'ru' ? 'Русский' : lang}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

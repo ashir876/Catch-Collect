@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import TradingCard from "@/components/cards/TradingCard";
+import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 import { useTranslation } from "react-i18next";
 import { useCollectionData, COLLECTION_QUERY_KEY } from "@/hooks/useCollectionData";
 import { useCurrentPrices } from "@/hooks/useCurrentPrices";
@@ -121,7 +122,7 @@ const Collection = () => {
       series: item.series_name || item.cards?.series_name || 'Unknown Series',
       set: item.cards?.set_name || 'Unknown Set',
       number: item.cards?.card_number || '',
-      rarity: (item.cards?.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
+      rarity: mapDatabaseRarityToComponent(item.cards?.rarity || "Common"),
       type: item.cards?.types?.[0] || 'Normal',
       image: item.cards?.image_url || '/placeholder.svg',
       inCollection: true,
@@ -268,6 +269,16 @@ const Collection = () => {
     const mostExpensiveValue = mostExpensive.marketPrice || mostExpensive.myPrice || 0;
     return cardValue > mostExpensiveValue ? card : mostExpensive;
   }, ownedCards[0]);
+
+  // Legendary cards helpers
+  const legendaryCards = ownedCards.filter(card => card.rarity === 'legendary');
+  const topLegendaryCard = legendaryCards.length > 0
+    ? legendaryCards.reduce((best, card) => {
+        const value = card.marketPrice || card.myPrice || 0;
+        const bestValue = best.marketPrice || best.myPrice || 0;
+        return value > bestValue ? card : best;
+      }, legendaryCards[0])
+    : null;
 
   // Get set names with card counts
   const setNames = Array.from(new Set(ownedCards.map(card => card.set))).sort();
@@ -440,9 +451,9 @@ const Collection = () => {
                   {t('collection.cardsInCollection')}
                 </p>
                 {mostExpensiveCard && (
-                  <div className="mt-3 p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
-                    <div className="flex items-center gap-2">
-                       <div className="w-8 h-10 bg-white rounded border overflow-hidden flex-shrink-0 relative">
+                  <div className="mt-4 p-4 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(mostExpensiveCard)}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-24 h-36 sm:w-28 sm:h-40 bg-white rounded border overflow-hidden flex-shrink-0 relative">
                         <img
                           src={mostExpensiveCard.image}
                           alt={mostExpensiveCard.name}
@@ -451,21 +462,21 @@ const Collection = () => {
                             (e.target as HTMLImageElement).src = '/placeholder.svg';
                           }}
                         />
-                         {/* Highest Value Tag */}
-                         <div className="absolute -top-1 -right-1">
-                           <Badge className="bg-yellow-500 text-black text-xs px-1 py-0 h-4">
-                             💎
-                           </Badge>
-                         </div>
+                        {/* Highest Value Tag */}
+                        <div className="absolute -top-1 -right-1">
+                          <Badge className="bg-yellow-500 text-black text-xs px-1.5 py-0 h-5">
+                            💎
+                          </Badge>
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{mostExpensiveCard.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-base sm:text-lg font-semibold truncate">{mostExpensiveCard.name}</p>
+                        <p className="text-base sm:text-lg text-muted-foreground">
                           {(mostExpensiveCard.marketPrice || mostExpensiveCard.myPrice || 0).toFixed(2)} CHF
                         </p>
-                         <p className="text-xs text-green-600 font-medium">
-                           Highest Value Card
-                         </p>
+                        <p className="text-sm text-green-600 font-medium">
+                          Highest Value Card
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -531,9 +542,39 @@ const Collection = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{collectionStats.rarityBreakdown.legendary}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-2">
                   {t('collection.rarestCards')}
                 </p>
+                {topLegendaryCard ? (
+                  <div className="mt-2 p-4 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(topLegendaryCard)}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-24 h-36 sm:w-28 sm:h-40 bg-white rounded border overflow-hidden flex-shrink-0 relative">
+                        <img
+                          src={topLegendaryCard.image}
+                          alt={topLegendaryCard.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                        <div className="absolute -top-1 -right-1">
+                          <Badge className="bg-purple-500 text-white text-xs px-1.5 py-0 h-5">
+                            ★
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base sm:text-lg font-semibold truncate">{topLegendaryCard.name}</p>
+                        <p className="text-base sm:text-lg text-muted-foreground">
+                          {(topLegendaryCard.marketPrice || topLegendaryCard.myPrice || 0).toFixed(2)} CHF
+                        </p>
+                        <p className="text-sm text-purple-700 font-medium">Top Legendary</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t('collection.noLegendaryCards', 'No legendary cards yet')}</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -704,14 +745,14 @@ const Collection = () => {
                  <label className="text-sm font-medium">{t('collection.sortBy')}:</label>
                  <select
                    value={sortBy}
-                   onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "date")}
+                   onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "date" | "price")}
                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                  >
-                                       <option value="name">{t('collection.sortByName')}</option>
-                    <option value="rarity">{t('collection.sortByRarity')}</option>
-                    <option value="set">{t('collection.sortBySet')}</option>
-                    <option value="date">{t('collection.sortByDate')}</option>
-                    <option value="price">{t('collection.sortByPrice')}</option>
+                   <option value="name">{t('collection.sortByName')}</option>
+                   <option value="rarity">{t('collection.sortByRarity')}</option>
+                   <option value="set">{t('collection.sortBySet')}</option>
+                   <option value="date">{t('collection.sortByDate')}</option>
+                   <option value="price">{t('collection.sortByPrice')}</option>
                  </select>
                  <Button
                    variant="outline"

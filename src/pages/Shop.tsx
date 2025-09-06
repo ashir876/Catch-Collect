@@ -15,6 +15,7 @@ import { useCartCount } from "@/hooks/useCartCount";
 import { useQueryClient } from "@tanstack/react-query";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
+import ShopProductListItem from "@/components/cards/ShopProductListItem";
 
 const Shop = () => {
   const { t } = useTranslation();
@@ -359,6 +360,26 @@ const ShopFromCards = () => {
         totalCount={totalCount}
       />
 
+      {/* View Mode Toggle */}
+      <div className="flex justify-end items-center mb-6">
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            onClick={() => setViewMode("grid")}
+            size="sm"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            onClick={() => setViewMode("list")}
+            size="sm"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {/* Pagination Info and Controls */}
       {totalCount > 0 && (
         <div className="mb-4 space-y-4">
@@ -468,63 +489,27 @@ const ShopFromCards = () => {
           </div>
         ) : (
           <div key="list-view" className="space-y-2">
-            {displayProducts.map((product, index) => {
-              const productPrice = product.price || 0;
-              const stock = product.stock || 0; // Use actual stock from database
-              return (
-                <Card key={`${product.article_number || product.id}-${index}`} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      {/* Smaller product image */}
-                      <div className="w-10 h-14 sm:w-12 sm:h-16 flex-shrink-0">
-                        <img
-                          src={product.image_url || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-full h-full object-contain rounded bg-gray-50"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      
-                      {/* Product details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                            <p className="text-xs text-muted-foreground truncate">{product.set_name || product.category} • {product.card_number || product.article_number}</p>
-                          </div>
-                          <div className="text-left sm:text-right">
-                            <div className="text-sm sm:text-base font-bold text-primary">CHF {productPrice.toFixed(2)}</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Badges and Add to Cart button */}
-                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                        <div className="flex flex-col gap-1">
-                          <Badge variant="secondary" className="text-xs px-1 py-0">{product.rarity || 'N/A'}</Badge>
-                          <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 py-0">
-                            {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
-                          </Badge>
-                        </div>
-                        <Button 
-                          onClick={() => handleAddToCart(product)}
-                          disabled={isLoading}
-                          size="sm"
-                          className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                        >
-                          <ShoppingCart className="mr-1 h-3 w-3" />
-                          <span className="hidden sm:inline">Add</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {displayProducts.map((product, index) => (
+              <ShopProductListItem
+                key={`${product.article_number || product.id}-${index}`}
+                product={product}
+                onAddToCart={handleAddToCart}
+                isLoading={isLoading}
+              />
+            ))}
           </div>
         )
+      )}
+
+      {/* Bottom Pagination Controls */}
+      {totalCount > 0 && totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       )}
 
       {/* Empty State */}

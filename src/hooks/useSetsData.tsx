@@ -8,6 +8,7 @@ export interface SetsDataOptions {
   limit?: number;
   offset?: number;
   searchTerm?: string;
+  sortBy?: string;
 }
 
 export const useSetsData = (options: SetsDataOptions = {}) => {
@@ -16,7 +17,8 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
     seriesId, 
     limit, 
     offset = 0, 
-    searchTerm 
+    searchTerm,
+    sortBy = 'newest'
   } = options;
 
   // Create a simpler query key
@@ -26,7 +28,8 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
     seriesId || 'all', 
     limit, 
     offset, 
-    searchTerm || ''
+    searchTerm || '',
+    sortBy
   ];
 
   return useQuery({
@@ -38,8 +41,21 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
       
       let query = supabase
         .from('sets')
-        .select('*')
-        .order('name');
+        .select('*');
+
+      // Apply sorting at the data source so pagination respects order
+      switch (sortBy) {
+        case 'oldest':
+          query = query.order('release_date', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
+          break;
+        case 'name':
+          query = query.order('name', { ascending: true });
+          break;
+        case 'newest':
+        default:
+          query = query.order('release_date', { ascending: false, nullsFirst: false }).order('name', { ascending: true });
+          break;
+      }
 
       // Filter by language if provided
       if (language && language !== 'all') {
