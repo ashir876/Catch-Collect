@@ -79,7 +79,7 @@ const CardDetailModal = ({ card, children }: CardDetailModalProps) => {
                     const data = (q as any).state?.data as boolean | undefined;
                     if (data) {
                       return (
-                        <div className="absolute top-4 right-4 z-50 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
+                        <div className="absolute top-4 left-4 z-50 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
                           <CheckCircle className="h-4 w-4" />
                           <span className="text-xs font-semibold">Collected</span>
                         </div>

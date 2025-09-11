@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,17 @@ const Navigation = () => {
   const { data: wishlistCount = 0 } = useWishlistCount();
   const { data: cartCount = 0 } = useCartCount();
   const { data: collectionCount = 0 } = useCollectionCount();
+
+  // Debug: Log count updates
+  React.useEffect(() => {
+    console.log('Navigation - Count Updates:', {
+      wishlistCount,
+      cartCount,
+      collectionCount,
+      user: user?.id,
+      timestamp: new Date().toISOString()
+    });
+  }, [wishlistCount, cartCount, collectionCount, user?.id]);
 
   const mainNavItems: NavItem[] = [
     { path: "/", label: "HOME", shortLabel: "HOME", icon: Home },

@@ -107,7 +107,7 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
 
       // If we have wishlist items, fetch the card details for each
       if (wishlistItems && wishlistItems.length > 0) {
-        const cardIds = wishlistItems.map(item => item.card_id);
+        const cardIds = wishlistItems.map((item: any) => item.card_id);
         
         let cardsQuery = supabase
           .from('cards')
@@ -126,8 +126,8 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
         }
         
         // Combine the wishlist items with their card details
-        const enhancedWishlistItems = wishlistItems.map(item => {
-          const cardData = cardsData.find(card => card.card_id === item.card_id);
+        const enhancedWishlistItems = wishlistItems.map((item: any) => {
+          const cardData = cardsData?.find((card: any) => card.card_id === item.card_id);
           return {
             ...item,
             card: cardData || undefined
@@ -139,9 +139,11 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
       }
       
       
-      return wishlistItems as WishlistItem[];
+      return (wishlistItems || []) as unknown as WishlistItem[];
     },
     enabled: !!user,
+    staleTime: 0, // Always consider data stale to ensure real-time updates
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 };
 
@@ -155,8 +157,6 @@ export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'o
     queryFn: async () => {
       if (!user) return 0;
 
-    
-      
       let query = supabase
         .from('card_wishlist')
         .select('*', { count: 'exact', head: true })
@@ -173,10 +173,11 @@ export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'o
         throw error;
       }
 
-      
       return count || 0;
     },
     enabled: !!user,
+    staleTime: 0, // Always consider data stale to ensure real-time updates
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 };
 

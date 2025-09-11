@@ -53,27 +53,13 @@ export function CollectionValueChart({ className, showControls = true }: Collect
   ];
 
   useEffect(() => {
-    console.log('CollectionValueChart useEffect:', {
-      user: !!user,
-      collectionItemsLength: collectionItems.length,
-      currentPricesLength: currentPrices.length,
-      timeRange
-    });
-    
     if (user && collectionItems.length > 0) {
       loadCollectionValueHistory();
     }
-  }, [user, timeRange, collectionItems, currentPrices]);
+  }, [user, timeRange, collectionItems.length]); // Only depend on length, not the full array
 
   const loadCollectionValueHistory = async () => {
-    console.log('loadCollectionValueHistory called:', {
-      user: !!user,
-      collectionItemsLength: collectionItems.length,
-      timeRange
-    });
-    
     if (!user || collectionItems.length === 0) {
-      console.log('Early return - no user or no collection items');
       return;
     }
 
@@ -81,23 +67,17 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     setError(null);
     try {
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
-      console.log('Calculating for days:', days);
       
       // Get real historical price data from database
       const historicalData = await fetchRealHistoricalData(days);
-      console.log('Fetched real historical data:', historicalData.length, 'points');
       
       if (historicalData.length > 0) {
         setValueHistory(historicalData);
-        console.log('✅ Using real historical price data from database');
       } else {
         // Fallback to realistic data based on current values
         const currentValues = calculateCurrentValues();
-        console.log('Current values:', currentValues);
         const fallbackData = generateRealisticHistoricalData(currentValues, days);
-        console.log('Using fallback realistic data:', fallbackData.length, 'points');
         setValueHistory(fallbackData);
-        console.log('⚠️ No real historical data found - using realistic estimates based on your collection');
       }
       
     } catch (error) {
@@ -107,7 +87,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
       const currentValues = calculateCurrentValues();
       const fallbackData = generateRealisticHistoricalData(currentValues, days);
-      console.log('Using fallback data:', fallbackData.length, 'points');
       setValueHistory(fallbackData);
     } finally {
       setLoading(false);
@@ -122,9 +101,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
 
-      console.log('Fetching real historical data for cards:', cardIds);
-      console.log('Cutoff date:', cutoffDate.toISOString());
-
       // Fetch price history for all cards in collection
       const { data: priceHistory, error } = await (supabase as any)
         .from('price_history')
@@ -138,7 +114,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         return [];
       }
 
-      console.log('Fetched price history records:', priceHistory?.length);
 
       if (!priceHistory || priceHistory.length === 0) {
         return [];
@@ -194,8 +169,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         });
       });
 
-      console.log('Generated real historical chart data:', chartData.length, 'points');
-      console.log('Sample chart data points:', chartData.slice(0, 3));
       return chartData;
 
     } catch (error) {
@@ -208,16 +181,12 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     let myTotalValue = 0;
     let marketTotalValue = 0;
 
-    console.log('CollectionValueChart - collectionItems:', collectionItems);
-    console.log('CollectionValueChart - currentPrices:', currentPrices);
-
     collectionItems.forEach((item: any) => {
       // Find current market price for this card
       const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
       
       // Your price (what you paid)
       const myPrice = item.price || 0;
-      console.log(`Card ${item.card_id}: myPrice = ${myPrice}, item.price = ${item.price}`);
       myTotalValue += myPrice;
 
       // Market price (current value)

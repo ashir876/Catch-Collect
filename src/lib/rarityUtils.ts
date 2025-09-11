@@ -1,6 +1,5 @@
 // Shared utility function to map database rarity to component rarity
 export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
-  console.log('Processing rarity:', dbRarity, 'Normalized:', dbRarity.toLowerCase());
   const normalizedRarity = dbRarity.toLowerCase().trim();
   
   // Check for partial matches first
@@ -42,6 +41,10 @@ export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare
     case "shiny rare":
       return "legendary";
     case "keine":
+    case "none":
+    case "two diamond":
+    case "illustration rare":
+    case "double rare":
       return "common";
     
     // French terms
@@ -88,7 +91,7 @@ export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare
       if (normalizedRarity.includes('rare')) {
         return "rare";
       }
-      console.warn(`Unknown database rarity: ${dbRarity}, defaulting to common`);
+      // Silently default to common for unknown rarities
       return "common";
   }
 }; 

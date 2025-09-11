@@ -128,6 +128,38 @@ const Wishlist = () => {
     .map(item => createCardObject(item))
     .filter(Boolean);
 
+  // Find the highest value legendary card (similar to collection page)
+  const legendaryCards = wishlistCards.filter(card => card.rarity === 'legendary');
+  const topLegendaryCard = legendaryCards.length > 0
+    ? legendaryCards.reduce((best, card) => {
+        const value = card.marketPrice || card.myPrice || 0;
+        const bestValue = best.marketPrice || best.myPrice || 0;
+        return value > bestValue ? card : best;
+      }, legendaryCards[0])
+    : null;
+
+  // Debug: Log rarity processing
+  React.useEffect(() => {
+    console.log('Wishlist - Rarity Debug:', {
+      totalItems: wishlistItems.length,
+      totalCards: wishlistCards.length,
+      rarityBreakdown: wishlistCards.reduce((acc, card) => {
+        acc[card.rarity] = (acc[card.rarity] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      legendaryCards: legendaryCards,
+      topLegendaryCard: topLegendaryCard ? {
+        name: topLegendaryCard.name,
+        value: topLegendaryCard.marketPrice || topLegendaryCard.myPrice || 0
+      } : null,
+      sampleCard: wishlistCards[0] ? {
+        name: wishlistCards[0].name,
+        originalRarity: wishlistItems[0]?.card?.rarity,
+        processedRarity: wishlistCards[0].rarity
+      } : null
+    });
+  }, [wishlistItems, wishlistCards, legendaryCards, topLegendaryCard]);
+
   // Handle card click to show price trends modal
   const handleCardClick = (card: any) => {
     setSelectedCardForModal(card);
@@ -470,9 +502,39 @@ const Wishlist = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{wishlistStats.rarityBreakdown.legendary}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-2">
                   {t('wishlist.rarestCards')}
                 </p>
+                {topLegendaryCard ? (
+                  <div className="mt-2 p-4 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleCardClick(topLegendaryCard)}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-24 h-36 sm:w-28 sm:h-40 bg-white rounded border overflow-hidden flex-shrink-0 relative">
+                        <img
+                          src={topLegendaryCard.image}
+                          alt={topLegendaryCard.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                        <div className="absolute top-1 right-1">
+                          <Badge className="bg-legendary/20 text-legendary border-legendary text-xs px-1 py-0">
+                            ★
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base sm:text-lg font-semibold truncate">{topLegendaryCard.name}</p>
+                        <p className="text-base sm:text-lg text-muted-foreground">
+                          {(topLegendaryCard.marketPrice || topLegendaryCard.myPrice || 0).toFixed(2)} CHF
+                        </p>
+                        <p className="text-sm text-purple-700 font-medium">Top Legendary</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t('wishlist.noLegendaryCards', 'No legendary cards yet')}</p>
+                )}
               </CardContent>
             </Card>
           </div>

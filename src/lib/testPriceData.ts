@@ -21,10 +21,10 @@ export async function testPriceData() {
   console.log('Current Prices Data:', currentPrices);
   console.log('Current Prices Error:', currentError);
   
-  // Test the collection value summary function
+  // Test the collection value summary function with a valid UUID format
   const { data: collectionValue, error: collectionError } = await supabase
     .rpc('get_collection_value_summary', {
-      p_user_id: 'test-user-id',
+      p_user_id: '00000000-0000-0000-0000-000000000000', // Use a valid UUID format for testing
       p_language: 'DE'
     });
   

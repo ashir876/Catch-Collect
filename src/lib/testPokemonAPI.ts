@@ -89,7 +89,7 @@ export async function testCollectionValue() {
   
   try {
     // This would require a valid user ID
-    const summary = await pokemonTCGService.getCollectionValueSummary('test-user-id');
+    const summary = await pokemonTCGService.getCollectionValueSummary('00000000-0000-0000-0000-000000000000');
     console.log('✅ Collection value summary:', summary);
     
   } catch (error) {
