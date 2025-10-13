@@ -13,9 +13,10 @@ interface CardWithWishlistProps {
   onViewDetails?: (id: string) => void; // Handler for viewing card details
   onCollectionChange?: () => void; // Callback when collection status changes
   onWishlistChange?: () => void; // Callback when wishlist status changes
+  priceData?: any; // Price data for the card
 }
 
-const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false, onAddToCollection, onViewDetails, onCollectionChange, onWishlistChange }: CardWithWishlistProps) => {
+const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false, onAddToCollection, onViewDetails, onCollectionChange, onWishlistChange, priceData }: CardWithWishlistProps) => {
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
   

@@ -15,6 +15,8 @@ import AddToCollectionModal from "./AddToCollectionModal";
 import AddToWishlistModal from "./AddToWishlistModal";
 import { EditCardModal } from "./EditCardModal";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
+import { useCardPrice } from "@/hooks/useCardPrices";
+import CardPriceDisplay from "./CardPriceDisplay";
 
 
 
@@ -203,6 +205,9 @@ const TradingCard = ({
   const queryClient = useQueryClient();
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
+  
+  // Fetch card price data
+  const { data: cardPriceData } = useCardPrice(id);
   
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";
@@ -606,7 +611,13 @@ const TradingCard = ({
             </p>
           </div>
 
-
+          {/* Price Display */}
+          <CardPriceDisplay 
+            priceData={cardPriceData} 
+            compact={true}
+            showSource={false}
+            className="mt-2"
+          />
         </div>
 
         {/* Price Comparison Section - Only show if hidePriceAndBuy is false */}

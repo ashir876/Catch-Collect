@@ -49,6 +49,8 @@
   "cards": {
     "title": "Karten",
     "subtitle": "Verwalte deine Sammlung und entdecke neue Karten",
+    "noPriceData": "Keine Preisdaten für diese Karte verfügbar",
+    "lastUpdated": "Zuletzt aktualisiert",
     "searchPlaceholder": "Nach Karten suchen...",
     "language": "Sprache",
     "allRarities": "Alle Seltenheiten",
@@ -637,7 +639,6 @@
     "error.loading": "Fehler beim Laden der Preisdaten",
     "error.loading.card": "Fehler beim Laden der Kartenpreise",
     "no.data": "Keine Preisdaten verfügbar",
-    "no.price.data": "Keine Preisdaten für diese Karte verfügbar",
     "refresh.prices": "Preise aktualisieren",
     "fetch.prices": "Preise abrufen",
     "card.prices": "Kartenpreise",

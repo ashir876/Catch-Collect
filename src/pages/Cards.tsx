@@ -25,6 +25,7 @@ import React from "react"; // Added missing import
 import { useIsCardInCollection } from "@/hooks/useCollectionData";
 import { useIsCardInWishlist } from "@/hooks/useWishlistData";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
+import { useCardPrices } from "@/hooks/useCardPrices";
 
 const Cards = () => {
   const { t, i18n } = useTranslation();
@@ -362,6 +363,13 @@ const Cards = () => {
 
   // Use cards data directly since we're filtering by language at the database level
   const filteredCards = cardsData || [];
+  
+  // Fetch prices for all cards
+  const cardIds = filteredCards.map(card => card.card_id);
+  const { data: cardPrices = [] } = useCardPrices(cardIds);
+  
+  // Create a map of card prices for easy lookup
+  const priceMap = new Map(cardPrices.map(price => [price.card_id, price]));
 
   // Handler for opening add to collection modal
   const handleAddToCollection = (card) => {
@@ -726,6 +734,7 @@ const Cards = () => {
                  card={card}
                  hidePriceAndBuy={true}
                  onAddToCollection={handleAddToCollection}
+                 priceData={priceMap.get(card.card_id)}
                />
              </div>
            ))}

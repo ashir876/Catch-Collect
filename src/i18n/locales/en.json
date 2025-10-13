@@ -108,7 +108,6 @@
     "error.loading": "Error loading pricing data",
     "error.loading.card": "Error loading card prices",
     "no.data": "No pricing data available",
-    "no.price.data": "No price data available for this card",
     "refresh.prices": "Refresh Prices",
     "fetch.prices": "Fetch Prices",
     "card.prices": "Card Prices",
@@ -226,6 +225,8 @@
   "cards": {
     "title": "Cards",
     "subtitle": "Manage your collection and discover new cards",
+    "noPriceData": "No price data available for this card",
+    "lastUpdated": "Last updated",
     "searchPlaceholder": "Search for cards...",
     "language": "Language",
     "allRarities": "All Rarities",
