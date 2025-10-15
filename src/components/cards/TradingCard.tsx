@@ -15,7 +15,6 @@ import AddToCollectionModal from "./AddToCollectionModal";
 import AddToWishlistModal from "./AddToWishlistModal";
 import { EditCardModal } from "./EditCardModal";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
-import { useCardPrice } from "@/hooks/useCardPrices";
 import CardPriceDisplay from "./CardPriceDisplay";
 
 
@@ -90,6 +89,8 @@ interface TradingCardProps {
   onRemove?: (id: string) => void;
   // New prop to control whether to show "Collected" label (hide on collection page)
   hideCollectedLabel?: boolean;
+  // Price data for the card
+  priceData?: any;
 }
 
 const rarityConfig = {
@@ -189,6 +190,7 @@ const TradingCard = ({
   showRemoveButton = false,
   onRemove,
   hideCollectedLabel = false,
+  priceData,
 }: TradingCardProps) => {
   console.log('TradingCard component rendering with props:', { 
     id, 
@@ -206,8 +208,8 @@ const TradingCard = ({
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
   
-  // Fetch card price data
-  const { data: cardPriceData } = useCardPrice(id);
+  // Use price data passed as prop
+  const cardPriceData = priceData;
   
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";

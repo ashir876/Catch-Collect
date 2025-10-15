@@ -258,7 +258,7 @@ export class PokemonTCGPriceUpdater {
    */
   async getCurrentPrices(cardId: string): Promise<PokemonCardPrice[]> {
     const { data, error } = await supabase
-      .from('current_prices')
+      .from('card_prices')
       .select('*')
       .eq('card_id', cardId);
 
@@ -266,7 +266,31 @@ export class PokemonTCGPriceUpdater {
       throw error;
     }
 
-    return data || [];
+    // Convert card_prices format to PokemonCardPrice format
+    const prices: PokemonCardPrice[] = [];
+    if (data && data.length > 0) {
+      const cardPrice = data[0];
+      if (cardPrice.avg_sell_price) {
+        prices.push({
+          card_id: cardId,
+          source: 'cardmarket',
+          price_type: 'averageSellPrice',
+          price: cardPrice.avg_sell_price,
+          currency: 'EUR'
+        });
+      }
+      if (cardPrice.price) {
+        prices.push({
+          card_id: cardId,
+          source: 'tcgplayer',
+          price_type: 'normal_market',
+          price: cardPrice.price,
+          currency: 'USD'
+        });
+      }
+    }
+
+    return prices;
   }
 
   /**

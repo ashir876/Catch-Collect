@@ -27,58 +27,40 @@ export const useCardPrices = (cardIds: string[]) => {
     queryFn: async (): Promise<CardPriceSummary[]> => {
       if (cardIds.length === 0) return [];
 
-      // Fetch current prices for all cards
+      console.log('🔍 useCardPrices - fetching prices for cardIds:', cardIds);
+
+      // Fetch prices from card_prices table using avg_sell_price
       const { data: prices, error } = await supabase
-        .from('current_prices')
+        .from('card_prices')
         .select('*')
         .in('card_id', cardIds);
 
+      console.log('📊 card_prices query result:', { prices, error, dataLength: prices?.length });
+
       if (error) {
-        console.error('Error fetching card prices:', error);
+        console.error('❌ Error fetching card prices:', error);
         throw error;
       }
 
-      // Group prices by card_id and create summary
-      const priceMap = new Map<string, CardPriceSummary>();
+      if (!prices || prices.length === 0) {
+        console.log('⚠️ No price data found in card_prices table');
+        return [];
+      }
 
-      prices?.forEach((price: CardPrice) => {
-        const cardId = price.card_id;
-        
-        if (!priceMap.has(cardId)) {
-          priceMap.set(cardId, { card_id: cardId });
-        }
-
-        const summary = priceMap.get(cardId)!;
-
-        // TCGPlayer prices (USD)
-        if (price.source === 'tcgplayer') {
-          if (price.price_type === 'normal_market') {
-            summary.tcgplayer_market_price = price.price;
-          } else if (price.price_type === 'normal_low') {
-            summary.tcgplayer_low_price = price.price;
-          } else if (price.price_type === 'normal_high') {
-            summary.tcgplayer_high_price = price.price;
-          }
-        }
-
-        // CardMarket prices (EUR)
-        if (price.source === 'cardmarket') {
-          if (price.price_type === 'averageSellPrice') {
-            summary.cardmarket_avg_sell_price = price.price;
-          } else if (price.price_type === 'lowPrice') {
-            summary.cardmarket_low_price = price.price;
-          } else if (price.price_type === 'trendPrice') {
-            summary.cardmarket_trend_price = price.price;
-          }
-        }
-
-        // Update last updated timestamp
-        if (!summary.last_updated || new Date(price.recorded_at) > new Date(summary.last_updated)) {
-          summary.last_updated = price.recorded_at;
-        }
+      // Convert to CardPriceSummary format using avg_sell_price
+      const priceSummaries: CardPriceSummary[] = prices.map((price: any) => {
+        const summary: CardPriceSummary = {
+          card_id: price.card_id,
+          cardmarket_avg_sell_price: price.avg_sell_price, // Use avg_sell_price field
+          tcgplayer_market_price: price.price, // Use price field as fallback
+          last_updated: price.updated_at || new Date().toISOString()
+        };
+        console.log('🔄 Mapped price summary:', summary);
+        return summary;
       });
 
-      return Array.from(priceMap.values());
+      console.log('📋 Final price summaries:', priceSummaries);
+      return priceSummaries;
     },
     enabled: cardIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -92,49 +74,36 @@ export const useCardPrice = (cardId: string) => {
     queryFn: async (): Promise<CardPriceSummary | null> => {
       if (!cardId) return null;
 
+      console.log('🔍 useCardPrice - fetching price for cardId:', cardId);
+
       const { data: prices, error } = await supabase
-        .from('current_prices')
+        .from('card_prices')
         .select('*')
         .eq('card_id', cardId);
 
+      console.log('📊 card_prices query result:', { prices, error, dataLength: prices?.length });
+
       if (error) {
-        console.error('Error fetching card price:', error);
+        console.error('❌ Error fetching card price:', error);
         throw error;
       }
 
-      if (!prices || prices.length === 0) return null;
+      if (!prices || prices.length === 0) {
+        console.log('⚠️ No price data found for card:', cardId);
+        return null;
+      }
 
-      const summary: CardPriceSummary = { card_id: cardId };
+      // If multiple rows, take the first one (or you could implement logic to pick the best one)
+      const price = prices[0];
 
-      prices.forEach((price: CardPrice) => {
-        // TCGPlayer prices (USD)
-        if (price.source === 'tcgplayer') {
-          if (price.price_type === 'normal_market') {
-            summary.tcgplayer_market_price = price.price;
-          } else if (price.price_type === 'normal_low') {
-            summary.tcgplayer_low_price = price.price;
-          } else if (price.price_type === 'normal_high') {
-            summary.tcgplayer_high_price = price.price;
-          }
-        }
+      const summary: CardPriceSummary = {
+        card_id: cardId,
+        cardmarket_avg_sell_price: price.avg_sell_price, // Use avg_sell_price field
+        tcgplayer_market_price: price.price, // Use price field as fallback
+        last_updated: price.updated_at || new Date().toISOString()
+      };
 
-        // CardMarket prices (EUR)
-        if (price.source === 'cardmarket') {
-          if (price.price_type === 'averageSellPrice') {
-            summary.cardmarket_avg_sell_price = price.price;
-          } else if (price.price_type === 'lowPrice') {
-            summary.cardmarket_low_price = price.price;
-          } else if (price.price_type === 'trendPrice') {
-            summary.cardmarket_trend_price = price.price;
-          }
-        }
-
-        // Update last updated timestamp
-        if (!summary.last_updated || new Date(price.recorded_at) > new Date(summary.last_updated)) {
-          summary.last_updated = price.recorded_at;
-        }
-      });
-
+      console.log('🔄 Single price summary:', summary);
       return summary;
     },
     enabled: !!cardId,

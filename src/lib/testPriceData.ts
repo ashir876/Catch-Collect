@@ -12,14 +12,23 @@ export async function testPriceData() {
   console.log('Price History Data:', priceHistory);
   console.log('Price History Error:', priceError);
   
-  // Check current_prices view
+  // Check card_prices table
+  const { data: cardPrices, error: cardPricesError } = await supabase
+    .from('card_prices')
+    .select('*')
+    .limit(5);
+  
+  console.log('Card Prices Data:', cardPrices);
+  console.log('Card Prices Error:', cardPricesError);
+  
+  // Check current_prices view (legacy)
   const { data: currentPrices, error: currentError } = await supabase
     .from('current_prices')
     .select('*')
     .limit(5);
   
-  console.log('Current Prices Data:', currentPrices);
-  console.log('Current Prices Error:', currentError);
+  console.log('Current Prices Data (legacy):', currentPrices);
+  console.log('Current Prices Error (legacy):', currentError);
   
   // Test the collection value summary function with a valid UUID format
   const { data: collectionValue, error: collectionError } = await supabase

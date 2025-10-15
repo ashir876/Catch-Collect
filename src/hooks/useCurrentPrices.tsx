@@ -7,52 +7,36 @@ export const useCurrentPrices = (cardIds: string[]) => {
     queryFn: async () => {
       if (!cardIds || cardIds.length === 0) return [];
 
-      console.log('useCurrentPrices - fetching prices for cardIds:', cardIds);
+      console.log('🔍 useCurrentPrices - fetching prices for cardIds:', cardIds);
 
-      // Directly query the current_prices view for the specific card IDs
+      // Query the card_prices table for the specific card IDs
       const { data, error } = await supabase
-        .from('price_history')
-        .select('card_id, source, price_type, price, currency, recorded_at')
-        .in('card_id', cardIds)
-        .order('recorded_at', { ascending: false });
+        .from('card_prices')
+        .select('*')
+        .in('card_id', cardIds);
 
-      console.log('useCurrentPrices - query result:', { data, error, dataLength: data?.length });
+      console.log('📊 useCurrentPrices - query result:', { data, error, dataLength: data?.length });
 
       if (error) {
-        console.error('Error fetching current prices:', error);
+        console.error('❌ Error fetching current prices:', error);
         return [];
       }
 
-      // Get the latest price for each card (since we ordered by recorded_at DESC)
-      const latestPrices = new Map();
-      data?.forEach((price: any) => {
-        const key = `${price.card_id}-${price.source}-${price.price_type}`;
-        if (!latestPrices.has(key)) {
-          latestPrices.set(key, price);
-        }
-      });
-
-      // Convert back to array and prefer TCGPlayer USD prices
-      const prices = Array.from(latestPrices.values());
+      // Convert to the expected format, using avg_sell_price as the primary price
       const result = cardIds.map(cardId => {
-        // Prefer TCGPlayer normal_market USD, then CardMarket averageSellPrice EUR
-        const tcgplayerPrice = prices.find(p => 
-          p.card_id === cardId && 
-          p.source === 'tcgplayer' && 
-          p.price_type === 'normal_market' && 
-          p.currency === 'USD'
-        );
-        
-        const cardmarketPrice = prices.find(p => 
-          p.card_id === cardId && 
-          p.source === 'cardmarket' && 
-          p.price_type === 'averageSellPrice' && 
-          p.currency === 'EUR'
-        );
+        const priceData = data?.find(p => p.card_id === cardId);
+        if (!priceData) return null;
 
-        return tcgplayerPrice || cardmarketPrice;
+        return {
+          card_id: cardId,
+          source: priceData.source || 'cardmarket',
+          price_type: 'avg_sell_price',
+          price: priceData.avg_sell_price || priceData.price, // Prefer avg_sell_price
+          currency: 'USD'
+        };
       }).filter(Boolean);
 
+      console.log('📋 useCurrentPrices - final result:', result);
       return result;
     },
     enabled: cardIds.length > 0,
