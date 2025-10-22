@@ -31,7 +31,7 @@ export const useCardPrices = (cardIds: string[]) => {
 
       // Fetch prices from card_prices table using avg_sell_price
       const { data: prices, error } = await supabase
-        .from('card_prices')
+        .from('card_prices' as any)
         .select('*')
         .in('card_id', cardIds);
 
@@ -47,12 +47,12 @@ export const useCardPrices = (cardIds: string[]) => {
         return [];
       }
 
-      // Convert to CardPriceSummary format using avg_sell_price
-      const priceSummaries: CardPriceSummary[] = prices.map((price: any) => {
+      // Convert to CardPriceSummary format using ONLY avg_sell_price
+      const priceSummaries: CardPriceSummary[] = (prices as any[]).map((price: any) => {
         const summary: CardPriceSummary = {
           card_id: price.card_id,
-          cardmarket_avg_sell_price: price.avg_sell_price, // Use avg_sell_price field
-          tcgplayer_market_price: price.price, // Use price field as fallback
+          cardmarket_avg_sell_price: price.avg_sell_price, // Use ONLY avg_sell_price field
+          // Remove tcgplayer_market_price to avoid confusion
           last_updated: price.updated_at || new Date().toISOString()
         };
         console.log('🔄 Mapped price summary:', summary);
@@ -64,7 +64,7 @@ export const useCardPrices = (cardIds: string[]) => {
     },
     enabled: cardIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
@@ -77,7 +77,7 @@ export const useCardPrice = (cardId: string) => {
       console.log('🔍 useCardPrice - fetching price for cardId:', cardId);
 
       const { data: prices, error } = await supabase
-        .from('card_prices')
+        .from('card_prices' as any)
         .select('*')
         .eq('card_id', cardId);
 
@@ -94,12 +94,12 @@ export const useCardPrice = (cardId: string) => {
       }
 
       // If multiple rows, take the first one (or you could implement logic to pick the best one)
-      const price = prices[0];
+      const price = (prices as any[])[0];
 
       const summary: CardPriceSummary = {
         card_id: cardId,
-        cardmarket_avg_sell_price: price.avg_sell_price, // Use avg_sell_price field
-        tcgplayer_market_price: price.price, // Use price field as fallback
+        cardmarket_avg_sell_price: price.avg_sell_price, // Use ONLY avg_sell_price field
+        // Remove tcgplayer_market_price to avoid confusion
         last_updated: price.updated_at || new Date().toISOString()
       };
 
@@ -108,6 +108,6 @@ export const useCardPrice = (cardId: string) => {
     },
     enabled: !!cardId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

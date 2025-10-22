@@ -11,7 +11,7 @@ export const useCurrentPrices = (cardIds: string[]) => {
 
       // Query the card_prices table for the specific card IDs
       const { data, error } = await supabase
-        .from('card_prices')
+        .from('card_prices' as any)
         .select('*')
         .in('card_id', cardIds);
 
@@ -22,16 +22,16 @@ export const useCurrentPrices = (cardIds: string[]) => {
         return [];
       }
 
-      // Convert to the expected format, using avg_sell_price as the primary price
+      // Convert to the expected format, using ONLY avg_sell_price
       const result = cardIds.map(cardId => {
-        const priceData = data?.find(p => p.card_id === cardId);
+        const priceData = (data as any[])?.find(p => p.card_id === cardId);
         if (!priceData) return null;
 
         return {
           card_id: cardId,
           source: priceData.source || 'cardmarket',
           price_type: 'avg_sell_price',
-          price: priceData.avg_sell_price || priceData.price, // Prefer avg_sell_price
+          price: priceData.avg_sell_price, // Use ONLY avg_sell_price
           currency: 'USD'
         };
       }).filter(Boolean);

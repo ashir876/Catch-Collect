@@ -185,8 +185,8 @@ export class PokemonTCGPriceUpdater {
     // Batch insert into Supabase
     if (priceInserts.length > 0) {
       const { error } = await supabase
-        .from('price_history')
-        .insert(priceInserts);
+        .from('price_history' as any)
+        .insert(priceInserts as any);
 
       if (error) {
         console.error('Error inserting price data:', error);
@@ -258,7 +258,7 @@ export class PokemonTCGPriceUpdater {
    */
   async getCurrentPrices(cardId: string): Promise<PokemonCardPrice[]> {
     const { data, error } = await supabase
-      .from('card_prices')
+      .from('card_prices' as any)
       .select('*')
       .eq('card_id', cardId);
 
@@ -266,10 +266,10 @@ export class PokemonTCGPriceUpdater {
       throw error;
     }
 
-    // Convert card_prices format to PokemonCardPrice format
+    // Convert card_prices format to PokemonCardPrice format using ONLY avg_sell_price
     const prices: PokemonCardPrice[] = [];
     if (data && data.length > 0) {
-      const cardPrice = data[0];
+      const cardPrice = (data as any[])[0];
       if (cardPrice.avg_sell_price) {
         prices.push({
           card_id: cardId,
@@ -279,15 +279,7 @@ export class PokemonTCGPriceUpdater {
           currency: 'EUR'
         });
       }
-      if (cardPrice.price) {
-        prices.push({
-          card_id: cardId,
-          source: 'tcgplayer',
-          price_type: 'normal_market',
-          price: cardPrice.price,
-          currency: 'USD'
-        });
-      }
+      // Remove tcgplayer price to avoid confusion - only use avg_sell_price
     }
 
     return prices;
@@ -300,11 +292,11 @@ export class PokemonTCGPriceUpdater {
     console.log('pokemonTCGService: getPriceHistory called with cardId:', cardId, 'days:', days);
     try {
       console.log('pokemonTCGService: Calling Supabase RPC get_card_price_history');
-      const { data, error } = await supabase
-        .rpc('get_card_price_history', {
-          p_card_id: cardId,
-          p_days: days
-        });
+    const { data, error } = await supabase
+      .rpc('get_card_price_history' as any, {
+        p_card_id: cardId,
+        p_days: days
+      });
 
       console.log('pokemonTCGService: Supabase response:', { data, error });
 
@@ -332,7 +324,7 @@ export class PokemonTCGPriceUpdater {
     value_change_30d_eur: number;
   } | null> {
     const { data, error } = await supabase
-      .rpc('get_collection_value_summary', {
+      .rpc('get_collection_value_summary' as any, {
         p_user_id: userId,
         p_language: language
       });
