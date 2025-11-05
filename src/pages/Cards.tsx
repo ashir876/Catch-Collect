@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
 import CompactCardListItem from "@/components/cards/CardListItem";
 import LanguageFilter from "@/components/LanguageFilter";
@@ -25,7 +25,6 @@ import React from "react"; // Added missing import
 import { useIsCardInCollection } from "@/hooks/useCollectionData";
 import { useIsCardInWishlist } from "@/hooks/useWishlistData";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
-import { useCardPrices } from "@/hooks/useCardPrices";
 
 const Cards = () => {
   const { t, i18n } = useTranslation();
@@ -364,12 +363,121 @@ const Cards = () => {
   // Use cards data directly since we're filtering by language at the database level
   const filteredCards = cardsData || [];
   
-  // Fetch prices for all cards
+  // Fetch prices for all cards directly from card_prices table
+  // Match using card_id, language, and get the latest based on download_id
   const cardIds = filteredCards.map(card => card.card_id);
-  const { data: cardPrices = [] } = useCardPrices(cardIds);
+  const { data: cardPricesData } = useQuery({
+    queryKey: ['card-prices-direct', cardIds, filteredCards.map(c => `${c.card_id}-${c.language || 'en'}`).sort().join(',')],
+    queryFn: async () => {
+      if (cardIds.length === 0 || filteredCards.length === 0) return [];
+      
+      // Query card_prices table for all matching card_ids
+      // We'll filter by card_id, language, and download_id in the processing step
+      const { data, error } = await supabase
+        .from('card_prices')
+        .select('card_id, language, avg_sell_price, download_id, date_recorded, updated_at')
+        .in('card_id', cardIds);
+      
+      if (error) {
+        console.error('Error fetching prices from card_prices:', error);
+        return [];
+      }
+      
+      if (!data || data.length === 0) {
+        console.log('No price data found in card_prices table');
+        return [];
+      }
+      
+      console.log('Raw price data from card_prices:', data.length, 'records');
+      
+      // Helper function to parse download_id and convert to comparable format
+      // download_id format: "2025/9/4/3" (year/month/day/batch)
+      const parseDownloadId = (downloadId: string): number => {
+        if (!downloadId) return 0;
+        const parts = downloadId.split('/').map(Number);
+        if (parts.length >= 3) {
+          // year * 10000 + month * 100 + day, then add batch number if available
+          return parts[0] * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0) + (parts[3] || 0) * 0.01;
+        }
+        return 0;
+      };
+      
+      // For each card, find the matching price record
+      // Match criteria: card_id AND language must match
+      // Among matching records, select the one with the highest download_id
+      const priceMap = new Map();
+      
+      filteredCards.forEach((card) => {
+        const cardId = card.card_id;
+        const cardLanguage = card.language || 'en';
+        
+        // Find all price records that match this card's card_id and language
+        const matchingPrices = data.filter((price: any) => {
+          const priceCardId = price.card_id;
+          const priceLanguage = price.language || 'en';
+          return priceCardId === cardId && priceLanguage === cardLanguage && price.avg_sell_price != null;
+        });
+        
+        if (matchingPrices.length === 0) {
+          console.log(`No price found for card_id: ${cardId}, language: ${cardLanguage}`);
+          return;
+        }
+        
+        // Among matching prices, find the one with the highest download_id
+        let latestPrice = matchingPrices[0];
+        let latestDownloadIdValue = parseDownloadId(latestPrice.download_id || '');
+        
+        matchingPrices.forEach((price: any) => {
+          const currentDownloadIdValue = parseDownloadId(price.download_id || '');
+          
+          if (currentDownloadIdValue > latestDownloadIdValue) {
+            latestPrice = price;
+            latestDownloadIdValue = currentDownloadIdValue;
+          } else if (currentDownloadIdValue === 0 && latestDownloadIdValue === 0) {
+            // If neither has download_id, compare by date_recorded
+            if (price.date_recorded && latestPrice.date_recorded) {
+              const currentDate = new Date(price.date_recorded).getTime();
+              const existingDate = new Date(latestPrice.date_recorded).getTime();
+              if (currentDate > existingDate) {
+                latestPrice = price;
+              }
+            }
+          }
+        });
+        
+        // Store the latest price for this card_id + language combination
+        const key = `${cardId}-${cardLanguage}`;
+        priceMap.set(key, {
+          card_id: cardId,
+          language: cardLanguage,
+          cardmarket_avg_sell_price: latestPrice.avg_sell_price,
+          download_id: latestPrice.download_id,
+          last_updated: latestPrice.updated_at || latestPrice.date_recorded
+        });
+        
+        console.log(`Matched price for ${key}:`, {
+          avg_sell_price: latestPrice.avg_sell_price,
+          download_id: latestPrice.download_id
+        });
+      });
+      
+      const result = Array.from(priceMap.values());
+      console.log('Final matched prices:', result.length, 'cards');
+      return result;
+    },
+    enabled: cardIds.length > 0 && filteredCards.length > 0,
+  });
   
-  // Create a map of card prices for easy lookup
-  const priceMap = new Map(cardPrices.map(price => [price.card_id, price]));
+  // Create a map of card prices for easy lookup using card_id + language as key
+  const priceMap = new Map();
+  (cardPricesData || []).forEach((price: any) => {
+    const key = `${price.card_id}-${price.language || 'en'}`;
+    priceMap.set(key, {
+      card_id: price.card_id,
+      cardmarket_avg_sell_price: price.cardmarket_avg_sell_price,
+      last_updated: price.last_updated
+    });
+  });
 
   // Handler for opening add to collection modal
   const handleAddToCollection = (card) => {
@@ -734,7 +842,7 @@ const Cards = () => {
                  card={card}
                  hidePriceAndBuy={true}
                  onAddToCollection={handleAddToCollection}
-                 priceData={priceMap.get(card.card_id)}
+                 priceData={priceMap.get(`${card.card_id}-${card.language || 'en'}`)}
                />
              </div>
            ))}
@@ -761,6 +869,7 @@ const Cards = () => {
               <CompactCardListItem
                 card={card}
                 onAddToCollection={handleAddToCollection}
+                priceData={priceMap.get(`${card.card_id}-${card.language || 'en'}`)}
               />
             </div>
           ))}
