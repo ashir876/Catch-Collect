@@ -365,65 +365,204 @@ const Cards = () => {
   
   // Fetch prices for all cards directly from card_prices table
   // Match using card_id, language, and get the latest based on download_id
-  const cardIds = filteredCards.map(card => card.card_id);
-  const { data: cardPricesData } = useQuery({
-    queryKey: ['card-prices-direct', cardIds, filteredCards.map(c => `${c.card_id}-${c.language || 'en'}`).sort().join(',')],
+  const cardIds = filteredCards.length > 0 ? Array.from(new Set(filteredCards.map(card => card.card_id))) : [];
+  
+  // Create a map of cards by card_id + language for quick lookup
+  const cardsByKey = new Map<string, any>();
+  filteredCards.forEach((card) => {
+    const key = `${card.card_id}-${card.language || 'en'}`;
+    cardsByKey.set(key, card);
+  });
+  
+  // Create a stable key for the query based on card IDs and language filter
+  const priceQueryKey = cardIds.length > 0 
+    ? ['card-prices-direct', cardIds.sort().join(','), languageFilter, filteredCards.length]
+    : ['card-prices-direct', 'empty'];
+  
+  const { data: cardPricesData, isLoading: pricesLoading } = useQuery({
+    queryKey: priceQueryKey,
     queryFn: async () => {
-      if (cardIds.length === 0 || filteredCards.length === 0) return [];
+      if (cardIds.length === 0 || filteredCards.length === 0) {
+        console.log('📊 No cards to fetch prices for');
+        return [];
+      }
       
-      // Query card_prices table for all matching card_ids
-      // We'll filter by card_id, language, and download_id in the processing step
+      console.log('📊 Fetching prices for', cardIds.length, 'unique card IDs,', filteredCards.length, 'total cards');
+      console.log('📊 Cards sample:', filteredCards.slice(0, 3).map(c => ({ 
+        id: c.card_id, 
+        lang: c.language || 'en',
+        hasLang: !!c.language 
+      })));
+      
+      // ============================================================================
+      // PRICE DATA SOURCE VERIFICATION
+      // ============================================================================
+      // Table: card_prices (NOT price_history or any other table)
+      // Field: avg_sell_price (this is the CardMarket average sell price in EUR)
+      // 
+      // Schema of card_prices table:
+      //   - id: primary key
+      //   - card_id: TEXT (matches card.card_id)
+      //   - language: TEXT (matches card.language, e.g., 'en', 'fr', 'de')
+      //   - avg_sell_price: DECIMAL/NUMERIC (the price we display)
+      //   - download_id: TEXT (used to determine latest price, format: "YYYY/MM/DD/HH")
+      //   - date_recorded: TIMESTAMP (fallback for determining latest price)
+      //   - updated_at: TIMESTAMP (fallback for determining latest price)
+      //
+      // Note: We query the table directly (not the latest_prices view) because:
+      //   1. We need to parse download_id to accurately determine the latest price
+      //   2. The view uses simpler ordering (date_recorded, updated_at, id) which
+      //      doesn't account for download_id parsing logic
+      // ============================================================================
+      console.log('🔍 VERIFICATION: Querying card_prices table');
+      console.log('  📊 Table: card_prices (confirmed correct)');
+      console.log('  💰 Field: avg_sell_price (confirmed correct)');
+      console.log('  📋 Selected fields: card_id, language, avg_sell_price, download_id, date_recorded, updated_at');
+      console.log('  🎯 Card IDs to fetch:', cardIds.length, 'unique IDs');
+      
       const { data, error } = await supabase
-        .from('card_prices')
-        .select('card_id, language, avg_sell_price, download_id, date_recorded, updated_at')
+        .from('card_prices')  // ✅ CORRECT TABLE: card_prices
+        .select('card_id, language, avg_sell_price, download_id, date_recorded, updated_at')  // ✅ CORRECT FIELD: avg_sell_price
         .in('card_id', cardIds);
       
       if (error) {
-        console.error('Error fetching prices from card_prices:', error);
+        console.error('❌ Error fetching prices from card_prices:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return [];
       }
       
       if (!data || data.length === 0) {
-        console.log('No price data found in card_prices table');
+        console.log('⚠️ No price data found in card_prices table for card_ids:', cardIds.slice(0, 5));
         return [];
       }
       
-      console.log('Raw price data from card_prices:', data.length, 'records');
+      // ============================================================================
+      // VERIFICATION: Confirm data source
+      // ============================================================================
+      console.log('✅ SUCCESS: Retrieved', data.length, 'price records from card_prices table');
+      console.log('  📊 Source Table: card_prices ✅');
+      console.log('  💰 Price Field: avg_sell_price ✅');
+      
+      // DEBUG: Log the actual structure of the first record to verify field names
+      if (data.length > 0) {
+        const firstRecord = data[0];
+        const allKeys = Object.keys(firstRecord);
+        console.log('');
+        console.log('🔍 FIRST PRICE RECORD STRUCTURE VERIFICATION:');
+        console.log('  📋 All field names in record:', allKeys);
+        console.log('  🔑 card_id:', firstRecord.card_id);
+        console.log('  🌐 language:', firstRecord.language);
+        console.log('  💰 avg_sell_price:', firstRecord.avg_sell_price, '(type:', typeof firstRecord.avg_sell_price + ')');
+        console.log('  📥 download_id:', firstRecord.download_id);
+        console.log('  📅 date_recorded:', firstRecord.date_recorded);
+        console.log('  ⏰ updated_at:', firstRecord.updated_at);
+        
+        // Check if avg_sell_price exists or if there's a different field name
+        if (!('avg_sell_price' in firstRecord)) {
+          console.error('');
+          console.error('❌ CRITICAL ERROR: avg_sell_price field NOT FOUND in database response!');
+          console.error('❌ This means we are NOT querying the correct table/field!');
+          console.error('❌ Available fields:', allKeys);
+          // Check for common alternative field names
+          const possiblePriceFields = allKeys.filter(k => 
+            k.toLowerCase().includes('price') || 
+            k.toLowerCase().includes('avg') ||
+            k.toLowerCase().includes('sell')
+          );
+          if (possiblePriceFields.length > 0) {
+            console.error('⚠️ Possible price fields found:', possiblePriceFields);
+          }
+          console.error('');
+        } else {
+          console.log('');
+          console.log('✅ VERIFICATION PASSED: avg_sell_price field EXISTS');
+          console.log('  💰 Price value:', firstRecord.avg_sell_price);
+          console.log('  📊 Data type:', typeof firstRecord.avg_sell_price);
+          console.log('  ✅ Table: card_prices (confirmed)');
+          console.log('  ✅ Field: avg_sell_price (confirmed)');
+          console.log('');
+        }
+        
+        // Log the full record as JSON for inspection
+        console.log('  📄 Full record (JSON):', JSON.stringify(firstRecord, null, 2));
+        console.log('');
+      }
+      
+      console.log('📊 Price data sample:', data.slice(0, 3).map((p: any) => ({ 
+        id: p.card_id, 
+        lang: p.language || 'en', 
+        price: p.avg_sell_price,
+        priceType: typeof p.avg_sell_price,
+        hasPrice: !!p.avg_sell_price,
+        allFields: Object.keys(p)
+      })));
       
       // Helper function to parse download_id and convert to comparable format
-      // download_id format: "2025/9/4/3" (year/month/day/batch)
       const parseDownloadId = (downloadId: string): number => {
         if (!downloadId) return 0;
         const parts = downloadId.split('/').map(Number);
         if (parts.length >= 3) {
-          // year * 10000 + month * 100 + day, then add batch number if available
           return parts[0] * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0) + (parts[3] || 0) * 0.01;
         }
         return 0;
       };
       
+      // Group prices by (card_id, language) first
+      const pricesByKey = new Map<string, any[]>();
+      data.forEach((price: any) => {
+        const priceCardId = price.card_id;
+        const priceLanguage = (price.language || 'en').toLowerCase().trim();
+        const key = `${priceCardId}-${priceLanguage}`;
+        
+        if (!pricesByKey.has(key)) {
+          pricesByKey.set(key, []);
+        }
+        pricesByKey.get(key)!.push(price);
+      });
+      
+      console.log('📊 Prices grouped by key:', pricesByKey.size, 'unique combinations');
+      console.log('📊 Sample price keys:', Array.from(pricesByKey.keys()).slice(0, 5));
+      
       // For each card, find the matching price record
-      // Match criteria: card_id AND language must match
-      // Among matching records, select the one with the highest download_id
-      const priceMap = new Map();
+      const priceResults: Array<{ key: string; priceData: any }> = [];
       
       filteredCards.forEach((card) => {
         const cardId = card.card_id;
-        const cardLanguage = card.language || 'en';
+        // Normalize language - handle null, undefined, and trim whitespace
+        const cardLanguage = (card.language || 'en').toLowerCase().trim();
+        const key = `${cardId}-${cardLanguage}`;
         
-        // Find all price records that match this card's card_id and language
-        const matchingPrices = data.filter((price: any) => {
-          const priceCardId = price.card_id;
-          const priceLanguage = price.language || 'en';
-          return priceCardId === cardId && priceLanguage === cardLanguage && price.avg_sell_price != null;
-        });
+        // Get all price records for this card_id + language combination
+        let matchingPrices = pricesByKey.get(key) || [];
+        
+        // If no exact match, try fallback to any language for this card_id
+        if (matchingPrices.length === 0) {
+          const fallbackKey = Array.from(pricesByKey.keys()).find(k => {
+            const [priceCardId] = k.split('-');
+            return priceCardId === cardId;
+          });
+          
+          if (fallbackKey) {
+            const fallbackPrices = pricesByKey.get(fallbackKey) || [];
+            if (fallbackPrices.length > 0) {
+              const fallbackLang = fallbackKey.split('-').slice(1).join('-');
+              console.log(`⚠️ Using fallback price for ${cardId} (wanted "${cardLanguage}", found "${fallbackLang}")`);
+              matchingPrices = fallbackPrices;
+            }
+          }
+        }
         
         if (matchingPrices.length === 0) {
-          console.log(`No price found for card_id: ${cardId}, language: ${cardLanguage}`);
+          console.log(`❌ No price found for card_id: ${cardId}, language: ${cardLanguage}`);
           return;
         }
         
-        // Among matching prices, find the one with the highest download_id
+        // Find the latest price by download_id or date_recorded
         let latestPrice = matchingPrices[0];
         let latestDownloadIdValue = parseDownloadId(latestPrice.download_id || '');
         
@@ -434,50 +573,118 @@ const Cards = () => {
             latestPrice = price;
             latestDownloadIdValue = currentDownloadIdValue;
           } else if (currentDownloadIdValue === 0 && latestDownloadIdValue === 0) {
-            // If neither has download_id, compare by date_recorded
+            // Compare by date_recorded if no download_id
             if (price.date_recorded && latestPrice.date_recorded) {
               const currentDate = new Date(price.date_recorded).getTime();
               const existingDate = new Date(latestPrice.date_recorded).getTime();
               if (currentDate > existingDate) {
                 latestPrice = price;
               }
+            } else if (price.date_recorded && !latestPrice.date_recorded) {
+              latestPrice = price;
             }
           }
         });
         
-        // Store the latest price for this card_id + language combination
-        const key = `${cardId}-${cardLanguage}`;
-        priceMap.set(key, {
-          card_id: cardId,
-          language: cardLanguage,
-          cardmarket_avg_sell_price: latestPrice.avg_sell_price,
-          download_id: latestPrice.download_id,
-          last_updated: latestPrice.updated_at || latestPrice.date_recorded
-        });
+        // Ensure price is a number, not a string or null
+        const priceValue = latestPrice.avg_sell_price != null 
+          ? Number(latestPrice.avg_sell_price) 
+          : null;
         
-        console.log(`Matched price for ${key}:`, {
-          avg_sell_price: latestPrice.avg_sell_price,
-          download_id: latestPrice.download_id
-        });
+        // Only add if we have a valid price value
+        if (priceValue != null && !isNaN(priceValue) && priceValue > 0) {
+          // Store the price result
+          priceResults.push({
+            key,
+            priceData: {
+              card_id: cardId,
+              language: cardLanguage,
+              cardmarket_avg_sell_price: priceValue,
+              download_id: latestPrice.download_id,
+              last_updated: latestPrice.updated_at || latestPrice.date_recorded
+            }
+          });
+          
+          console.log(`✅ Matched price for ${key}:`);
+          console.log('  💰 Price value:', priceValue, '(type:', typeof priceValue + ')');
+          console.log('  📥 Download ID:', latestPrice.download_id);
+          console.log('  🌐 Language:', latestPrice.language || 'en');
+          console.log('  📦 Price data object:', JSON.stringify({
+            card_id: cardId,
+            language: cardLanguage,
+            cardmarket_avg_sell_price: priceValue,
+            download_id: latestPrice.download_id,
+            last_updated: latestPrice.updated_at || latestPrice.date_recorded
+          }, null, 2));
+        } else {
+          console.log(`⚠️ Invalid price for ${key}:`, {
+            avg_sell_price: latestPrice.avg_sell_price,
+            converted: priceValue,
+            isNaN: isNaN(priceValue),
+            isNull: priceValue == null
+          });
+        }
       });
       
-      const result = Array.from(priceMap.values());
-      console.log('Final matched prices:', result.length, 'cards');
-      return result;
+      // ============================================================================
+      // FINAL VERIFICATION SUMMARY
+      // ============================================================================
+      console.log('');
+      console.log('📊 FINAL PRICE PROCESSING SUMMARY:');
+      console.log('  ✅ Source Table: card_prices');
+      console.log('  ✅ Price Field: avg_sell_price');
+      console.log('  📊 Total records retrieved:', data.length);
+      console.log('  🎯 Cards with prices:', priceResults.length, 'out of', filteredCards.length, 'cards');
+      console.log('  💰 All prices extracted from: card_prices.avg_sell_price');
+      console.log('');
+      
+      return priceResults;
     },
-    enabled: cardIds.length > 0 && filteredCards.length > 0,
+    enabled: cardIds.length > 0 && filteredCards.length > 0 && !isLoading,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  // Create a map of card prices for easy lookup using card_id + language as key
-  const priceMap = new Map();
-  (cardPricesData || []).forEach((price: any) => {
-    const key = `${price.card_id}-${price.language || 'en'}`;
-    priceMap.set(key, {
-      card_id: price.card_id,
-      cardmarket_avg_sell_price: price.cardmarket_avg_sell_price,
-      last_updated: price.last_updated
-    });
-  });
+  // Convert price results array to a Map for easy lookup
+  const priceMap = React.useMemo(() => {
+    const map = new Map<string, any>();
+    if (cardPricesData && Array.isArray(cardPricesData)) {
+      cardPricesData.forEach(({ key, priceData }) => {
+        map.set(key, priceData);
+      });
+      console.log('📊 Price map created with', map.size, 'entries');
+      if (map.size > 0) {
+        console.log('📊 Sample price map keys:', Array.from(map.keys()).slice(0, 5));
+        console.log('📊 Sample price map values:', Array.from(map.values()).slice(0, 2).map(v => ({
+          card_id: v.card_id,
+          language: v.language,
+          price: v.cardmarket_avg_sell_price
+        })));
+      }
+    } else {
+      console.log('📊 No price data available yet');
+    }
+    return map;
+  }, [cardPricesData]);
+  
+  // Debug: Log price lookup for first few cards and verify data structure
+  React.useEffect(() => {
+    if (filteredCards.length > 0 && priceMap.size > 0) {
+      console.log('🔍 Price lookup debug for first 5 cards:');
+      filteredCards.slice(0, 5).forEach(card => {
+        const lookupKey = `${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`;
+        const price = priceMap.get(lookupKey);
+        console.log(`  Card: ${card.card_id}, Lang: ${card.language || 'en'}, Key: ${lookupKey}, Found: ${!!price}`, {
+          priceData: price,
+          priceValue: price?.cardmarket_avg_sell_price,
+          priceType: typeof price?.cardmarket_avg_sell_price,
+          isNumber: typeof price?.cardmarket_avg_sell_price === 'number',
+          isGreaterThanZero: price?.cardmarket_avg_sell_price > 0
+        });
+      });
+    } else if (filteredCards.length > 0) {
+      console.log('⚠️ Price map is empty but cards exist. Cards:', filteredCards.length, 'Price map size:', priceMap.size);
+    }
+  }, [filteredCards, priceMap]);
 
   // Handler for opening add to collection modal
   const handleAddToCollection = (card) => {
@@ -839,10 +1046,11 @@ const Cards = () => {
                  </div>
                )}
                <CardWithWishlist
+                 key={`${card.card_id}-${card.language || 'en'}-${priceMap.has(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) ? 'with-price' : 'no-price'}`}
                  card={card}
                  hidePriceAndBuy={true}
                  onAddToCollection={handleAddToCollection}
-                 priceData={priceMap.get(`${card.card_id}-${card.language || 'en'}`)}
+                 priceData={priceMap.get(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) || undefined}
                />
              </div>
            ))}
@@ -867,9 +1075,10 @@ const Cards = () => {
                 </div>
               )}
               <CompactCardListItem
+                key={`${card.card_id}-${card.language || 'en'}-${priceMap.has(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) ? 'with-price' : 'no-price'}`}
                 card={card}
                 onAddToCollection={handleAddToCollection}
-                priceData={priceMap.get(`${card.card_id}-${card.language || 'en'}`)}
+                priceData={priceMap.get(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) || undefined}
               />
             </div>
           ))}

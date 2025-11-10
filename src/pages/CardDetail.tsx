@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Heart, 
   ShoppingCart, 
@@ -42,6 +42,7 @@ const CardDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [card, setCard] = useState<CardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCollected, setIsCollected] = useState(false);
@@ -54,20 +55,38 @@ const CardDetail = () => {
     const fetchCard = async () => {
       if (!id) return;
       
-    
+      // Get language from URL params or default to 'en'
+      const cardLanguage = searchParams.get('language') || 'en';
       
       try {
-        const { data, error } = await supabase
+        // First, try to fetch with the specified language
+        let { data, error } = await supabase
           .from('cards')
           .select('*')
           .eq('card_id', id)
+          .eq('language', cardLanguage)
           .single();
 
-        if (error) {
+        // If not found with specified language, try to get any language version
+        if (error && error.code === 'PGRST116') {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('cards')
+            .select('*')
+            .eq('card_id', id)
+            .order('language', { ascending: true })
+            .limit(1)
+            .single();
+          
+          if (fallbackError) {
+            console.error('Supabase error:', fallbackError);
+            throw fallbackError;
+          }
+          data = fallbackData;
+          error = null;
+        } else if (error) {
           console.error('Supabase error:', error);
           throw error;
         }
-        
 
         setCard(data);
       } catch (error) {
@@ -83,7 +102,7 @@ const CardDetail = () => {
     };
 
     fetchCard();
-  }, [id, toast, t]);
+  }, [id, searchParams, toast, t]);
 
   // Check if this card is already in the user's collection
   useEffect(() => {

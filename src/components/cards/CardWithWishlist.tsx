@@ -42,6 +42,18 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
     setRenderKey(prev => prev + 1);
   }, [isInWishlist, card.card_id]);
   
+  // Log when priceData changes to debug price display updates
+  React.useEffect(() => {
+    if (priceData) {
+      console.log('CardWithWishlist - PriceData prop updated:', {
+        cardId: card.card_id,
+        hasPrice: !!priceData,
+        price: priceData?.cardmarket_avg_sell_price,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [priceData, card.card_id]);
+  
   // Debug logging
   console.log('CardWithWishlist - Card:', card.card_id, 'isInCollection:', isInCollection, 'renderKey:', renderKey, 'timestamp:', new Date().toISOString());
   

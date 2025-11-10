@@ -40,12 +40,31 @@ export const useCollectionActions = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Get card data
+      // Get card data - filter by both card_id and language
       let query = supabase.from('cards').select('*').eq('card_id', cardId);
-      if (cardLanguage) {
-        query = query.eq('language', cardLanguage);
+      const finalLanguage = cardLanguage || 'en'; // Default to 'en' if not provided
+      query = query.eq('language', finalLanguage);
+      
+      let { data: cardData, error: cardError } = await query.single();
+      
+      // If not found with specified/default language, try to get any language version as fallback
+      if (cardError && cardError.code === 'PGRST116') {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('cards')
+          .select('*')
+          .eq('card_id', cardId)
+          .order('language', { ascending: true })
+          .limit(1)
+          .single();
+        
+        if (fallbackError) {
+          throw cardError; // Throw original error if fallback also fails
+        }
+        cardData = fallbackData;
+        cardError = null;
+      } else if (cardError) {
+        throw cardError;
       }
-      const { data: cardData, error: cardError } = await query.single();
 
       if (cardError) {
         throw cardError;
@@ -260,12 +279,31 @@ export const useWishlistActions = () => {
         throw new Error("Card already in wishlist");
       }
 
-      // Get card data
+      // Get card data - filter by both card_id and language
       let query = supabase.from('cards').select('*').eq('card_id', cardId);
-      if (cardLanguage) {
-        query = query.eq('language', cardLanguage);
+      const finalLanguage = cardLanguage || 'en'; // Default to 'en' if not provided
+      query = query.eq('language', finalLanguage);
+      
+      let { data: cardData, error: cardError } = await query.single();
+      
+      // If not found with specified/default language, try to get any language version as fallback
+      if (cardError && cardError.code === 'PGRST116') {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('cards')
+          .select('*')
+          .eq('card_id', cardId)
+          .order('language', { ascending: true })
+          .limit(1)
+          .single();
+        
+        if (fallbackError) {
+          throw cardError; // Throw original error if fallback also fails
+        }
+        cardData = fallbackData;
+        cardError = null;
+      } else if (cardError) {
+        throw cardError;
       }
-      const { data: cardData, error: cardError } = await query.single();
 
       if (cardError) throw cardError;
 

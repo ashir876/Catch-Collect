@@ -208,8 +208,27 @@ const TradingCard = ({
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
   
-  // Use price data passed as prop
-  const cardPriceData = priceData;
+  // Normalize price data - ensure it's a single object, not an array
+  const cardPriceData = Array.isArray(priceData) ? priceData[0] : priceData;
+  
+  // Debug: Log price data received by TradingCard
+  React.useEffect(() => {
+    if (id && cardPriceData) {
+      console.log(`💵 TradingCard ${id} received priceData:`);
+      console.log('  📦 priceData object keys:', Object.keys(cardPriceData));
+      console.log('  💵 cardmarket_avg_sell_price:', cardPriceData.cardmarket_avg_sell_price, '(type:', typeof cardPriceData.cardmarket_avg_sell_price + ')');
+      console.log('  ✅ Has price:', !!cardPriceData.cardmarket_avg_sell_price);
+      console.log('  📄 Full priceData:', JSON.stringify(cardPriceData, null, 2));
+      
+      // Check if the field exists
+      if (!('cardmarket_avg_sell_price' in cardPriceData)) {
+        console.error(`❌ CRITICAL: TradingCard ${id} - cardmarket_avg_sell_price field NOT FOUND!`);
+        console.error('❌ Available fields:', Object.keys(cardPriceData));
+      }
+    } else if (id && !cardPriceData) {
+      console.log(`💵 TradingCard ${id} has NO priceData`);
+    }
+  }, [id, cardPriceData]);
   
   // Normalize props
   const cardImage = image || imageUrl || "/placeholder.svg";
@@ -353,17 +372,33 @@ const TradingCard = ({
         // Use the cardData prop if available
         cardDataFromDB = cardData;
       } else {
-        // Fetch from database
+        // Fetch from database - filter by both card_id and language
+        // Use language from prop, cardData, or default to 'en'
+        const cardLanguage = language || cardData?.language || 'en';
         const { data, error: cardError } = await supabase
           .from('cards')
           .select('*')
           .eq('card_id', id)
+          .eq('language', cardLanguage)
           .single();
 
         if (cardError) {
-          throw cardError;
+          // If query fails, try to get any language version as fallback
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('cards')
+            .select('*')
+            .eq('card_id', id)
+            .order('language', { ascending: true })
+            .limit(1)
+            .single();
+          
+          if (fallbackError) {
+            throw cardError; // Throw original error if fallback also fails
+          }
+          cardDataFromDB = fallbackData;
+        } else {
+          cardDataFromDB = data;
         }
-        cardDataFromDB = data;
       }
 
       // Insert entries one by one to avoid batch insert issues

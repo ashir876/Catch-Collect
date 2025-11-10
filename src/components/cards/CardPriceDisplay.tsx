@@ -26,10 +26,48 @@ export const CardPriceDisplay: React.FC<CardPriceDisplayProps> = ({
   className = ''
 }) => {
   // Get the avg_sell_price from card_prices table
-  const avgPrice = priceData?.cardmarket_avg_sell_price;
+  // Ensure it's a number and handle string conversion
+  let avgPrice: number | null = null;
+  
+  if (priceData?.cardmarket_avg_sell_price != null) {
+    const rawPrice = priceData.cardmarket_avg_sell_price;
+    avgPrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : Number(rawPrice);
+    
+    // Check if conversion was successful
+    if (isNaN(avgPrice)) {
+      console.warn('🔍 CardPriceDisplay - Invalid price value:', {
+        rawPrice,
+        type: typeof rawPrice,
+        priceData
+      });
+      avgPrice = null;
+    }
+  }
 
-  // Show "No price data found" message if no price data or price is 0/null
-  if (!priceData || !avgPrice || avgPrice === 0) {
+  // Debug logging for troubleshooting
+  React.useEffect(() => {
+    if (priceData) {
+      console.log('💰 CardPriceDisplay render:');
+      console.log('  ✅ Has priceData:', !!priceData);
+      console.log('  📦 priceData object keys:', Object.keys(priceData));
+      console.log('  💵 cardmarket_avg_sell_price:', priceData.cardmarket_avg_sell_price, '(type:', typeof priceData.cardmarket_avg_sell_price + ')');
+      console.log('  🔄 Converted price:', avgPrice, '(type:', typeof avgPrice + ')');
+      console.log('  ✅ Will display:', avgPrice != null && avgPrice > 0 && !isNaN(avgPrice));
+      console.log('  📄 Full priceData:', JSON.stringify(priceData, null, 2));
+      
+      // Check if the field exists
+      if (!('cardmarket_avg_sell_price' in priceData)) {
+        console.error('❌ CRITICAL: cardmarket_avg_sell_price field NOT FOUND in priceData!');
+        console.error('❌ Available fields:', Object.keys(priceData));
+      }
+    } else {
+      console.log('💰 CardPriceDisplay render: NO priceData provided');
+    }
+  }, [priceData, avgPrice]);
+
+  // Show "No price data found" message if no price data or price is invalid
+  // Allow prices > 0 (even very small ones like 0.43)
+  if (!priceData || avgPrice == null || avgPrice <= 0 || isNaN(avgPrice)) {
     if (compact) {
       return (
         <div className={`text-xs text-muted-foreground italic ${className}`}>
@@ -54,19 +92,30 @@ export const CardPriceDisplay: React.FC<CardPriceDisplayProps> = ({
 
   if (compact) {
     return (
-      <div className={`text-xs font-semibold text-primary ${className}`}>
+      <div 
+        className={`text-xs font-semibold text-primary ${className}`}
+        data-testid="card-price-display-compact"
+        style={{ visibility: 'visible', opacity: 1 }}
+      >
         {formatCurrency(avgPrice, 'EUR')}
       </div>
     );
   }
 
   return (
-    <div className={`space-y-1 ${className}`}>
+    <div 
+      className={`space-y-1 ${className}`}
+      data-testid="card-price-display-full"
+      style={{ visibility: 'visible', opacity: 1 }}
+    >
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {showSource ? 'CardMarket Avg' : 'Price'}
         </span>
-        <span className="text-sm font-semibold text-primary">
+        <span 
+          className="text-sm font-semibold text-primary"
+          style={{ color: 'inherit', display: 'inline-block' }}
+        >
           {formatCurrency(avgPrice, 'EUR')}
         </span>
       </div>
