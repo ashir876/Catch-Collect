@@ -18,7 +18,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisplay";
 import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
-import { testPriceData } from "@/lib/testPriceData";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Collection = () => {
@@ -78,12 +77,6 @@ const Collection = () => {
     pricesError
   });
   
-  // Test price data on component mount
-  React.useEffect(() => {
-    if (user) {
-      testPriceData();
-    }
-  }, [user]);
 
   // Transform collection data to match TradingCard component expectations
   console.log('Collection - Processing collection items:', collectionItems.length);
