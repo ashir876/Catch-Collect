@@ -26,7 +26,6 @@ export function usePokemonPricing() {
   const [collectionValue, setCollectionValue] = useState<CollectionValueSummary | null>(null);
   const [priceCache, setPriceCache] = useState<Record<string, PokemonCardPrice[]>>({});
 
-  // Get collection value summary
   const fetchCollectionValue = useCallback(async () => {
     if (!user) return;
 
@@ -43,7 +42,6 @@ export function usePokemonPricing() {
     }
   }, [user]);
 
-  // Get current prices for a specific card
   const fetchCardPrices = useCallback(async (cardId: string) => {
     if (priceCache[cardId]) {
       return priceCache[cardId];
@@ -64,7 +62,6 @@ export function usePokemonPricing() {
     }
   }, [priceCache]);
 
-  // Get price history for a specific card
   const fetchPriceHistory = useCallback(async (cardId: string, days: number = 30): Promise<PriceHistoryData[]> => {
     console.log('usePokemonPricing: fetchPriceHistory called with cardId:', cardId, 'days:', days);
     setLoading(true);
@@ -84,18 +81,15 @@ export function usePokemonPricing() {
     }
   }, []);
 
-  // Update prices for a specific card
   const updateCardPrices = useCallback(async (cardId: string, setCode: string, cardNumber: string) => {
     setLoading(true);
     setError(null);
 
     try {
       const prices = await pokemonTCGService.updateCardPrice(cardId, setCode, cardNumber);
-      
-      // Update cache
+
       setPriceCache(prev => ({ ...prev, [cardId]: prices }));
-      
-      // Refresh collection value if user is logged in
+
       if (user) {
         await fetchCollectionValue();
       }
@@ -109,18 +103,15 @@ export function usePokemonPricing() {
     }
   }, [user, fetchCollectionValue]);
 
-  // Update prices for all cards in a set
   const updateSetPrices = useCallback(async (setId: string) => {
     setLoading(true);
     setError(null);
 
     try {
       await pokemonTCGService.updateSetPrices(setId);
-      
-      // Clear cache to force refresh
+
       setPriceCache({});
-      
-      // Refresh collection value if user is logged in
+
       if (user) {
         await fetchCollectionValue();
       }
@@ -132,7 +123,6 @@ export function usePokemonPricing() {
     }
   }, [user, fetchCollectionValue]);
 
-  // Get market price for a card (TCGPlayer market price)
   const getMarketPrice = useCallback((cardId: string): number | null => {
     const prices = priceCache[cardId];
     if (!prices) return null;
@@ -144,7 +134,6 @@ export function usePokemonPricing() {
     return marketPrice?.price || null;
   }, [priceCache]);
 
-  // Get CardMarket average price for a card
   const getCardMarketPrice = useCallback((cardId: string): number | null => {
     const prices = priceCache[cardId];
     if (!prices) return null;
@@ -156,17 +145,14 @@ export function usePokemonPricing() {
     return cardMarketPrice?.price || null;
   }, [priceCache]);
 
-  // Get all prices for a card
   const getCardPrices = useCallback((cardId: string): PokemonCardPrice[] => {
     return priceCache[cardId] || [];
   }, [priceCache]);
 
-  // Clear price cache
   const clearCache = useCallback(() => {
     setPriceCache({});
   }, []);
 
-  // Subscribe to real-time price updates
   useEffect(() => {
     if (!user) return;
 
@@ -177,7 +163,7 @@ export function usePokemonPricing() {
         schema: 'public',
         table: 'price_history'
       }, (payload) => {
-        // Refresh collection value when new prices are added
+        
         fetchCollectionValue();
       })
       .subscribe();
@@ -187,7 +173,6 @@ export function usePokemonPricing() {
     };
   }, [user, fetchCollectionValue]);
 
-  // Initial load of collection value
   useEffect(() => {
     if (user) {
       fetchCollectionValue();

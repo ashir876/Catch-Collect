@@ -17,8 +17,6 @@ import { EditCardModal } from "./EditCardModal";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
 import CardPriceDisplay from "./CardPriceDisplay";
 
-
-
 interface CardData {
   card_id: string;
   name: string;
@@ -52,28 +50,28 @@ interface TradingCardProps {
   inCollection?: boolean;
   inWishlist?: boolean;
   description?: string;
-  // Legacy props
+  
   isOwned?: boolean;
   isWishlisted?: boolean;
-  // Display options
+  
   hidePriceAndBuy?: boolean;
   disableHoverEffects?: boolean;
-  // Action handlers
+  
   onAddToCart?: (id?: string) => void;
   onAddToCollection?: (card?: CardData | any) => void;
   onAddToWishlist?: (id?: string) => void;
   onToggleWishlist?: (id: string) => void;
   onViewDetails?: (id: string) => void;
-  // Wishlist overlay actions and badges
+  
   onRemoveFromWishlist?: () => void;
   priority?: "high" | "medium" | "low";
   getPriorityText?: () => string;
   getPriorityColor?: () => "default" | "secondary" | "destructive";
-  // Full card data for modal
+  
   cardData?: CardData;
-  // Collection/wishlist item data for editing
+  
   collectionItemId?: string;
-  // Additional properties for collection items
+  
   notes?: string;
   condition?: string;
   language?: string;
@@ -84,12 +82,12 @@ interface TradingCardProps {
   marketRecordedAt?: string;
   acquiredDate?: string;
   showEditButton?: boolean;
-  // New prop for showing remove button
+  
   showRemoveButton?: boolean;
   onRemove?: (id: string) => void;
-  // New prop to control whether to show "Collected" label (hide on collection page)
+  
   hideCollectedLabel?: boolean;
-  // Price data for the card
+  
   priceData?: any;
 }
 
@@ -120,7 +118,6 @@ const rarityConfig = {
   }
 };
 
-// Helper function to normalize rarity values from database to component format
 const normalizeRarity = (rarity: string): "common" | "rare" | "epic" | "legendary" => {
   const normalizedRarity = rarity.toLowerCase();
   
@@ -158,13 +155,13 @@ const TradingCard = ({
   inCollection = false,
   inWishlist = false,
   description,
-  // Legacy props
+  
   isOwned = false,
   isWishlisted = false,
-  // Display options
+  
   hidePriceAndBuy = false,
   disableHoverEffects = false,
-  // Action handlers
+  
   onAddToCart,
   onAddToCollection,
   onAddToWishlist,
@@ -174,7 +171,7 @@ const TradingCard = ({
   priority,
   getPriorityText,
   getPriorityColor,
-  // Full card data for modal
+  
   cardData,
   collectionItemId,
   notes,
@@ -197,8 +194,8 @@ const TradingCard = ({
     name, 
     series, 
     set, 
-    collectionItemId, // Add this to see the collectionItemId value
-    cardData: cardData ? 'present' : 'missing' // Add this to see if cardData is present
+    collectionItemId, 
+    cardData: cardData ? 'present' : 'missing' 
   });
   
   const { t } = useTranslation();
@@ -207,11 +204,9 @@ const TradingCard = ({
   const queryClient = useQueryClient();
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection, setOnCollectionSuccess } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist, setOnWishlistSuccess } = useWishlistActions();
-  
-  // Normalize price data - ensure it's a single object, not an array
+
   const cardPriceData = Array.isArray(priceData) ? priceData[0] : priceData;
-  
-  // Debug: Log price data received by TradingCard
+
   React.useEffect(() => {
     if (id && cardPriceData) {
       console.log(`💵 TradingCard ${id} received priceData:`);
@@ -219,8 +214,7 @@ const TradingCard = ({
       console.log('  💵 cardmarket_avg_sell_price:', cardPriceData.cardmarket_avg_sell_price, '(type:', typeof cardPriceData.cardmarket_avg_sell_price + ')');
       console.log('  ✅ Has price:', !!cardPriceData.cardmarket_avg_sell_price);
       console.log('  📄 Full priceData:', JSON.stringify(cardPriceData, null, 2));
-      
-      // Check if the field exists
+
       if (!('cardmarket_avg_sell_price' in cardPriceData)) {
         console.error(`❌ CRITICAL: TradingCard ${id} - cardmarket_avg_sell_price field NOT FOUND!`);
         console.error('❌ Available fields:', Object.keys(cardPriceData));
@@ -229,24 +223,19 @@ const TradingCard = ({
       console.log(`💵 TradingCard ${id} has NO priceData`);
     }
   }, [id, cardPriceData]);
-  
-  // Normalize props
+
   const cardImage = image || imageUrl || "/placeholder.svg";
-  
-  // Local state for immediate UI updates
+
   const [localOwned, setLocalOwned] = useState(inCollection || isOwned);
   const [localWishlisted, setLocalWishlisted] = useState(inWishlist || isWishlisted);
-  
-  // Modal state
+
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
-  // Define owned and wishlisted variables first
+
   const owned = localOwned;
   const wishlisted = localWishlisted;
-  
-  // Debug logging for owned status
+
   React.useEffect(() => {
     console.log('TradingCard - owned status changed:', {
       id,
@@ -260,8 +249,7 @@ const TradingCard = ({
       timestamp: new Date().toISOString()
     });
   }, [owned, localOwned, inCollection, isOwned, hideCollectedLabel, id, name]);
-  
-  // Debug modal state changes
+
   React.useEffect(() => {
     console.log('TradingCard - Collection modal state changed:', {
       id,
@@ -271,8 +259,7 @@ const TradingCard = ({
       wishlisted
     });
   }, [isCollectionModalOpen, id, name, owned, wishlisted]);
-  
-  // Update local state when props change
+
   React.useEffect(() => {
     console.log('TradingCard - inCollection prop changed:', {
       id,
@@ -297,7 +284,6 @@ const TradingCard = ({
     setLocalWishlisted(inWishlist || isWishlisted);
   }, [inWishlist, isWishlisted, id, name]);
 
-  // Reset modal states when card status changes
   React.useEffect(() => {
     if (owned) {
       setIsCollectionModalOpen(false);
@@ -309,28 +295,25 @@ const TradingCard = ({
       setIsWishlistModalOpen(false);
     }
   }, [wishlisted]);
-  
-  // Revert optimistic updates if actions fail
+
   React.useEffect(() => {
     if (!isAddingToCollection && !isRemovingFromCollection) {
-      // Action completed, sync with actual state
+      
       setLocalOwned(inCollection || isOwned);
     }
   }, [isAddingToCollection, isRemovingFromCollection, inCollection, isOwned]);
   
   React.useEffect(() => {
     if (!isAddingToWishlist && !isRemovingFromWishlist) {
-      // Action completed, sync with actual state
+      
       setLocalWishlisted(inWishlist || isWishlisted);
     }
   }, [isAddingToWishlist, isRemovingFromWishlist, inWishlist, isWishlisted]);
   const [isHovered, setIsHovered] = useState(false);
-  
-  // Normalize the rarity to ensure it matches our config keys
+
   const normalizedRarity = normalizeRarity(rarity);
   const rarityInfo = rarityConfig[normalizedRarity];
 
-  // Handle collection toggle - always open modal to add card
   const handleCollectionToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('TradingCard - Collection button clicked:', {
@@ -342,11 +325,10 @@ const TradingCard = ({
       isAddingToCollection,
       isRemovingFromCollection
     });
-    // Always open collection modal to add card (even if already in collection)
+    
     setIsCollectionModalOpen(true);
   };
 
-  // Handle collection modal submit
   const handleCollectionModalSubmit = async (entries: Array<{
     condition: string;
     price: number;
@@ -365,15 +347,14 @@ const TradingCard = ({
     }
 
     try {
-      // Get card data first - use the cardData prop if available, otherwise fetch from DB
+      
       let cardDataFromDB;
       
       if (cardData) {
-        // Use the cardData prop if available
+        
         cardDataFromDB = cardData;
       } else {
-        // Fetch from database - filter by both card_id and language
-        // Use language from prop, cardData, or default to 'en'
+
         const cardLanguage = language || cardData?.language || 'en';
         const { data, error: cardError } = await supabase
           .from('cards')
@@ -383,7 +364,7 @@ const TradingCard = ({
           .single();
 
         if (cardError) {
-          // If query fails, try to get any language version as fallback
+          
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('cards')
             .select('*')
@@ -393,7 +374,7 @@ const TradingCard = ({
             .single();
           
           if (fallbackError) {
-            throw cardError; // Throw original error if fallback also fails
+            throw cardError; 
           }
           cardDataFromDB = fallbackData;
         } else {
@@ -401,7 +382,6 @@ const TradingCard = ({
         }
       }
 
-      // Insert entries one by one to avoid batch insert issues
       let successCount = 0;
       let errorCount = 0;
 
@@ -453,7 +433,7 @@ const TradingCard = ({
           } else {
             console.log('Successfully inserted entry for card:', id);
             successCount++;
-            // Immediately update shared cache so other components reflect ownership
+            
             if (user) {
               queryClient.setQueryData(['collection-check', user.id, id], true);
             }
@@ -463,22 +443,18 @@ const TradingCard = ({
           errorCount++;
         }
       }
-      
-      // Mark owned locally for instant UI
+
       if (successCount > 0) {
         setLocalOwned(true);
       }
 
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user.id, id] });
-      
-      // Close modal
+
       setIsCollectionModalOpen(false);
-      
-      // Show appropriate toast message
+
       if (successCount > 0 && errorCount === 0) {
         toast({
           title: t('messages.addedToCollection'),
@@ -513,27 +489,25 @@ const TradingCard = ({
     }
   };
 
-  // Handle wishlist toggle
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (wishlisted) {
-      // Optimistic update - immediately update UI
+      
       setLocalWishlisted(false);
       removeFromWishlist({ cardId: id });
     } else {
-      // Open wishlist modal
+      
       setIsWishlistModalOpen(true);
     }
   };
 
-  // Handle wishlist modal submit
   const handleWishlistModalSubmit = (data: {
     priority: string;
     notes: string;
     language: string;
     price: number;
   }) => {
-    // Set success callback to close modal
+    
     setOnWishlistSuccess(() => () => {
       setIsWishlistModalOpen(false);
       setLocalWishlisted(true);
@@ -556,7 +530,7 @@ const TradingCard = ({
         owned && "ring-2 ring-accent ring-opacity-50"
       )}
     >
-      {/* Priority Badge (Wishlist) */}
+      {}
       {priority && getPriorityText && getPriorityColor && (
         <div className="absolute top-2 right-2 z-20">
           <Badge variant={getPriorityColor()} className="text-xs">
@@ -565,10 +539,8 @@ const TradingCard = ({
         </div>
       )}
 
-
-      
       <CardContent className="p-4 relative z-10 flex flex-col flex-1">
-        {/* Card Image */}
+        {}
         <div className="relative mb-3 aspect-[3/4] overflow-visible rounded-lg bg-muted" style={{ position: 'relative' }}>
           <img
             src={cardImage}
@@ -576,7 +548,7 @@ const TradingCard = ({
             className="w-full h-full object-contain transition-transform duration-300 hover:scale-105 pointer-events-none"
           />
           
-          {/* Status Badges */}
+          {}
           <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
             <Badge 
               variant="secondary" 
@@ -596,7 +568,7 @@ const TradingCard = ({
             )}
           </div>
 
-          {/* Collection Status Icon - Top Right */}
+          {}
           {owned && !hideCollectedLabel && (
             <div 
               className="bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg z-30 border-2 border-white flex items-center gap-1"
@@ -618,7 +590,7 @@ const TradingCard = ({
             </div>
           )}
 
-          {/* Remove Button - Below Collection Status Icon */}
+          {}
           {owned && showRemoveButton && onRemove && !hideCollectedLabel && (
             <div className="absolute top-16 right-2 z-30">
               <Button
@@ -637,7 +609,7 @@ const TradingCard = ({
 
         </div>
 
-        {/* Card Info */}
+        {}
         <div className="space-y-2 flex-1">
           <div>
             <h3 className="font-semibold text-sm line-clamp-2 transition-colors">
@@ -648,7 +620,7 @@ const TradingCard = ({
             </p>
           </div>
 
-          {/* Price Display */}
+          {}
           <CardPriceDisplay 
             priceData={cardPriceData} 
             compact={true}
@@ -657,7 +629,7 @@ const TradingCard = ({
           />
         </div>
 
-        {/* Price Comparison Section - Only show if hidePriceAndBuy is false */}
+        {}
         {!hidePriceAndBuy && (
           <>
             {typeof myPrice === 'number' && myPrice > 0 && typeof marketPrice === 'number' && marketPrice > 0 ? (
@@ -716,9 +688,9 @@ const TradingCard = ({
           </>
         )}
 
-        {/* Bottom Action Buttons */}
+        {}
         <div className="mt-4 space-y-2">
-          {/* Add to Cart Button */}
+          {}
           {!hidePriceAndBuy && inStock && !owned && !wishlisted && onAddToCart && (
             <Button
               size="sm"
@@ -733,7 +705,7 @@ const TradingCard = ({
             </Button>
           )}
 
-          {/* Add to Collection Button */}
+          {}
           {(hidePriceAndBuy || (!hidePriceAndBuy && !onAddToCart)) && (
             <Button
               size="sm"
@@ -747,7 +719,7 @@ const TradingCard = ({
             </Button>
           )}
 
-          {/* Add to Wishlist Button */}
+          {}
           <Button
             size="sm"
             variant={wishlisted ? "destructive" : "secondary"}
@@ -759,7 +731,7 @@ const TradingCard = ({
             {wishlisted ? t('cards.removeFromWishlist') : t('cards.addToWishlist')}
           </Button>
 
-          {/* Edit Card Button - Only show if card is in collection or wishlist */}
+          {}
           {(owned || wishlisted) && showEditButton && (
             <Button
               size="sm"
@@ -784,7 +756,7 @@ const TradingCard = ({
             </Button>
           )}
 
-          {/* Remove from Collection Button - Only show if owned and showRemoveButton is true */}
+          {}
           {owned && showRemoveButton && onRemove && (
             <Button
               size="sm"
@@ -802,11 +774,9 @@ const TradingCard = ({
         </div>
       </CardContent>
 
-
     </Card>
   );
 
-  // Wrap with CardDetailModal if cardData is available
   if (cardData) {
     return (
       <>
@@ -814,7 +784,7 @@ const TradingCard = ({
           {cardContent}
         </CardDetailModal>
         
-        {/* Add to Collection Modal */}
+        {}
         <AddToCollectionModal
           isOpen={isCollectionModalOpen}
           onClose={() => setIsCollectionModalOpen(false)}
@@ -825,7 +795,7 @@ const TradingCard = ({
           defaultLanguage={cardData?.language || language}
         />
         
-              {/* Add to Wishlist Modal */}
+              {}
       <AddToWishlistModal
         isOpen={isWishlistModalOpen}
         onClose={() => setIsWishlistModalOpen(false)}
@@ -834,13 +804,13 @@ const TradingCard = ({
         isLoading={isAddingToWishlist}
       />
 
-                     {/* Edit Card Modal */}
+                     {}
         <EditCardModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           card={{
-            id: collectionItemId || (cardData as any)?.id || id, // Use collection item ID if available
-            card_id: id, // The actual card ID
+            id: collectionItemId || (cardData as any)?.id || id, 
+            card_id: id, 
             name: name,
             set: set,
             image: cardImage,
@@ -853,8 +823,7 @@ const TradingCard = ({
           }}
           type={owned ? 'collection' : 'wishlist'}
           onSuccess={() => {
-            // The query invalidation in EditCardModal will handle refreshing the data
-            // Don't call onAddToWishlist here as it might be the remove function
+
           }}
         />
       </>
@@ -865,7 +834,7 @@ const TradingCard = ({
     <>
       {cardContent}
       
-      {/* Add to Collection Modal */}
+      {}
       <AddToCollectionModal
         isOpen={isCollectionModalOpen}
         onClose={() => setIsCollectionModalOpen(false)}
@@ -876,7 +845,7 @@ const TradingCard = ({
         defaultLanguage={cardData?.language || language}
       />
       
-      {/* Add to Wishlist Modal */}
+      {}
       <AddToWishlistModal
         isOpen={isWishlistModalOpen}
         onClose={() => setIsWishlistModalOpen(false)}
@@ -885,13 +854,13 @@ const TradingCard = ({
         isLoading={isAddingToWishlist}
       />
 
-      {/* Edit Card Modal */}
+      {}
       <EditCardModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         card={{
-          id: collectionItemId || (cardData as any)?.id || id, // Use collection item ID if available
-          card_id: id, // The actual card ID
+          id: collectionItemId || (cardData as any)?.id || id, 
+          card_id: id, 
           name: name,
           set: set,
           image: cardImage,
@@ -904,8 +873,7 @@ const TradingCard = ({
         }}
         type={owned ? 'collection' : 'wishlist'}
         onSuccess={() => {
-          // The query invalidation in EditCardModal will handle refreshing the data
-          // Don't call onAddToWishlist here as it might be the remove function
+
         }}
       />
     </>

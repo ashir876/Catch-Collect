@@ -11,7 +11,7 @@ export interface UserProfile {
   loyalty_points: number | null;
   account_type: string | null;
   role: string;
-  // Stats
+  
   totalCards: number;
   totalValue: number;
   setsCompleted: number;
@@ -28,7 +28,7 @@ export const useUserProfile = () => {
       if (!user) return null;
 
       try {
-        // Get user data from users table
+        
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -44,7 +44,6 @@ export const useUserProfile = () => {
           throw new Error('User not found');
         }
 
-        // Get collection count
         const { count: collectionCount, error: collectionError } = await supabase
           .from('card_collections')
           .select('*', { count: 'exact', head: true })
@@ -55,7 +54,6 @@ export const useUserProfile = () => {
           throw collectionError;
         }
 
-        // Get wishlist count
         const { count: wishlistCount, error: wishlistError } = await supabase
           .from('card_wishlist')
           .select('*', { count: 'exact', head: true })
@@ -66,7 +64,6 @@ export const useUserProfile = () => {
           throw wishlistError;
         }
 
-        // Get orders count
         const { count: ordersCount, error: ordersError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true })
@@ -77,7 +74,6 @@ export const useUserProfile = () => {
           throw ordersError;
         }
 
-        // Calculate total collection value (sum of prices)
         const { data: collectionItems, error: valueError } = await supabase
           .from('card_collections')
           .select('price')
@@ -91,8 +87,6 @@ export const useUserProfile = () => {
 
         const totalValue = collectionItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
 
-        // For now, we'll set sets completed to 0 as it requires more complex logic
-        // This could be calculated by grouping by set_id and counting complete sets
         const setsCompleted = 0;
 
         return {

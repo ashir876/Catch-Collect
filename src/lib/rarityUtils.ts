@@ -1,14 +1,13 @@
-// Shared utility function to map database rarity to component rarity
+
 export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare" | "epic" | "legendary" => {
   const normalizedRarity = dbRarity.toLowerCase().trim();
-  
-  // Check for partial matches first
+
   if (normalizedRarity.includes('hiper rara') || normalizedRarity.includes('hiper raro')) {
     return "legendary";
   }
   
   switch (normalizedRarity) {
-    // English terms
+    
     case "common":
     case "uncommon":
       return "common";
@@ -20,8 +19,7 @@ export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare
     case "legendary":
     case "secret rare":
       return "legendary";
-    
-    // German terms
+
     case "häufig":
       return "common";
     case "selten":
@@ -46,18 +44,15 @@ export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare
     case "illustration rare":
     case "double rare":
       return "common";
-    
-    // French terms
+
     case "commune":
     case "peu commune":
     case "incomum":
       return "common";
-    
-    // Portuguese terms
+
     case "comum":
       return "common";
-    
-    // Spanish terms
+
     case "común":
     case "comun":
       return "common";
@@ -81,7 +76,7 @@ export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare
       return "legendary";
     
     default:
-      // Final fallback check for any remaining cases
+      
       if (normalizedRarity.includes('hiper') || normalizedRarity.includes('legendary') || normalizedRarity.includes('secret')) {
         return "legendary";
       }
@@ -91,7 +86,7 @@ export const mapDatabaseRarityToComponent = (dbRarity: string): "common" | "rare
       if (normalizedRarity.includes('rare')) {
         return "rare";
       }
-      // Silently default to common for unknown rarities
+      
       return "common";
   }
 }; 

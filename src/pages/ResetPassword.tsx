@@ -18,7 +18,7 @@ const ResetPassword = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Check if we have the access token in the URL (Supabase redirects here with it)
+    
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     if (!hashParams.get('access_token')) {
       navigate('/auth');

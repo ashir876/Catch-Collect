@@ -42,10 +42,9 @@ export const useProductsData = (options: ProductsDataOptions = {}) => {
         .eq('language', language)
         .eq('on_stock', true);
 
-      // Apply search filter (support name or card_number/article_number)
       if (searchTerm) {
         const trimmed = searchTerm.trim();
-        // If looks like a pure card number pattern like 123 or 123/456, prioritize card_number
+        
         const pureNumberPattern = /^(\d+)(?:\/(\d+))?$/;
         if (pureNumberPattern.test(trimmed)) {
           const match = trimmed.match(pureNumberPattern)!;
@@ -55,49 +54,41 @@ export const useProductsData = (options: ProductsDataOptions = {}) => {
             query = query.or(`card_number.eq.${match[1]},card_number.ilike.${match[1]}/%`);
           }
         } else {
-          // General search across key fields
+          
           query = query.or(
             `name.ilike.%${trimmed}%,card_number.ilike.%${trimmed}%,article_number.ilike.%${trimmed}%`
           );
         }
       }
 
-      // Apply rarity filter
       if (rarity && rarity !== 'all') {
         query = query.eq('rarity', rarity);
       }
 
-      // Apply type filter
       if (type && type !== 'all') {
         query = query.contains('types', [type]);
       }
 
-      // Apply illustrator filter
       if (illustrator && illustrator !== 'all') {
         query = query.eq('illustrator', illustrator);
       }
 
-      // Apply category filter
       if (category && category !== 'all') {
         query = query.eq('category', category);
       }
 
-      // Apply stage filter
       if (stage && stage !== 'all') {
         query = query.eq('stage', stage);
       }
 
-      // Apply evolve from filter
       if (evolveFrom && evolveFrom !== 'all') {
         query = query.eq('evolvefrom', evolveFrom);
       }
 
-      // Apply sets filter
       if (setsFilter && setsFilter !== 'all') {
         query = query.eq('set_id', setsFilter);
       }
 
-      // Apply sorting
       switch (sortBy) {
         case 'price-low':
           query = query.order('price', { ascending: true });
@@ -115,7 +106,6 @@ export const useProductsData = (options: ProductsDataOptions = {}) => {
           query = query.order('created_at', { ascending: false });
       }
 
-      // Apply pagination
       query = query.range(offset, offset + limit - 1);
 
       const { data, error } = await query;
@@ -130,7 +120,6 @@ export const useProductsData = (options: ProductsDataOptions = {}) => {
   });
 };
 
-// Hook to get total count of products for pagination
 export const useProductsCount = (options: Omit<ProductsDataOptions, 'limit' | 'offset'> = {}) => {
   const { 
     language = 'en', 
@@ -153,42 +142,34 @@ export const useProductsCount = (options: Omit<ProductsDataOptions, 'limit' | 'o
         .eq('language', language)
         .eq('on_stock', true);
 
-      // Apply search filter
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }
 
-      // Apply rarity filter
       if (rarity && rarity !== 'all') {
         query = query.eq('rarity', rarity);
       }
 
-      // Apply type filter
       if (type && type !== 'all') {
         query = query.contains('types', [type]);
       }
 
-      // Apply illustrator filter
       if (illustrator && illustrator !== 'all') {
         query = query.eq('illustrator', illustrator);
       }
 
-      // Apply category filter
       if (category && category !== 'all') {
         query = query.eq('category', category);
       }
 
-      // Apply stage filter
       if (stage && stage !== 'all') {
         query = query.eq('stage', stage);
       }
 
-      // Apply evolve from filter
       if (evolveFrom && evolveFrom !== 'all') {
         query = query.eq('evolvefrom', evolveFrom);
       }
 
-      // Apply sets filter
       if (setsFilter && setsFilter !== 'all') {
         query = query.eq('set_id', setsFilter);
       }

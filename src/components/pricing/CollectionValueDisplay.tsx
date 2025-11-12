@@ -96,7 +96,7 @@ export function CollectionValueDisplay({ className, showRefreshButton = true }: 
 
   return (
     <div className={`grid gap-4 ${className}`}>
-      {/* Total Collection Value */}
+      {}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
@@ -119,7 +119,7 @@ export function CollectionValueDisplay({ className, showRefreshButton = true }: 
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* USD Value */}
+            {}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
@@ -144,7 +144,7 @@ export function CollectionValueDisplay({ className, showRefreshButton = true }: 
               )}
             </div>
 
-            {/* EUR Value */}
+            {}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Euro className="h-4 w-4 text-blue-600" />
@@ -170,7 +170,7 @@ export function CollectionValueDisplay({ className, showRefreshButton = true }: 
             </div>
           </div>
 
-          {/* Collection Stats */}
+          {}
           <div className="mt-4 pt-4 border-t">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">
@@ -187,7 +187,7 @@ export function CollectionValueDisplay({ className, showRefreshButton = true }: 
         </CardContent>
       </Card>
 
-      {/* Price Sources Info */}
+      {}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">{t('pricing.price.sources')}</CardTitle>

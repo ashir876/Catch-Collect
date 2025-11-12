@@ -20,7 +20,6 @@ import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisp
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCurrentPrices } from "@/hooks/useCurrentPrices";
 
-// Map priority number to text
 const getPriorityText = (priority: number, t: any) => {
   switch (priority) {
     case 2:
@@ -34,7 +33,6 @@ const getPriorityText = (priority: number, t: any) => {
   }
 };
 
-// Map priority number to color
 const getPriorityColor = (priority: number): "default" | "secondary" | "destructive" => {
   switch (priority) {
     case 2:
@@ -63,33 +61,26 @@ const Wishlist = () => {
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "priority" | "date" | "price">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  
-  // Modal state for price trends
+
   const [isPriceTrendModalOpen, setIsPriceTrendModalOpen] = useState(false);
   const [selectedCardForModal, setSelectedCardForModal] = useState<any>(null);
 
-  // Fetch wishlist data
   const { data: wishlistItems = [], isLoading, error } = useWishlistData({
-    limit: 1000, // Get all items for statistics
+    limit: 1000, 
     offset: 0,
     priority: undefined,
     searchTerm: undefined
   });
 
-  // Get card IDs for price fetching
   const cardIds = wishlistItems.map(item => item.card_id);
-  
-  // Fetch current prices for the cards
+
   const { data: currentPrices = [], isLoading: pricesLoading, error: pricesError } = useCurrentPrices(cardIds);
 
-  // Create card objects for the TradingCard component from wishlist items
   const createCardObject = (item: WishlistItem) => {
     if (!item.card) return null;
-    
-    // Find current market price for this card
+
     const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
-    
-    // Fallback mock price for testing (remove this once real prices work)
+
     const mockMarketPrice = !marketPrice && item.card?.rarity ? {
       price: item.card.rarity === 'legendary' ? 150.00 : 
              item.card.rarity === 'epic' ? 75.00 :
@@ -100,8 +91,8 @@ const Wishlist = () => {
     } : null;
     
     return {
-      id: item.id?.toString() || item.card_id, // Use item.id if available, fallback to card_id
-      card_id: item.card_id, // Add the card_id as a separate field for reference
+      id: item.id?.toString() || item.card_id, 
+      card_id: item.card_id, 
       name: item.card.name || t("cards.unknownCard"),
       series: item.card.series_name || "",
       set: item.card.set_name || "",
@@ -113,9 +104,9 @@ const Wishlist = () => {
       inWishlist: true,
       priority: item.priority === 2 ? "high" : item.priority === 1 ? "medium" : "low" as "high" | "medium" | "low",
       availability: "in-stock",
-      // Add prices for wishlist items
-      myPrice: item.price || 0, // Use the price from wishlist item
-      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, // Use real market price or mock
+      
+      myPrice: item.price || 0, 
+      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, 
       marketSource: marketPrice?.source || mockMarketPrice?.source || 'tcgplayer',
       marketCurrency: marketPrice?.currency || mockMarketPrice?.currency || 'USD',
       marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at || new Date().toISOString(),
@@ -123,12 +114,10 @@ const Wishlist = () => {
     };
   };
 
-  // Transform wishlist data to match TradingCard component expectations
   const wishlistCards = wishlistItems
     .map(item => createCardObject(item))
     .filter(Boolean);
 
-  // Find the highest value legendary card (similar to collection page)
   const legendaryCards = wishlistCards.filter(card => card.rarity === 'legendary');
   const topLegendaryCard = legendaryCards.length > 0
     ? legendaryCards.reduce((best, card) => {
@@ -138,7 +127,6 @@ const Wishlist = () => {
       }, legendaryCards[0])
     : null;
 
-  // Debug: Log rarity processing
   React.useEffect(() => {
     console.log('Wishlist - Rarity Debug:', {
       totalItems: wishlistItems.length,
@@ -160,16 +148,13 @@ const Wishlist = () => {
     });
   }, [wishlistItems, wishlistCards, legendaryCards, topLegendaryCard]);
 
-  // Handle card click to show price trends modal
   const handleCardClick = (card: any) => {
     setSelectedCardForModal(card);
     setIsPriceTrendModalOpen(true);
   };
 
-  // Get unique sets for filter dropdown
   const uniqueSets = Array.from(new Set(wishlistCards.map(card => card.set))).sort();
 
-  // Filter and sort cards
   const filteredCards = wishlistCards
     .filter(card => {
       const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -179,8 +164,7 @@ const Wishlist = () => {
         (priorityFilter === "low" && card.priority === "low");
       const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
       const matchesSet = setFilter === "all" || card.set === setFilter;
-      
-      // Price filtering
+
       let matchesPrice = true;
       if (priceFilter !== "all") {
         const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice || 0;
@@ -225,7 +209,6 @@ const Wishlist = () => {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-  // Calculate wishlist statistics
   const wishlistStats = {
     totalCards: wishlistCards.length,
     totalValue: wishlistCards.reduce((sum, card) => sum + (card.marketPrice || 0), 0),
@@ -243,20 +226,17 @@ const Wishlist = () => {
     }
   };
 
-  // Find the most expensive card
   const mostExpensiveCard = wishlistCards.reduce((mostExpensive, card) => {
     const cardValue = card.marketPrice || 0;
     const mostExpensiveValue = mostExpensive.marketPrice || 0;
     return cardValue > mostExpensiveValue ? card : mostExpensive;
   }, wishlistCards[0]);
 
-  // Get set names with card counts
   const setNames = Array.from(new Set(wishlistCards.map(card => card.set))).sort();
 
   const handleRemoveFromWishlist = async (wishlistItemId: string, cardName: string) => {
     if (!user) return;
-    
-    // Optimistic update - remove the card from all wishlist caches immediately
+
     const wishlistQueryKey = ['wishlist', user.id];
     const previousData = queryClient.getQueryData(wishlistQueryKey);
     
@@ -269,7 +249,7 @@ const Wishlist = () => {
     });
     
     try {
-      // Check if wishlistItemId is a number (wishlist item ID) or string (card_id)
+      
       const isNumericId = !isNaN(parseInt(wishlistItemId));
       
       let deleteQuery = supabase
@@ -286,8 +266,7 @@ const Wishlist = () => {
       const { error } = await deleteQuery;
         
       if (error) throw error;
-      
-      // Invalidate all wishlist queries to refetch the data
+
       await queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
       await queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
       
@@ -297,8 +276,7 @@ const Wishlist = () => {
       });
     } catch (err) {
       console.error('Error removing from wishlist:', err);
-      
-      // Revert optimistic update on error
+
       queryClient.setQueryData(wishlistQueryKey, previousData);
       
       toast({
@@ -309,7 +287,6 @@ const Wishlist = () => {
     }
   };
 
-  // Show login prompt if user is not authenticated
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -327,7 +304,6 @@ const Wishlist = () => {
     );
   }
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -349,7 +325,6 @@ const Wishlist = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -366,7 +341,7 @@ const Wishlist = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {}
       <div className="text-center mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
           <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -378,7 +353,7 @@ const Wishlist = () => {
         </p>
       </div>
 
-      {/* View Toggle */}
+      {}
       <div className="flex gap-2 mb-8">
         <Button
           variant={viewMode === "stats" ? "default" : "outline"}
@@ -398,7 +373,7 @@ const Wishlist = () => {
 
       {viewMode === "stats" ? (
         <div className="space-y-8">
-          {/* Wishlist Overview */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -422,7 +397,7 @@ const Wishlist = () => {
                             (e.target as HTMLImageElement).src = '/placeholder.svg';
                           }}
                         />
-                        {/* Highest Value Tag */}
+                        {}
                         <div className="absolute -top-1 -right-1">
                           <Badge className="bg-yellow-500 text-black text-xs px-1.5 py-0 h-5">
                             💎
@@ -467,7 +442,7 @@ const Wishlist = () => {
                         key={setName}
                         className="p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
                         onClick={() => {
-                          // Filter to show only cards from this set
+                          
                           setSetFilter(setName);
                           setViewMode("cards");
                         }}
@@ -539,9 +514,7 @@ const Wishlist = () => {
             </Card>
           </div>
 
-
-
-          {/* Wishlist Value Chart */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>{t('wishlist.value.development')}</CardTitle>
@@ -554,9 +527,9 @@ const Wishlist = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Search and Filters */}
+          {}
           <div className="space-y-4">
-            {/* Search Bar */}
+            {}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -567,9 +540,9 @@ const Wishlist = () => {
               />
             </div>
 
-            {/* Filters Row */}
+            {}
             <div className="flex flex-wrap gap-4 items-center">
-              {/* Priority Filter */}
+              {}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">{t('wishlist.filterByPriority')}:</label>
                 <select
@@ -584,7 +557,7 @@ const Wishlist = () => {
                 </select>
               </div>
 
-              {/* Rarity Filter */}
+              {}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">{t('wishlist.filterByRarity')}:</label>
                 <select
@@ -600,7 +573,7 @@ const Wishlist = () => {
                 </select>
               </div>
 
-              {/* Set Filter */}
+              {}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">{t('wishlist.filterBySet')}:</label>
                 <select
@@ -615,7 +588,7 @@ const Wishlist = () => {
                 </select>
               </div>
 
-              {/* Sort Options */}
+              {}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">{t('wishlist.sortBy')}:</label>
                 <select
@@ -640,7 +613,7 @@ const Wishlist = () => {
                 </Button>
               </div>
 
-              {/* Price Filter */}
+              {}
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">{t('wishlist.filterByPrice')}:</label>
                 <select
@@ -654,7 +627,7 @@ const Wishlist = () => {
                 </select>
               </div>
 
-              {/* Price Range Inputs */}
+              {}
               {priceFilter !== "all" && (
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-medium">{t('wishlist.priceRange')}:</label>
@@ -680,7 +653,7 @@ const Wishlist = () => {
                 </div>
               )}
 
-              {/* Clear Filters */}
+              {}
               {(searchTerm || priorityFilter !== "all" || rarityFilter !== "all" || setFilter !== "all" || priceFilter !== "all") && (
                 <Button
                   variant="outline"
@@ -701,13 +674,13 @@ const Wishlist = () => {
               )}
             </div>
 
-            {/* Results Count */}
+            {}
             <div className="text-sm text-muted-foreground">
               {t('wishlist.showing')} {filteredCards.length} {t('wishlist.of')} {wishlistCards.length} {t('wishlist.cards')}
             </div>
           </div>
 
-          {/* View Mode Toggle */}
+          {}
           <div className="flex justify-end mb-6">
             <div className="flex gap-2">
               <Button
@@ -727,7 +700,7 @@ const Wishlist = () => {
             </div>
           </div>
 
-          {/* Cards Display */}
+          {}
           {cardViewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {filteredCards.map((card) => (
@@ -787,7 +760,7 @@ const Wishlist = () => {
                         <p className="text-xs text-muted-foreground">
                           {t('wishlist.added')}: {new Date(card.acquiredDate).toLocaleDateString()}
                         </p>
-                        {/* Price Information */}
+                        {}
                         <div className="flex items-center gap-4 mt-2">
                           {typeof card.marketPrice === 'number' && card.marketPrice > 0 && (
                             <div className="text-xs">
@@ -817,7 +790,7 @@ const Wishlist = () => {
             </div>
           )}
 
-          {/* Empty State */}
+          {}
           {filteredCards.length === 0 && (
             <div className="text-center py-12">
               <Heart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -832,7 +805,7 @@ const Wishlist = () => {
         </div>
       )}
 
-      {/* Price Trends Modal */}
+      {}
       {selectedCardForModal && (
         <Dialog open={isPriceTrendModalOpen} onOpenChange={setIsPriceTrendModalOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

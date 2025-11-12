@@ -8,14 +8,13 @@ export interface WishlistItem {
   card_id: string;
   user_id: string;
   created_at: string;
-  priority: number; // 0 = low, 1 = medium, 2 = high
+  priority: number; 
   set_id?: string;
   series_id?: string;
   language?: string;
-  price?: number; // User's desired price
-  notes?: string; // User's notes
-  
-  // Card information (joined with cards table)
+  price?: number; 
+  notes?: string; 
+
   card?: {
     name: string;
     set_name: string;
@@ -45,9 +44,6 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
     queryFn: async () => {
       if (!user) return [];
 
-    
-      
-      // First get the wishlist items with pagination
       let wishlistQuery = supabase
         .from('card_wishlist')
         .select('id, card_id, user_id, created_at, priority, set_id, series_id, language, price, notes')
@@ -66,8 +62,7 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
 
       if (wishlistError) {
         console.error('Error fetching wishlist:', wishlistError);
-        
-        // If the error is due to missing columns, try without price and notes
+
         if (wishlistError.message?.includes('column') && wishlistError.message?.includes('does not exist')) {
           console.warn('Price or notes columns not found, falling back to basic query');
           
@@ -91,8 +86,7 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
             console.error('Error with fallback query:', fallbackError);
             throw fallbackError;
           }
-          
-          // Add default values for missing columns
+
           const itemsWithDefaults = fallbackItems?.map((item: any) => ({
             ...item,
             price: 0,
@@ -105,7 +99,6 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
         }
       }
 
-      // If we have wishlist items, fetch the card details for each
       if (wishlistItems && wishlistItems.length > 0) {
         const cardIds = wishlistItems.map((item: any) => item.card_id);
         
@@ -124,8 +117,7 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
           console.error('Error fetching card details:', cardsError);
           throw cardsError;
         }
-        
-        // Combine the wishlist items with their card details
+
         const enhancedWishlistItems = wishlistItems.map((item: any) => {
           const cardData = cardsData?.find((card: any) => card.card_id === item.card_id);
           return {
@@ -133,21 +125,18 @@ export const useWishlistData = (options: WishlistDataOptions = {}) => {
             card: cardData || undefined
           };
         });
-        
 
         return enhancedWishlistItems as WishlistItem[];
       }
-      
-      
+
       return (wishlistItems || []) as unknown as WishlistItem[];
     },
     enabled: !!user,
-    staleTime: 0, // Always consider data stale to ensure real-time updates
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, 
+    refetchOnWindowFocus: false, 
   });
 };
 
-// Hook to get total count of wishlist items for pagination
 export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'offset'> = {}) => {
   const { user } = useAuth();
   const { priority, searchTerm } = options;
@@ -176,12 +165,11 @@ export const useWishlistCount = (options: Omit<WishlistDataOptions, 'limit' | 'o
       return count || 0;
     },
     enabled: !!user,
-    staleTime: 0, // Always consider data stale to ensure real-time updates
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, 
+    refetchOnWindowFocus: false, 
   });
 };
 
-// Hook to check if a specific card is in the user's wishlist
 export const useIsCardInWishlist = (cardId: string) => {
   const { user } = useAuth();
 

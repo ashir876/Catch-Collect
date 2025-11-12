@@ -144,7 +144,7 @@ const ProCatches = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-2">
             <Crown className="h-8 w-8 text-yellow-500" />
@@ -164,7 +164,7 @@ const ProCatches = () => {
           </div>
         </div>
 
-        {/* Filters */}
+        {}
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -191,7 +191,7 @@ const ProCatches = () => {
           </CardContent>
         </Card>
 
-        {/* Pro Catches Grid */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCatches.map((item) => (
             <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">

@@ -35,15 +35,12 @@ const Collection = () => {
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date" | "price">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  
-  // Modal state for price trends
+
   const [isPriceTrendModalOpen, setIsPriceTrendModalOpen] = useState(false);
   const [selectedCardForModal, setSelectedCardForModal] = useState<any>(null);
 
-  // Fetch real collection data
   const { data: collectionItems = [], isLoading, error } = useCollectionData();
-  
-  // Debug: Log when collection data changes
+
   React.useEffect(() => {
     console.log('Collection - Data changed:', {
       itemsCount: collectionItems.length,
@@ -58,17 +55,13 @@ const Collection = () => {
       } : null
     });
   }, [collectionItems, isLoading, error]);
-  
-  // Debug: Log the raw collection items
+
   console.log('Collection - Raw collection items:', collectionItems);
 
-  // Get card IDs for price fetching
   const cardIds = collectionItems.map(item => item.card_id);
-  
-  // Fetch current prices for the cards
+
   const { data: currentPrices = [], isLoading: pricesLoading, error: pricesError } = useCurrentPrices(cardIds);
-  
-  // Debug logging
+
   console.log('Collection Debug:', {
     collectionItems: collectionItems.length,
     cardIds: cardIds,
@@ -76,15 +69,12 @@ const Collection = () => {
     pricesLoading,
     pricesError
   });
-  
 
-  // Transform collection data to match TradingCard component expectations
   console.log('Collection - Processing collection items:', collectionItems.length);
   const ownedCards = collectionItems.map((item: any) => {
-    // Find current market price for this card
-    const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
     
-    // Debug logging
+    const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
+
     console.log('Collection card processing:', {
       cardId: item.card_id,
       cardName: item.cards?.name,
@@ -93,12 +83,11 @@ const Collection = () => {
       marketPrice: marketPrice?.price,
       hasMarketPrice: !!marketPrice,
       currentPricesLength: currentPrices.length,
-      itemId: item.id, // Add this to see the actual item.id value
-      itemIdType: typeof item.id, // Add this to see the type of item.id
+      itemId: item.id, 
+      itemIdType: typeof item.id, 
       fullItem: item
     });
-    
-    // Fallback mock price for testing (remove this once real prices work)
+
     const mockMarketPrice = !marketPrice && item.cards?.rarity ? {
       price: item.cards.rarity === 'legendary' ? 150.00 : 
              item.cards.rarity === 'epic' ? 75.00 :
@@ -109,8 +98,8 @@ const Collection = () => {
     } : null;
     
     return {
-      id: item.card_id, // Use the card_id for the TradingCard component
-      cardId: item.card_id, // Keep the original card ID for reference
+      id: item.card_id, 
+      cardId: item.card_id, 
       name: item.cards?.name || 'Unknown Card',
       series: item.series_name || item.cards?.series_name || 'Unknown Series',
       set: item.cards?.set_name || 'Unknown Set',
@@ -123,17 +112,17 @@ const Collection = () => {
       description: item.cards?.description || '',
       acquiredDate: item.created_at,
       condition: item.condition || 'Near Mint',
-      myPrice: item.price || 0, // your own price
-      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, // latest market price or mock
+      myPrice: item.price || 0, 
+      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, 
       marketSource: marketPrice?.source || mockMarketPrice?.source || 'tcgplayer',
       marketCurrency: marketPrice?.currency || mockMarketPrice?.currency || 'USD',
       marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at || new Date().toISOString(),
       notes: item.notes || '',
       quantity: item.quantity || 1,
       language: item.language || 'en',
-      // Add collection item ID for editing
+      
       collectionItemId: item.id,
-      // Add cardData for EditCardModal - using the full card data structure
+      
       cardData: item.cards ? {
         card_id: item.card_id,
         name: item.cards.name,
@@ -152,12 +141,11 @@ const Collection = () => {
         set_symbol_url: item.cards.set_symbol_url,
         language: item.language
       } : undefined,
-      // Add instance identifier for display
+      
       instanceId: `${item.card_id}-${item.condition}-${item.price}-${item.created_at}`,
     };
   });
 
-  // Debug: Log the first card to see the structure
   if (ownedCards.length > 0) {
     console.log('First owned card structure:', {
       id: ownedCards[0].id,
@@ -169,23 +157,19 @@ const Collection = () => {
     });
   }
 
-  // Handle card click to show price trends modal
   const handleCardClick = (card: any) => {
     setSelectedCardForModal(card);
     setIsPriceTrendModalOpen(true);
   };
 
-  // Get unique sets for filter dropdown
   const uniqueSets = Array.from(new Set(ownedCards.map(card => card.set))).sort();
 
-        // Filter and sort cards
    const filteredCards = ownedCards
      .filter(card => {
        const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
        const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
        const matchesSet = setFilter === "all" || card.set === setFilter;
-       
-       // Price filtering
+
        let matchesPrice = true;
        if (priceFilter !== "all") {
          const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice;
@@ -225,7 +209,6 @@ const Collection = () => {
        return sortOrder === "asc" ? comparison : -comparison;
      });
 
-  // Debug function to check collection data
   const debugCollectionData = () => {
     console.log('=== COLLECTION DATA DEBUG ===');
     console.log('Collection Items:', collectionItems);
@@ -234,7 +217,6 @@ const Collection = () => {
     console.log('Filtered Cards:', filteredCards);
   };
 
-  // Make debug function available globally
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).debugCollectionData = debugCollectionData;
@@ -242,12 +224,11 @@ const Collection = () => {
     }
      }, [collectionItems, currentPrices, ownedCards, filteredCards]);
 
-  // Calculate collection statistics from real data
   const collectionStats = {
     totalCards: ownedCards.length,
-    totalValue: 0, // Price removed from cards
+    totalValue: 0, 
     totalSets: new Set(ownedCards.map(card => card.set)).size,
-    completedSets: 0, // This would need more complex logic to calculate
+    completedSets: 0, 
     rarityBreakdown: {
       legendary: ownedCards.filter(card => card.rarity === 'legendary').length,
       epic: ownedCards.filter(card => card.rarity === 'epic').length,
@@ -256,14 +237,12 @@ const Collection = () => {
     }
   };
 
-  // Find the most expensive card
   const mostExpensiveCard = ownedCards.reduce((mostExpensive, card) => {
     const cardValue = card.marketPrice || card.myPrice || 0;
     const mostExpensiveValue = mostExpensive.marketPrice || mostExpensive.myPrice || 0;
     return cardValue > mostExpensiveValue ? card : mostExpensive;
   }, ownedCards[0]);
 
-  // Legendary cards helpers
   const legendaryCards = ownedCards.filter(card => card.rarity === 'legendary');
   const topLegendaryCard = legendaryCards.length > 0
     ? legendaryCards.reduce((best, card) => {
@@ -273,14 +252,12 @@ const Collection = () => {
       }, legendaryCards[0])
     : null;
 
-  // Get set names with card counts
   const setNames = Array.from(new Set(ownedCards.map(card => card.set))).sort();
   const setWithCardCounts = setNames.map(setName => {
     const cardCount = ownedCards.filter(card => card.set === setName).length;
     return `${setName} (${cardCount} cards)`;
   });
 
-  // Calculate set progress (simplified version)
   const setProgress = Array.from(new Set(ownedCards.map(card => card.set))).map(setName => {
     const setCards = ownedCards.filter(card => card.set === setName);
     return {
@@ -288,15 +265,14 @@ const Collection = () => {
       name: setName,
       series: setCards[0]?.series || 'Unknown Series',
       owned: setCards.length,
-      total: 0, // This would need to be fetched from sets table
-      percentage: 0 // This would need total cards in set
+      total: 0, 
+      percentage: 0 
     };
-  }).slice(0, 5); // Show top 5 sets
+  }).slice(0, 5); 
 
   const handleRemoveFromCollection = async (collectionItemId: string | number, cardName: string) => {
     if (!user) return;
-    
-    // Optimistic update - remove the specific collection item from the cache immediately
+
     let previousData: any = null;
     if (user?.id) {
       previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user.id));
@@ -307,7 +283,7 @@ const Collection = () => {
     }
     
     try {
-      // Delete the specific collection item by its ID
+      
       const { error } = await supabase
         .from('card_collections')
         .delete()
@@ -315,8 +291,7 @@ const Collection = () => {
         .eq('user_id', user.id as string);
         
       if (error) throw error;
-      
-      // Invalidate and refetch the collection data to ensure consistency
+
       if (user?.id) {
         await queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user.id) });
         await queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
@@ -328,8 +303,7 @@ const Collection = () => {
       });
     } catch (err) {
       console.error('Error removing from collection:', err);
-      
-      // Revert optimistic update on error
+
       if (user?.id && previousData) {
         queryClient.setQueryData(COLLECTION_QUERY_KEY(user.id), previousData);
       }
@@ -342,7 +316,6 @@ const Collection = () => {
     }
   };
 
-  // Show login prompt if user is not authenticated
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -360,7 +333,6 @@ const Collection = () => {
     );
   }
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -382,7 +354,6 @@ const Collection = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -399,7 +370,7 @@ const Collection = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
             <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -411,7 +382,7 @@ const Collection = () => {
           </p>
         </div>
 
-      {/* View Toggle */}
+      {}
       <div className="flex gap-2 mb-8">
         <Button
           variant={viewMode === "stats" ? "default" : "outline"}
@@ -431,7 +402,7 @@ const Collection = () => {
 
       {viewMode === "stats" ? (
         <div className="space-y-8">
-          {/* Collection Overview */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -455,7 +426,7 @@ const Collection = () => {
                             (e.target as HTMLImageElement).src = '/placeholder.svg';
                           }}
                         />
-                        {/* Highest Value Tag */}
+                        {}
                         <div className="absolute -top-1 -right-1">
                           <Badge className="bg-yellow-500 text-black text-xs px-1.5 py-0 h-5">
                             💎
@@ -500,7 +471,7 @@ const Collection = () => {
                         key={setName}
                         className="p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
                         onClick={() => {
-                          // Filter to show only cards from this set
+                          
                           setSetFilter(setName);
                           setViewMode("cards");
                         }}
@@ -572,80 +543,10 @@ const Collection = () => {
             </Card>
           </div>
 
-          {/* Rarity Breakdown */}
-          {/* <Card>
-            <CardHeader>
-              <CardTitle>{t('collection.rarityBreakdown')}</CardTitle>
-              <CardDescription>{t('collection.rarityBreakdownDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-legendary/10 text-legendary border-legendary">Legendary</Badge>
-                    <span>{collectionStats.rarityBreakdown.legendary} {t('collection.cards')}</span>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {collectionStats.totalCards > 0 ? ((collectionStats.rarityBreakdown.legendary / collectionStats.totalCards) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <Progress 
-                  value={collectionStats.totalCards > 0 ? (collectionStats.rarityBreakdown.legendary / collectionStats.totalCards) * 100 : 0} 
-                  className="h-2"
-                />
-              </div>
+          {}
+          {}
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-epic/10 text-epic border-epic">Epic</Badge>
-                    <span>{collectionStats.rarityBreakdown.epic} {t('collection.cards')}</span>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {collectionStats.totalCards > 0 ? ((collectionStats.rarityBreakdown.epic / collectionStats.totalCards) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <Progress 
-                  value={collectionStats.totalCards > 0 ? (collectionStats.rarityBreakdown.epic / collectionStats.totalCards) * 100 : 0} 
-                  className="h-2"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-rare/10 text-rare border-rare">Rare</Badge>
-                    <span>{collectionStats.rarityBreakdown.rare} {t('collection.cards')}</span>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {collectionStats.totalCards > 0 ? ((collectionStats.rarityBreakdown.rare / collectionStats.totalCards) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <Progress 
-                  value={collectionStats.totalCards > 0 ? (collectionStats.rarityBreakdown.rare / collectionStats.totalCards) * 100 : 0} 
-                  className="h-2"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-common/10 text-common border-common">Common</Badge>
-                    <span>{collectionStats.rarityBreakdown.common} {t('collection.cards')}</span>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {collectionStats.totalCards > 0 ? ((collectionStats.rarityBreakdown.common / collectionStats.totalCards) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <Progress 
-                  value={collectionStats.totalCards > 0 ? (collectionStats.rarityBreakdown.common / collectionStats.totalCards) * 100 : 0} 
-                  className="h-2"
-                />
-              </div>
-            </CardContent>
-          </Card> */}
-
-                                 {/* Collection Value Chart */}
+                                 {}
             <Card>
               <CardHeader>
                 <CardTitle>{t('collection.value.development')}</CardTitle>
@@ -656,40 +557,14 @@ const Collection = () => {
               </CardContent>
             </Card>
 
-          {/* Set Progress */}
-          {/* {setProgress.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('collection.setProgress')}</CardTitle>
-                <CardDescription>{t('collection.setProgressDescription')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {setProgress.map((set) => (
-                    <div key={set.id} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-medium">{set.name}</h4>
-                          <p className="text-sm text-muted-foreground">{set.series}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">{set.owned} {t('collection.cards')}</div>
-                          <div className="text-sm text-muted-foreground">{t('collection.inThisSet')}</div>
-                        </div>
-                      </div>
-                      <Progress value={set.percentage} className="h-2" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )} */}
+          {}
+          {}
         </div>
       ) : (
                  <div className="space-y-6">
-           {/* Search and Filters */}
+           {}
            <div className="space-y-4">
-             {/* Search Bar */}
+             {}
              <div className="relative">
                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                <Input
@@ -700,9 +575,9 @@ const Collection = () => {
                />
              </div>
 
-             {/* Filters Row */}
+             {}
              <div className="flex flex-wrap gap-4 items-center">
-               {/* Rarity Filter */}
+               {}
                <div className="flex items-center gap-2">
                  <label className="text-sm font-medium">{t('collection.filterByRarity')}:</label>
                  <select
@@ -718,7 +593,7 @@ const Collection = () => {
                  </select>
                </div>
 
-               {/* Set Filter */}
+               {}
                <div className="flex items-center gap-2">
                  <label className="text-sm font-medium">{t('collection.filterBySet')}:</label>
                  <select
@@ -733,7 +608,7 @@ const Collection = () => {
                  </select>
                </div>
 
-               {/* Sort Options */}
+               {}
                <div className="flex items-center gap-2">
                  <label className="text-sm font-medium">{t('collection.sortBy')}:</label>
                  <select
@@ -757,7 +632,7 @@ const Collection = () => {
                  </Button>
                </div>
 
-                               {/* Price Filter */}
+                               {}
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-medium">{t('collection.filterByPrice')}:</label>
                   <select
@@ -771,7 +646,7 @@ const Collection = () => {
                   </select>
                 </div>
 
-                {/* Price Range Inputs */}
+                {}
                 {priceFilter !== "all" && (
                   <div className="flex items-center gap-2">
                     <label className="text-sm font-medium">{t('collection.priceRange')}:</label>
@@ -797,7 +672,7 @@ const Collection = () => {
                   </div>
                 )}
 
-                {/* Clear Filters */}
+                {}
                 {(searchTerm || rarityFilter !== "all" || setFilter !== "all" || priceFilter !== "all") && (
                   <Button
                     variant="outline"
@@ -817,13 +692,13 @@ const Collection = () => {
                 )}
              </div>
 
-             {/* Results Count */}
+             {}
              <div className="text-sm text-muted-foreground">
                {t('collection.showing')} {filteredCards.length} {t('collection.of')} {ownedCards.length} {t('collection.cards')}
              </div>
            </div>
 
-           {/* View Mode Toggle */}
+           {}
            <div className="flex justify-end mb-6">
              <div className="flex gap-2">
                <Button
@@ -843,7 +718,7 @@ const Collection = () => {
              </div>
            </div>
 
-                     {/* Cards Display */}
+                     {}
                        {cardViewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {filteredCards.map((card) => (
@@ -855,7 +730,7 @@ const Collection = () => {
                          inWishlist={false}
                          isOwned={true}
                          isWishlisted={false}
-                         onAddToCollection={() => {}} // No-op on collection page
+                         onAddToCollection={() => {}} 
                          onAddToWishlist={() => {}}
                          onAddToCart={() => {}}
                          onViewDetails={() => handleCardClick(card)}
@@ -867,7 +742,7 @@ const Collection = () => {
                          onRemove={(id) => handleRemoveFromCollection(card.collectionItemId, card.name)}
                          hideCollectedLabel={true}
                        />
-                      {/* Condition Badge */}
+                      {}
                       <div className="absolute top-2 right-10 z-30">
                         <Badge variant="secondary" className="text-xs">
                           {card.condition}
@@ -909,7 +784,7 @@ const Collection = () => {
                          <p className="text-xs text-muted-foreground">
                            {t('collection.acquired')}: {new Date(card.acquiredDate).toLocaleDateString()}
                          </p>
-                         {/* Price Information */}
+                         {}
                          <div className="flex items-center gap-4 mt-2">
                            {typeof card.myPrice === 'number' && (
                              <div className="text-xs">
@@ -945,7 +820,7 @@ const Collection = () => {
              </div>
            )}
 
-                     {/* Empty State */}
+                     {}
            {filteredCards.length === 0 && (
             <div className="text-center py-12">
               <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -960,7 +835,7 @@ const Collection = () => {
         </div>
       )}
 
-             {/* Price Trends Modal */}
+             {}
        {selectedCardForModal && (
          <Dialog open={isPriceTrendModalOpen} onOpenChange={setIsPriceTrendModalOpen}>
                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

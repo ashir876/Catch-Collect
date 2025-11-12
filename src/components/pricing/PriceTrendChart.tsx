@@ -55,13 +55,11 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       console.log('PriceTrendChart: Fetching price history for', days, 'days');
       const history = await fetchPriceHistory(cardId, days);
       console.log('PriceTrendChart: Received price history:', history);
-      
-      // Check if we have data with proper time progression
+
       if (history && history.length > 0) {
         const uniqueDates = new Set(history.map(h => h.recorded_at.split('T')[0]));
         console.log('PriceTrendChart: Unique dates found:', uniqueDates.size);
-        
-        // If all data is from the same date, use demo data instead
+
         if (uniqueDates.size <= 1) {
           console.log('PriceTrendChart: All data from same date, using demo data');
           const demoData = generateDemoPriceData(cardId, days);
@@ -70,7 +68,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       setPriceHistory(history || []);
         }
       } else {
-        // No real data, use demo data
+        
         console.log('PriceTrendChart: No real data, using demo data');
         const demoData = generateDemoPriceData(cardId, days);
         setPriceHistory(demoData);
@@ -78,7 +76,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
     } catch (error) {
       console.error('PriceTrendChart: Failed to load price history:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      // Use demo data on error
+      
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 30;
       const demoData = generateDemoPriceData(cardId, days);
       setPriceHistory(demoData);
@@ -90,10 +88,9 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
   const generateDemoPriceData = (cardId: string, days: number): PriceHistoryData[] => {
     const data: PriceHistoryData[] = [];
     const baseDate = new Date();
-    const basePrice = 4.95; // Starting price
+    const basePrice = 4.95; 
     let currentPrice = basePrice;
 
-    // Generate data for different price types
     const priceTypes = [
       { source: 'tcgplayer', type: 'normal_mid', currency: 'USD' },
       { source: 'tcgplayer', type: 'normal_low', currency: 'USD' },
@@ -106,16 +103,15 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       currentDate.setDate(currentDate.getDate() - day);
       
       priceTypes.forEach(({ source, type, currency }) => {
-        // Create different trends for different price types
+        
         const trend = Math.sin(day * 0.1 + (source === 'tcgplayer' ? 0 : Math.PI)) * 0.05;
         const randomVariation = (Math.random() - 0.5) * 0.02;
         const change = trend + randomVariation;
-        
-        // Adjust base price for different types
+
         let typePrice = currentPrice;
         if (type === 'normal_low') typePrice *= 0.8;
         if (type === 'normal_directLow') typePrice *= 0.6;
-        if (source === 'cardmarket') typePrice *= 0.9; // EUR conversion approximation
+        if (source === 'cardmarket') typePrice *= 0.9; 
         
         typePrice = Math.max(0.01, typePrice * (1 + change));
         
@@ -196,7 +192,6 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       );
     }
 
-    // Group by source and price type
     const groupedData = priceHistory.reduce((acc, record) => {
       const key = `${record.source}_${record.price_type}`;
       if (!acc[key]) {
@@ -206,14 +201,12 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       return acc;
     }, {} as Record<string, PriceHistoryData[]>);
 
-    // Sort each group by date
     Object.keys(groupedData).forEach(key => {
       groupedData[key].sort((a, b) => 
         new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
       );
     });
 
-    // Prepare data for the chart
     const chartData = Object.entries(groupedData).map(([key, data]) => {
           const source = data[0].source;
           const priceType = data[0].price_type;
@@ -237,7 +230,6 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       };
     });
 
-    // Merge all data points by date for the chart
     const allDates = new Set<string>();
     chartData.forEach(series => {
       series.data.forEach(point => {
@@ -349,7 +341,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
         </ResponsiveContainer>
         </div>
         
-        {/* Legend */}
+        {}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2">
           {chartData.map((series) => (
             <div key={series.key} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
@@ -401,8 +393,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
       </CardHeader>
       <CardContent className="space-y-4">
 
-
-        {/* Price Change Summary */}
+        {}
         {priceChange && (
           <div className="p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between">
@@ -423,7 +414,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
           </div>
         )}
 
-        {/* Chart */}
+        {}
         <div className="space-y-2">
           {loading ? (
             <div className="flex items-center justify-center h-32">
@@ -434,7 +425,7 @@ export function PriceTrendChart({ cardId, className, showControls = true }: Pric
           )}
         </div>
 
-        {/* Data Points Info */}
+        {}
         {priceHistory.length > 0 && (
           <div className="text-xs text-gray-500 text-center">
             {priceHistory.length} {t('pricing.data.points')} • {t('pricing.last.updated')}: {

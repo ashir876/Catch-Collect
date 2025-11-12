@@ -74,7 +74,7 @@ const CardInstance: React.FC<CardInstanceProps> = ({
     <Card className="relative overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex gap-3">
-          {/* Card Image */}
+          {}
           <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border-2 border-black flex-shrink-0">
             <img
               src={card.image}
@@ -86,14 +86,14 @@ const CardInstance: React.FC<CardInstanceProps> = ({
             />
           </div>
 
-          {/* Card Details */}
+          {}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-sm truncate">{card.name}</h3>
                 <p className="text-muted-foreground text-xs mb-1">#{card.number}</p>
                 
-                {/* Badges */}
+                {}
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <Badge className={`text-xs ${getRarityColor(card.rarity)}`}>
                     {card.rarity}
@@ -116,7 +116,7 @@ const CardInstance: React.FC<CardInstanceProps> = ({
                   )}
                 </div>
 
-                {/* Additional Details */}
+                {}
                 {showDetails && (
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <p>
@@ -136,7 +136,7 @@ const CardInstance: React.FC<CardInstanceProps> = ({
                 )}
               </div>
 
-              {/* Action Buttons */}
+              {}
               <div className="flex flex-col items-end gap-2">
                 {onEdit && (
                   <Button

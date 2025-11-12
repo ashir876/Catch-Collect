@@ -21,7 +21,7 @@ import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import CardDetailModal from "@/components/cards/CardDetailModal";
 import AddToCollectionModal from "@/components/cards/AddToCollectionModal";
 import BulkAddToCollectionModal from "@/components/cards/BulkAddToCollectionModal";
-import React from "react"; // Added missing import
+import React from "react"; 
 import { useIsCardInCollection } from "@/hooks/useCollectionData";
 import { useIsCardInWishlist } from "@/hooks/useWishlistData";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
@@ -38,7 +38,7 @@ const Cards = () => {
   const [illustratorFilter, setIllustratorFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [wishlistFilter, setWishlistFilter] = useState("all");
-  // New filter states
+  
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState("all");
   const [evolveFromFilter, setEvolveFromFilter] = useState("all");
@@ -48,14 +48,12 @@ const Cards = () => {
   const [weaknessTypeFilter, setWeaknessTypeFilter] = useState("all");
   const [setsFilter, setSetsFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(50); // Show 50 items per page for more compact view
+  const [itemsPerPage] = useState(50); 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  
-  // Selection state for bulk actions
+
   const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
   const [isBulkSelectionMode, setIsBulkSelectionMode] = useState(false);
-  
-  // Modal state
+
   const [isAddToCollectionModalOpen, setIsAddToCollectionModalOpen] = useState(false);
   const [selectedCardForCollection, setSelectedCardForCollection] = useState<any>(null);
   const [isBulkAddToCollectionModalOpen, setIsBulkAddToCollectionModalOpen] = useState(false);
@@ -65,10 +63,8 @@ const Cards = () => {
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
 
-  // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Fetch cards data with all filters
   const { data: cardsData, isLoading, error } = useCardsData({
     setId: (setFilter || (setsFilter !== "all" ? setsFilter : undefined)) || undefined,
     language: languageFilter === "all" ? undefined : languageFilter,
@@ -83,7 +79,7 @@ const Cards = () => {
     collectionFilter: collectionFilter === "all" ? undefined : collectionFilter,
     wishlistFilter: wishlistFilter === "all" ? undefined : wishlistFilter,
     userId: user?.id,
-    // New filters
+    
     category: categoryFilter === "all" ? undefined : categoryFilter,
     stage: stageFilter === "all" ? undefined : stageFilter,
     evolveFrom: evolveFromFilter === "all" ? undefined : evolveFromFilter,
@@ -93,7 +89,6 @@ const Cards = () => {
     weaknessType: weaknessTypeFilter === "all" ? undefined : weaknessTypeFilter
   });
 
-  // Fetch total count for pagination with all filters
   const { data: totalCount = 0 } = useCardsCount({
     setId: (setFilter || (setsFilter !== "all" ? setsFilter : undefined)) || undefined,
     language: languageFilter === "all" ? undefined : languageFilter,
@@ -106,7 +101,7 @@ const Cards = () => {
     collectionFilter: collectionFilter === "all" ? undefined : collectionFilter,
     wishlistFilter: wishlistFilter === "all" ? undefined : wishlistFilter,
     userId: user?.id,
-    // New filters
+    
     category: categoryFilter === "all" ? undefined : categoryFilter,
     stage: stageFilter === "all" ? undefined : stageFilter,
     evolveFrom: evolveFromFilter === "all" ? undefined : evolveFromFilter,
@@ -116,12 +111,8 @@ const Cards = () => {
     weaknessType: weaknessTypeFilter === "all" ? undefined : weaknessTypeFilter
   });
 
-
-
-  // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Reset to first page when filters change
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1);
@@ -132,7 +123,6 @@ const Cards = () => {
     setCurrentPage(1);
   };
 
-  // Initialize and update language filter from URL parameters
   React.useEffect(() => {
     const urlLanguage = searchParams.get("language");
     if (urlLanguage) {
@@ -170,7 +160,6 @@ const Cards = () => {
     setCurrentPage(1);
   };
 
-  // New filter change handlers
   const handleCategoryFilterChange = (newCategoryFilter: string) => {
     setCategoryFilter(newCategoryFilter);
     setCurrentPage(1);
@@ -221,7 +210,6 @@ const Cards = () => {
     });
   };
 
-  // Bulk selection handlers
   const handleCardSelection = (cardId: string, isSelected: boolean) => {
     setSelectedCards(prev => {
       const newSet = new Set(prev);
@@ -262,13 +250,11 @@ const Cards = () => {
   }}) => {
     if (!user || selectedCards.size === 0) return;
 
-    // Optimistic updates for all selected cards
     const selectedCardData = filteredCards.filter(card => 
       selectedCards.has(`${card.card_id}-${card.language}`)
     );
     const previousCheckData: { [cardId: string]: any } = {};
-    
-    // Store previous data and set optimistic updates
+
     selectedCardData.forEach(card => {
       const cardId = card.card_id;
       previousCheckData[cardId] = queryClient.getQueryData(['collection-check', user?.id, cardId]);
@@ -276,7 +262,7 @@ const Cards = () => {
     });
 
     try {
-      // Insert records with individual details for each card (one copy per card)
+      
       const insertData = [];
       for (const card of selectedCardData) {
         const cardId = `${card.card_id}-${card.language}`;
@@ -287,7 +273,7 @@ const Cards = () => {
             user_id: user.id,
             card_id: card.card_id,
             language: card.language || 'en',
-            // Store full card details for proper display
+            
             name: card.name,
             set_name: card.set_name,
             set_id: card.set_id,
@@ -317,8 +303,7 @@ const Cards = () => {
       
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
-      
-      // Invalidate collection check queries for all selected cards
+
       selectedCardData.forEach(card => {
         queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, card.card_id] });
       });
@@ -336,7 +321,7 @@ const Cards = () => {
       });
     } catch (error) {
       console.error('Error adding cards to collection:', error);
-      // Revert optimistic updates
+      
       selectedCardData.forEach(card => {
         const cardId = card.card_id;
         if (previousCheckData[cardId] !== undefined) {
@@ -358,23 +343,16 @@ const Cards = () => {
     }
   };
 
-
-
-  // Use cards data directly since we're filtering by language at the database level
   const filteredCards = cardsData || [];
-  
-  // Fetch prices for all cards directly from card_prices table
-  // Match using card_id, language, and get the latest based on download_id
+
   const cardIds = filteredCards.length > 0 ? Array.from(new Set(filteredCards.map(card => card.card_id))) : [];
-  
-  // Create a map of cards by card_id + language for quick lookup
+
   const cardsByKey = new Map<string, any>();
   filteredCards.forEach((card) => {
     const key = `${card.card_id}-${card.language || 'en'}`;
     cardsByKey.set(key, card);
   });
-  
-  // Create a stable key for the query based on card IDs and language filter
+
   const priceQueryKey = cardIds.length > 0 
     ? ['card-prices-direct', cardIds.sort().join(','), languageFilter, filteredCards.length]
     : ['card-prices-direct', 'empty'];
@@ -393,27 +371,7 @@ const Cards = () => {
         lang: c.language || 'en',
         hasLang: !!c.language 
       })));
-      
-      // ============================================================================
-      // PRICE DATA SOURCE VERIFICATION
-      // ============================================================================
-      // Table: card_prices (NOT price_history or any other table)
-      // Field: avg_sell_price (this is the CardMarket average sell price in EUR)
-      // 
-      // Schema of card_prices table:
-      //   - id: primary key
-      //   - card_id: TEXT (matches card.card_id)
-      //   - language: TEXT (matches card.language, e.g., 'en', 'fr', 'de')
-      //   - avg_sell_price: DECIMAL/NUMERIC (the price we display)
-      //   - download_id: TEXT (used to determine latest price, format: "YYYY/MM/DD/HH")
-      //   - date_recorded: TIMESTAMP (fallback for determining latest price)
-      //   - updated_at: TIMESTAMP (fallback for determining latest price)
-      //
-      // Note: We query the table directly (not the latest_prices view) because:
-      //   1. We need to parse download_id to accurately determine the latest price
-      //   2. The view uses simpler ordering (date_recorded, updated_at, id) which
-      //      doesn't account for download_id parsing logic
-      // ============================================================================
+
       console.log('🔍 VERIFICATION: Querying card_prices table');
       console.log('  📊 Table: card_prices (confirmed correct)');
       console.log('  💰 Field: avg_sell_price (confirmed correct)');
@@ -421,8 +379,8 @@ const Cards = () => {
       console.log('  🎯 Card IDs to fetch:', cardIds.length, 'unique IDs');
       
       const { data, error } = await supabase
-        .from('card_prices')  // ✅ CORRECT TABLE: card_prices
-        .select('card_id, language, avg_sell_price, download_id, date_recorded, updated_at')  // ✅ CORRECT FIELD: avg_sell_price
+        .from('card_prices')  
+        .select('card_id, language, avg_sell_price, download_id, date_recorded, updated_at')  
         .in('card_id', cardIds);
       
       if (error) {
@@ -440,15 +398,11 @@ const Cards = () => {
         console.log('⚠️ No price data found in card_prices table for card_ids:', cardIds.slice(0, 5));
         return [];
       }
-      
-      // ============================================================================
-      // VERIFICATION: Confirm data source
-      // ============================================================================
+
       console.log('✅ SUCCESS: Retrieved', data.length, 'price records from card_prices table');
       console.log('  📊 Source Table: card_prices ✅');
       console.log('  💰 Price Field: avg_sell_price ✅');
-      
-      // DEBUG: Log the actual structure of the first record to verify field names
+
       if (data.length > 0) {
         const firstRecord = data[0];
         const allKeys = Object.keys(firstRecord);
@@ -461,14 +415,13 @@ const Cards = () => {
         console.log('  📥 download_id:', firstRecord.download_id);
         console.log('  📅 date_recorded:', firstRecord.date_recorded);
         console.log('  ⏰ updated_at:', firstRecord.updated_at);
-        
-        // Check if avg_sell_price exists or if there's a different field name
+
         if (!('avg_sell_price' in firstRecord)) {
           console.error('');
           console.error('❌ CRITICAL ERROR: avg_sell_price field NOT FOUND in database response!');
           console.error('❌ This means we are NOT querying the correct table/field!');
           console.error('❌ Available fields:', allKeys);
-          // Check for common alternative field names
+          
           const possiblePriceFields = allKeys.filter(k => 
             k.toLowerCase().includes('price') || 
             k.toLowerCase().includes('avg') ||
@@ -487,8 +440,7 @@ const Cards = () => {
           console.log('  ✅ Field: avg_sell_price (confirmed)');
           console.log('');
         }
-        
-        // Log the full record as JSON for inspection
+
         console.log('  📄 Full record (JSON):', JSON.stringify(firstRecord, null, 2));
         console.log('');
       }
@@ -501,8 +453,7 @@ const Cards = () => {
         hasPrice: !!p.avg_sell_price,
         allFields: Object.keys(p)
       })));
-      
-      // Helper function to parse download_id and convert to comparable format
+
       const parseDownloadId = (downloadId: string): number => {
         if (!downloadId) return 0;
         const parts = downloadId.split('/').map(Number);
@@ -511,8 +462,7 @@ const Cards = () => {
         }
         return 0;
       };
-      
-      // Group prices by (card_id, language) first
+
       const pricesByKey = new Map<string, any[]>();
       data.forEach((price: any) => {
         const priceCardId = price.card_id;
@@ -527,20 +477,17 @@ const Cards = () => {
       
       console.log('📊 Prices grouped by key:', pricesByKey.size, 'unique combinations');
       console.log('📊 Sample price keys:', Array.from(pricesByKey.keys()).slice(0, 5));
-      
-      // For each card, find the matching price record
+
       const priceResults: Array<{ key: string; priceData: any }> = [];
       
       filteredCards.forEach((card) => {
         const cardId = card.card_id;
-        // Normalize language - handle null, undefined, and trim whitespace
+        
         const cardLanguage = (card.language || 'en').toLowerCase().trim();
         const key = `${cardId}-${cardLanguage}`;
-        
-        // Get all price records for this card_id + language combination
+
         let matchingPrices = pricesByKey.get(key) || [];
-        
-        // If no exact match, try fallback to any language for this card_id
+
         if (matchingPrices.length === 0) {
           const fallbackKey = Array.from(pricesByKey.keys()).find(k => {
             const [priceCardId] = k.split('-');
@@ -561,8 +508,7 @@ const Cards = () => {
           console.log(`❌ No price found for card_id: ${cardId}, language: ${cardLanguage}`);
           return;
         }
-        
-        // Find the latest price by download_id or date_recorded
+
         let latestPrice = matchingPrices[0];
         let latestDownloadIdValue = parseDownloadId(latestPrice.download_id || '');
         
@@ -573,7 +519,7 @@ const Cards = () => {
             latestPrice = price;
             latestDownloadIdValue = currentDownloadIdValue;
           } else if (currentDownloadIdValue === 0 && latestDownloadIdValue === 0) {
-            // Compare by date_recorded if no download_id
+            
             if (price.date_recorded && latestPrice.date_recorded) {
               const currentDate = new Date(price.date_recorded).getTime();
               const existingDate = new Date(latestPrice.date_recorded).getTime();
@@ -585,15 +531,13 @@ const Cards = () => {
             }
           }
         });
-        
-        // Ensure price is a number, not a string or null
+
         const priceValue = latestPrice.avg_sell_price != null 
           ? Number(latestPrice.avg_sell_price) 
           : null;
-        
-        // Only add if we have a valid price value
+
         if (priceValue != null && !isNaN(priceValue) && priceValue > 0) {
-          // Store the price result
+          
           priceResults.push({
             key,
             priceData: {
@@ -625,10 +569,7 @@ const Cards = () => {
           });
         }
       });
-      
-      // ============================================================================
-      // FINAL VERIFICATION SUMMARY
-      // ============================================================================
+
       console.log('');
       console.log('📊 FINAL PRICE PROCESSING SUMMARY:');
       console.log('  ✅ Source Table: card_prices');
@@ -641,10 +582,9 @@ const Cards = () => {
       return priceResults;
     },
     enabled: cardIds.length > 0 && filteredCards.length > 0 && !isLoading,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, 
   });
-  
-  // Convert price results array to a Map for easy lookup
+
   const priceMap = React.useMemo(() => {
     const map = new Map<string, any>();
     if (cardPricesData && Array.isArray(cardPricesData)) {
@@ -665,8 +605,7 @@ const Cards = () => {
     }
     return map;
   }, [cardPricesData]);
-  
-  // Debug: Log price lookup for first few cards and verify data structure
+
   React.useEffect(() => {
     if (filteredCards.length > 0 && priceMap.size > 0) {
       console.log('🔍 Price lookup debug for first 5 cards:');
@@ -686,7 +625,6 @@ const Cards = () => {
     }
   }, [filteredCards, priceMap]);
 
-  // Handler for opening add to collection modal
   const handleAddToCollection = (card) => {
     if (!user) {
       toast({
@@ -700,7 +638,6 @@ const Cards = () => {
     setIsAddToCollectionModalOpen(true);
   };
 
-  // Handler for adding to collection with modal data
   const handleAddToCollectionWithDetails = async (entries: Array<{
     id: string;
     condition: string;
@@ -712,19 +649,18 @@ const Cards = () => {
   }>) => {
     if (!user || !selectedCardForCollection) return;
 
-    // Optimistic update for collection check
     const cardId = selectedCardForCollection.card_id;
     const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
     console.log('Cards - Setting optimistic update for card:', cardId, 'previousData:', previousCheckData, 'timestamp:', new Date().toISOString());
     queryClient.setQueryData(['collection-check', user?.id, cardId], true);
 
     try {
-      // Create insert data for all entries (each entry represents one card copy)
+      
       const insertData = entries.map(entry => ({
         user_id: user.id,
         card_id: selectedCardForCollection.card_id,
         language: entry.language || selectedCardForCollection.language || 'en',
-        // Store full card details for proper display
+        
         name: selectedCardForCollection.name,
         set_name: selectedCardForCollection.set_name,
         set_id: selectedCardForCollection.set_id,
@@ -763,7 +699,7 @@ const Cards = () => {
       });
     } catch (error) {
       console.error('Error adding to collection:', error);
-      // Revert optimistic update
+      
       if (previousCheckData !== undefined) {
         queryClient.setQueryData(['collection-check', user?.id, cardId], previousCheckData);
       }
@@ -775,7 +711,6 @@ const Cards = () => {
     }
   };
 
-  // Handler for adding to wishlist from list view
   const handleAddToWishlist = async (card) => {
     if (!user) {
       toast({
@@ -810,48 +745,33 @@ const Cards = () => {
     }
   };
 
-  // Test function to check database connectivity
   const testDatabaseConnection = async () => {
 
-    
     try {
-      // Test cards table
+      
       const { data: cardsTest, error: cardsError } = await supabase
         .from('cards')
         .select('card_id, name, language')
         .limit(1);
-      
-      
-      
-      // Test card_wishlist table
+
       const { data: wishlistTest, error: wishlistError } = await supabase
         .from('card_wishlist')
         .select('*')
         .limit(1);
-      
-      
-      
-      // Test card_collections table
+
       const { data: collectionsTest, error: collectionsError } = await supabase
         .from('card_collections')
         .select('*')
         .limit(1);
-      
-      
-      
+
     } catch (error) {
       console.error('Database connection test error:', error);
     }
   };
 
-  // Run the test when component mounts
   React.useEffect(() => {
     testDatabaseConnection();
   }, []);
-
-
-
-
 
   if (error) {
     return (
@@ -866,7 +786,7 @@ const Cards = () => {
 
   return (
           <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
             <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -878,7 +798,7 @@ const Cards = () => {
           </p>
         </div>
 
-      {/* Advanced Search and Filters */}
+      {}
              <AdvancedFilters
          searchTerm={searchTerm}
          onSearchChange={handleSearchChange}
@@ -897,7 +817,7 @@ const Cards = () => {
          wishlistFilter={wishlistFilter}
          onWishlistChange={handleWishlistFilterChange}
          onReloadCollection={handleReloadCollection}
-         // New filter props
+         
          categoryFilter={categoryFilter}
          onCategoryChange={handleCategoryFilterChange}
          stageFilter={stageFilter}
@@ -916,9 +836,9 @@ const Cards = () => {
          onSetsChange={handleSetsFilterChange}
        />
 
-      {/* View Mode Toggle and Bulk Actions */}
+      {}
       <div className="flex justify-between items-center mb-6">
-        {/* Bulk Selection Controls */}
+        {}
         {isBulkSelectionMode && (
           <div className="flex items-center gap-2">
             <Button
@@ -949,7 +869,7 @@ const Cards = () => {
           </div>
         )}
         
-        {/* View Mode Toggle */}
+        {}
         <div className="flex gap-2 ml-auto">
           <Button
             variant={isBulkSelectionMode ? "outline" : "default"}
@@ -975,7 +895,7 @@ const Cards = () => {
         </div>
       </div>
 
-      {/* Pagination Info and Controls */}
+      {}
       {totalCount > 0 && (
         <div className="mb-4 space-y-4">
           <PaginationInfo
@@ -994,9 +914,7 @@ const Cards = () => {
         </div>
       )}
 
-
-
-      {/* Cards Display */}
+      {}
       {isLoading ? (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -1030,7 +948,7 @@ const Cards = () => {
                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
            {filteredCards.map((card) => (
              <div key={`${card.card_id}-${card.language}`} className="relative">
-               {/* Selection Checkbox */}
+               {}
                {isBulkSelectionMode && (
                  <div className="absolute top-2 left-2 z-50">
                    <input
@@ -1059,7 +977,7 @@ const Cards = () => {
         <div className="space-y-2">
           {filteredCards.map((card) => (
             <div key={`${card.card_id}-${card.language}`} className="relative">
-              {/* Selection Checkbox */}
+              {}
               {isBulkSelectionMode && (
                 <div className="absolute top-2 left-2 z-50">
                   <input
@@ -1085,9 +1003,7 @@ const Cards = () => {
         </div>
       )}
 
-
-
-      {/* Empty State */}
+      {}
       {!isLoading && filteredCards.length === 0 && (
         <div className="text-center py-12">
           <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -1098,7 +1014,7 @@ const Cards = () => {
         </div>
       )}
 
-      {/* Bottom Pagination Controls */}
+      {}
       {totalCount > 0 && totalPages > 1 && (
         <div className="mt-8">
           <Pagination
@@ -1109,7 +1025,7 @@ const Cards = () => {
         </div>
       )}
 
-      {/* Add to Collection Modal */}
+      {}
       <AddToCollectionModal
         isOpen={isAddToCollectionModalOpen}
         onClose={() => {
@@ -1123,7 +1039,7 @@ const Cards = () => {
         defaultLanguage={selectedCardForCollection?.language}
       />
 
-      {/* Bulk Add to Collection Modal */}
+      {}
       <BulkAddToCollectionModal
         isOpen={isBulkAddToCollectionModalOpen}
         onClose={() => {
@@ -1138,6 +1054,5 @@ const Cards = () => {
     </div>
   );
 };
-
 
 export default Cards;

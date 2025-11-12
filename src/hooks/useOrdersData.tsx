@@ -5,12 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export interface Order {
   id: number;
-  article_number: string; // This is used as the order number in the UI
+  article_number: string; 
   user_id: string;
   total: number;
   status: string;
   created_at: string;
-  order_items?: any[]; // Define this as optional since it might not be in the database yet
+  order_items?: any[]; 
 }
 
 export const useOrdersData = () => {

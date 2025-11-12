@@ -5,7 +5,7 @@ export const useProductsFilterOptions = (language: string = 'en') => {
   return useQuery({
     queryKey: ['products-filter-options', language],
     queryFn: async () => {
-      // Get all products for the specified language
+      
       const { data: products, error } = await supabase
         .from('products')
         .select('rarity, illustrator, category, stage, evolvefrom, set_id, set_name, types')
@@ -17,14 +17,12 @@ export const useProductsFilterOptions = (language: string = 'en') => {
         throw error;
       }
 
-      // Extract unique values for each filter
       const rarities = [...new Set(products?.map(p => p.rarity).filter(Boolean))].sort();
       const illustrators = [...new Set(products?.map(p => p.illustrator).filter(Boolean))].sort();
       const categories = [...new Set(products?.map(p => p.category).filter(Boolean))].sort();
       const stages = [...new Set(products?.map(p => p.stage).filter(Boolean))].sort();
       const evolveFroms = [...new Set(products?.map(p => p.evolvefrom).filter(Boolean))].sort();
-      
-      // Get unique sets with their names
+
       const setsMap = new Map();
       products?.forEach(p => {
         if (p.set_id && p.set_name) {
@@ -33,7 +31,6 @@ export const useProductsFilterOptions = (language: string = 'en') => {
       });
       const sets = Array.from(setsMap.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
 
-      // Get unique types from all products
       const allTypes = new Set<string>();
       products?.forEach(p => {
         if (p.types && Array.isArray(p.types)) {

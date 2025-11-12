@@ -41,30 +41,25 @@ const UserStats = () => {
       try {
         setLoading(true);
 
-        // Get collection count
         const { count: collectionCount } = await supabase
           .from('card_collections')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Get wishlist count
         const { count: wishlistCount } = await supabase
           .from('card_wishlist')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Get cart count
         const { count: cartCount } = await supabase
           .from('carts')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Get total cards count
         const { count: totalCards } = await supabase
           .from('cards')
           .select('*', { count: 'exact', head: true });
 
-        // Get unique sets in collection
         const { data: collectionSets } = await supabase
           .from('card_collections')
           .select('set_id')
@@ -73,17 +68,14 @@ const UserStats = () => {
 
         const uniqueSets = new Set(collectionSets?.map(item => item.set_id).filter(Boolean)).size;
 
-        // Get unique series in collection
         const { data: collectionSeries } = await supabase
           .from('card_collections')
           .select('set_id')
           .eq('user_id', user.id)
           .not('set_id', 'is', null);
 
-        // For now, we'll count unique sets as series since we don't have direct series_id
         const uniqueSeries = uniqueSets;
 
-        // Get rarest card in collection
         const { data: rarestCard } = await supabase
           .from('card_collections')
           .select('name, rarity')
@@ -93,7 +85,6 @@ const UserStats = () => {
           .limit(1)
           .single();
 
-        // Get recent additions (last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         
@@ -104,14 +95,12 @@ const UserStats = () => {
           .gte('created_at', thirtyDaysAgo.toISOString());
 
         const rawPercentage = totalCards ? (collectionCount || 0) / totalCards * 100 : 0;
-        // If user has cards but percentage rounds to 0, show at least 0.1%
+        
         const completionRate = rawPercentage >= 1 
           ? Math.round(rawPercentage) 
           : collectionCount > 0 
             ? Math.max(0.1, parseFloat(rawPercentage.toFixed(1)))
             : 0;
-
-
 
         setStats({
           totalCards: totalCards || 0,
@@ -166,7 +155,7 @@ const UserStats = () => {
 
   return (
     <div className="space-y-6">
-      {/* Achievement Card */}
+      {}
       <Card className="pixel-card bg-gradient-to-r from-primary/10 to-accent/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -190,7 +179,7 @@ const UserStats = () => {
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="pixel-card">
           <CardHeader className="pb-2">
@@ -253,7 +242,7 @@ const UserStats = () => {
         </Card>
       </div>
 
-      {/* Detailed Stats */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="pixel-card">
           <CardHeader>

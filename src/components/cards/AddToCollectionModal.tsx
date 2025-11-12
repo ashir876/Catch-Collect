@@ -55,7 +55,6 @@ const AddToCollectionModal = ({
     setEntry(prev => ({ ...prev, [field]: value }));
   };
 
-  // Fetch languages for this card from database when modal opens
   React.useEffect(() => {
     const fetchLanguages = async () => {
       if (!cardId) return;
@@ -67,24 +66,24 @@ const AddToCollectionModal = ({
         if (error) throw error;
         const langs = Array.from(new Set((data || []).map((row: any) => row.language).filter(Boolean)));
         setAvailableLanguages(langs);
-        // Default to provided defaultLanguage or the first available
+        
         if (langs.length > 0) {
           setEntry(prev => ({ ...prev, language: (defaultLanguage && langs.includes(defaultLanguage)) ? defaultLanguage : langs[0] }));
         } else if (defaultLanguage) {
           setEntry(prev => ({ ...prev, language: defaultLanguage }));
         }
       } catch (e) {
-        // If fetch fails, keep defaults
+        
       }
     };
     if (isOpen) {
-      // When opening, set language to defaultLanguage before fetching
+      
       if (defaultLanguage) {
         setEntry(prev => ({ ...prev, language: defaultLanguage }));
       }
       fetchLanguages();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [isOpen, cardId, defaultLanguage]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -93,7 +92,7 @@ const AddToCollectionModal = ({
   };
 
   const handleClose = () => {
-    // Reset form when closing
+    
     setEntry({
       condition: "Mint",
       price: 0,
@@ -121,7 +120,7 @@ const AddToCollectionModal = ({
           <div className="border rounded-lg p-4 space-y-3">
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Language Filter */}
+                {}
                 <div className="space-y-2">
                   <Label htmlFor="language">{t('cards.language')}</Label>
                   <Select 
@@ -153,7 +152,7 @@ const AddToCollectionModal = ({
                   </Select>
                 </div>
 
-                {/* Condition */}
+                {}
                 <div className="space-y-2">
                   <Label htmlFor="condition">{t('collection.condition')}</Label>
                   <Select 
@@ -175,7 +174,7 @@ const AddToCollectionModal = ({
                   </Select>
                 </div>
 
-                {/* Price */}
+                {}
                 <div className="space-y-2">
                   <Label htmlFor="price">{t('collection.price')} (CHF)</Label>
                   <div className="relative">
@@ -195,7 +194,7 @@ const AddToCollectionModal = ({
                   </div>
                 </div>
 
-                {/* Date */}
+                {}
                 <div className="space-y-2">
                   <Label htmlFor="date">{t('collection.date')}</Label>
                   <Input
@@ -207,7 +206,7 @@ const AddToCollectionModal = ({
                 </div>
               </div>
 
-              {/* Notes */}
+              {}
               <div className="space-y-2">
                 <Label htmlFor="notes">{t('collection.notes')}</Label>
                 <Textarea
@@ -220,9 +219,7 @@ const AddToCollectionModal = ({
               </div>
             </div>
 
-
-
-          {/* Action Buttons */}
+          {}
           <div className="flex justify-end gap-3 pt-3">
             <Button
               type="button"

@@ -50,9 +50,6 @@ export class PokemonTCGPriceUpdater {
     this.apiKey = apiKey;
   }
 
-  /**
-   * Fetch card data from Pokemon TCG API
-   */
   async fetchCardData(setCode: string, cardNumber: string): Promise<PokemonCardData | null> {
     await this.enforceRateLimit();
     
@@ -85,9 +82,6 @@ export class PokemonTCGPriceUpdater {
     }
   }
 
-  /**
-   * Search for cards by name and set
-   */
   async searchCardByNameAndSet(name: string, setCode: string): Promise<PokemonCardData | null> {
     await this.enforceRateLimit();
     
@@ -117,9 +111,6 @@ export class PokemonTCGPriceUpdater {
     }
   }
 
-  /**
-   * Extract price data from card and save to Supabase
-   */
   async updateCardPrice(cardId: string, setCode: string, cardNumber: string): Promise<PokemonCardPrice[]> {
     const card = await this.fetchCardData(setCode, cardNumber);
     if (!card) {
@@ -128,7 +119,6 @@ export class PokemonTCGPriceUpdater {
 
     const priceInserts: PokemonCardPrice[] = [];
 
-    // Extract TCGPlayer prices (USD)
     if (card.tcgplayer?.prices) {
       for (const [variant, prices] of Object.entries(card.tcgplayer.prices)) {
         if (prices && typeof prices === 'object') {
@@ -147,7 +137,6 @@ export class PokemonTCGPriceUpdater {
       }
     }
 
-    // Extract CardMarket prices (EUR)
     if (card.cardmarket?.prices) {
       const cmPrices = card.cardmarket.prices;
       const priceFields = [
@@ -182,7 +171,6 @@ export class PokemonTCGPriceUpdater {
       });
     }
 
-    // Batch insert into Supabase
     if (priceInserts.length > 0) {
       const { error } = await supabase
         .from('price_history' as any)
@@ -199,11 +187,8 @@ export class PokemonTCGPriceUpdater {
     return priceInserts;
   }
 
-  /**
-   * Batch update prices for multiple cards
-   */
   async batchUpdatePrices(cards: Array<{id: string, setCode: string, number: string}>): Promise<void> {
-    const batchSize = 25; // Respects rate limits
+    const batchSize = 25; 
     
     for (let i = 0; i < cards.length; i += batchSize) {
       const batch = cards.slice(i, i + batchSize);
@@ -214,19 +199,15 @@ export class PokemonTCGPriceUpdater {
             .catch(err => console.error(`Error with ${card.id}:`, err))
         )
       );
-      
-      // Pause between batches
+
       if (i + batchSize < cards.length) {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
   }
 
-  /**
-   * Update prices for all cards in a set
-   */
   async updateSetPrices(setId: string): Promise<void> {
-    // Fetch cards from database
+    
     const { data: cards, error } = await supabase
       .from('card_collections')
       .select('card_id, name, card_number')
@@ -241,9 +222,8 @@ export class PokemonTCGPriceUpdater {
       return;
     }
 
-    // Prepare mapping for API calls
     const cardsToUpdate = cards
-      .filter(card => card.card_number) // Only cards with numbers
+      .filter(card => card.card_number) 
       .map(card => ({
         id: card.card_id,
         setCode: setId,
@@ -253,9 +233,6 @@ export class PokemonTCGPriceUpdater {
     await this.batchUpdatePrices(cardsToUpdate);
   }
 
-  /**
-   * Get current prices for a card
-   */
   async getCurrentPrices(cardId: string): Promise<PokemonCardPrice[]> {
     const { data, error } = await supabase
       .from('card_prices' as any)
@@ -266,7 +243,6 @@ export class PokemonTCGPriceUpdater {
       throw error;
     }
 
-    // Convert card_prices format to PokemonCardPrice format using ONLY avg_sell_price
     const prices: PokemonCardPrice[] = [];
     if (data && data.length > 0) {
       const cardPrice = (data as any[])[0];
@@ -279,15 +255,12 @@ export class PokemonTCGPriceUpdater {
           currency: 'EUR'
         });
       }
-      // Remove tcgplayer price to avoid confusion - only use avg_sell_price
+      
     }
 
     return prices;
   }
 
-  /**
-   * Get price history for a card
-   */
   async getPriceHistory(cardId: string, days: number = 30): Promise<PokemonCardPrice[]> {
     console.log('pokemonTCGService: getPriceHistory called with cardId:', cardId, 'days:', days);
     try {
@@ -313,9 +286,6 @@ export class PokemonTCGPriceUpdater {
     }
   }
 
-  /**
-   * Get collection value summary for a user
-   */
   async getCollectionValueSummary(userId: string, language: string = 'DE'): Promise<{
     total_cards: number;
     total_value_usd: number;
@@ -336,19 +306,15 @@ export class PokemonTCGPriceUpdater {
     return data?.[0] || null;
   }
 
-  /**
-   * Enforce rate limiting (30 requests per minute with API key)
-   */
   private async enforceRateLimit(): Promise<void> {
     const now = Date.now();
-    const timeWindow = 60 * 1000; // 1 minute
+    const timeWindow = 60 * 1000; 
     
     if (now - this.lastResetTime >= timeWindow) {
       this.requestCount = 0;
       this.lastResetTime = now;
     }
-    
-    // With API key: 30 requests per minute
+
     if (this.requestCount >= 30) {
       const waitTime = timeWindow - (now - this.lastResetTime);
       await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -359,24 +325,18 @@ export class PokemonTCGPriceUpdater {
     this.requestCount++;
   }
 
-  /**
-   * Normalize card name for API search
-   */
   private normalizeCardName(name: string): string {
     return name
       .toLowerCase()
       .replace(/[éè]/g, 'e')
       .replace(/&/g, 'and')
       .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, ' ') // Normalize multiple spaces
+      .replace(/\s+/g, ' ') 
       .trim();
   }
 
-  /**
-   * Enhanced card search with fallback strategies
-   */
   async findCardByNameAndNumber(name: string, setCode: string, number: string): Promise<PokemonCardData | null> {
-    // Primary: Exact ID search
+    
     try {
       const card = await this.fetchCardData(setCode, number);
       if (card) return card;
@@ -384,7 +344,6 @@ export class PokemonTCGPriceUpdater {
       console.warn(`Exact search failed for ${setCode}-${number}:`, error);
     }
 
-    // Secondary: Name + Set search with fuzzy matching
     try {
       return await this.searchCardByNameAndSet(name, setCode);
     } catch (error) {
@@ -395,7 +354,6 @@ export class PokemonTCGPriceUpdater {
   }
 }
 
-// Export a singleton instance
 export const pokemonTCGService = new PokemonTCGPriceUpdater(
   import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 );

@@ -27,16 +27,12 @@ const Sets = () => {
   const [languageFilter, setLanguageFilter] = useState("en");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(12); // Show 12 items per page
+  const [itemsPerPage] = useState(12); 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [completionFilter, setCompletionFilter] = useState<'all' | 'completed' | 'incomplete'>('all');
 
-
-
-  // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Prepare API parameters
   const apiParams = {
     seriesId: seriesFilter || undefined,
     language: languageFilter,
@@ -46,25 +42,18 @@ const Sets = () => {
     sortBy
   };
 
-
-
-  // Fetch sets data with pagination
   const { data: setsData, isLoading, error } = useSetsData(apiParams);
 
-  // Fetch total count for pagination
   const { data: totalCount = 0 } = useSetsCount({
     seriesId: seriesFilter || undefined,
     language: languageFilter,
     searchTerm: searchTerm || undefined
   });
 
-  // Fetch set progress data
   const { data: setProgressData = [], isLoading: progressLoading, error: progressError } = useSetProgress();
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Reset to first page when filters change
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1);
@@ -73,9 +62,7 @@ const Sets = () => {
   const handleLanguageFilterChange = (newLanguageFilter: string) => {
     setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
-    
-    // Invalidate cache to ensure fresh data for sets, series, and language data
-    // Use predicate to invalidate all related queries
+
     queryClient.invalidateQueries({ 
       predicate: (query) => query.queryKey[0] === 'sets' 
     });
@@ -104,7 +91,6 @@ const Sets = () => {
     setCurrentPage(1);
   };
 
-  // Initialize and update language filter from URL parameters
   useEffect(() => {
     const urlLanguage = searchParams.get("language");
     if (urlLanguage) {
@@ -112,12 +98,10 @@ const Sets = () => {
     }
   }, [searchParams]);
 
-  // Reset page when language filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [languageFilter]);
 
-  // Filter and sort sets
   const filteredAndSortedSets = setsData?.slice()
     .filter(set => {
       if (completionFilter === 'all') return true;
@@ -146,7 +130,7 @@ const Sets = () => {
           primary = 0;
       }
       if (primary !== 0) return primary;
-      // Secondary sort by unique set_id
+      
       return (a.set_id || '').localeCompare(b.set_id || '');
     }) || [];
 
@@ -154,7 +138,6 @@ const Sets = () => {
     return Math.round((owned / total) * 100);
   };
 
-  // Helper function to get progress data for a specific set
   const getSetProgress = (setId: string) => {
     return setProgressData.find(progress => progress.set_id === setId);
   };
@@ -172,7 +155,7 @@ const Sets = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {}
       <div className="text-center mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
           <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -184,7 +167,7 @@ const Sets = () => {
         </p>
       </div>
 
-      {/* Search and Filters */}
+      {}
       <SetsFilters
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
@@ -198,9 +181,7 @@ const Sets = () => {
         onCompletionFilterChange={setCompletionFilter}
       />
 
-      
-
-      {/* View Toggle */}
+      {}
       <div className="flex justify-center mb-6">
         <div className="flex border-2 border-black rounded-lg overflow-hidden">
           <Button
@@ -224,7 +205,7 @@ const Sets = () => {
         </div>
       </div>
 
-      {/* Pagination Info and Controls */}
+      {}
       {totalCount > 0 && (
         <div className="mb-4 space-y-4">
           <PaginationInfo
@@ -243,7 +224,7 @@ const Sets = () => {
         </div>
       )}
 
-      {/* Sets Grid/List */}
+      {}
       {isLoading ? (
         viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -280,7 +261,7 @@ const Sets = () => {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredAndSortedSets.map((set, index) => {
-            // Create unique key combining set_id and language to handle duplicates
+            
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
               <Card 
@@ -326,7 +307,7 @@ const Sets = () => {
                     )}
                   </div>
                   
-                  {/* Set Progress Information */}
+                  {}
                   {(() => {
                     const progress = getSetProgress(set.set_id);
                     if (progress) {
@@ -361,7 +342,7 @@ const Sets = () => {
       ) : (
         <div className="space-y-4">
           {filteredAndSortedSets.map((set, index) => {
-            // Create unique key combining set_id and language to handle duplicates
+            
             const uniqueKey = `${set.set_id}-${set.language || 'unknown'}-${index}`;
             return (
               <Card 
@@ -438,7 +419,7 @@ const Sets = () => {
         </div>
       )}
 
-      {/* Bottom Pagination Controls */}
+      {}
       {totalCount > 0 && totalPages > 1 && (
         <div className="mt-8">
           <Pagination
@@ -449,7 +430,7 @@ const Sets = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {}
       {!isLoading && filteredAndSortedSets.length === 0 && (
         <div className="text-center py-12">
           <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -459,7 +440,6 @@ const Sets = () => {
           </p>
         </div>
       )}
-
 
     </div>
   );

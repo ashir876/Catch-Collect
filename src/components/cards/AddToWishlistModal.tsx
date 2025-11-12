@@ -45,7 +45,7 @@ const AddToWishlistModal = ({
   };
 
   const handleClose = () => {
-    // Reset form when closing
+    
     setPriority("medium");
     setNotes("");
     setSelectedLanguage("all");
@@ -66,7 +66,7 @@ const AddToWishlistModal = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Language Filter */}
+          {}
           <div className="space-y-2">
             <Label htmlFor="language">{t('cards.language')}</Label>
             <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
@@ -90,7 +90,7 @@ const AddToWishlistModal = ({
             </Select>
           </div>
 
-                     {/* Priority */}
+                     {}
            <div className="space-y-2">
              <Label htmlFor="priority">{t('wishlist.priority')}</Label>
              <Select value={priority} onValueChange={setPriority}>
@@ -105,7 +105,7 @@ const AddToWishlistModal = ({
              </Select>
            </div>
 
-           {/* Price */}
+           {}
            <div className="space-y-2">
              <Label htmlFor="price">{t('wishlist.price')} (CHF)</Label>
              <div className="relative">
@@ -125,7 +125,7 @@ const AddToWishlistModal = ({
              </div>
            </div>
 
-           {/* Notes */}
+           {}
            <div className="space-y-2">
              <Label htmlFor="notes">{t('wishlist.notes')}</Label>
              <Textarea
@@ -137,7 +137,7 @@ const AddToWishlistModal = ({
              />
            </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex justify-end gap-3 pt-3">
             <Button
               type="button"

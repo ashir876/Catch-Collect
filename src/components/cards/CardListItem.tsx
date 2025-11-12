@@ -31,11 +31,9 @@ const CardListItem = ({
   const { t } = useTranslation();
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
-  
-  // Force re-render counter to ensure immediate updates
+
   const [renderKey, setRenderKey] = React.useState(0);
-  
-  // Update render key when collection status changes to force re-render
+
   React.useEffect(() => {
     setRenderKey(prev => prev + 1);
   }, [isInCollection]);
@@ -48,7 +46,7 @@ const CardListItem = ({
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
 
   const handleAddToCollection = () => {
-    // Force immediate re-render for instant UI feedback
+    
     setRenderKey(prev => prev + 1);
     
     if (onAddToCollection) {
@@ -66,7 +64,7 @@ const CardListItem = ({
   };
 
   const handleAddToWishlist = () => {
-    // Force immediate re-render for instant UI feedback
+    
     setRenderKey(prev => prev + 1);
     
     if (isInWishlist) {
@@ -102,7 +100,7 @@ const CardListItem = ({
     >
       <CardContent className="p-3">
         <div className="flex gap-3">
-          {/* Card Image - Compact */}
+          {}
           <div className="relative w-16 h-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
             <img
               src={cardImage}
@@ -110,7 +108,7 @@ const CardListItem = ({
               className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
             
-            {/* Rarity Badge */}
+            {}
             <div className="absolute top-1 left-1">
               <Badge 
                 variant="secondary" 
@@ -122,7 +120,7 @@ const CardListItem = ({
               </Badge>
             </div>
 
-            {/* Collection Status */}
+            {}
             {isInCollection && (
               <div className="absolute top-1 right-1">
                 <CheckCircle className="h-3 w-3 text-emerald-600 bg-white rounded-full" />
@@ -130,7 +128,7 @@ const CardListItem = ({
             )}
           </div>
 
-          {/* Card Info */}
+          {}
           <div className="flex-1 min-w-0">
             <div className="space-y-1">
               <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
@@ -145,7 +143,7 @@ const CardListItem = ({
                 </p>
               )}
               
-              {/* Price Display */}
+              {}
               <div className="mt-1">
                 <CardPriceDisplay 
                   priceData={priceData} 
@@ -155,7 +153,7 @@ const CardListItem = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {}
             <div className="flex gap-2 mt-2">
               <Button
                 size="sm"

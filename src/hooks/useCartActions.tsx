@@ -24,7 +24,6 @@ export const useCartActions = () => {
         throw new Error('User not authenticated');
       }
 
-      // Validate required fields
       if (!item.article_number || !item.price) {
         console.error('Missing required fields:', item);
         throw new Error('Missing required product information');
@@ -32,7 +31,6 @@ export const useCartActions = () => {
       
       console.log('Adding to cart:', { user: user.id, item });
 
-      // Test database connection first
       try {
         console.log('Testing database connection to carts_with_id table...');
         const { data: testData, error: testError } = await (supabase as any)
@@ -53,7 +51,6 @@ export const useCartActions = () => {
         throw new Error(`Database connection error: ${testError instanceof Error ? testError.message : 'Unknown error'}`);
       }
 
-      // Now try to add to cart - using type assertion to bypass TypeScript issues
       try {
         console.log('Checking for existing cart item...');
         const { data: existingItems, error: fetchError } = await (supabase as any)

@@ -14,13 +14,11 @@ import { useCardsCount } from "@/hooks/useCardsData";
 import { useTranslation } from 'react-i18next';
 import SearchBar from "@/components/SearchBar";
 import UserStats from "@/components/user/UserStats";
-// import SocialFeed from "@/components/social/SocialFeed";
+
 import { useAuth } from "@/contexts/AuthContext";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
 import { useCartActions } from "@/hooks/useCartActions";
 import { useToast } from "@/hooks/use-toast";
-
-
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -33,14 +31,12 @@ const Home = () => {
   const { data: seriesData, isLoading: seriesLoading } = useSeriesData({ language: 'en' });
   const { data: productsData, isLoading: productsLoading } = useProductsData({ language: i18n.language, limit: 10 });
   const { data: setsData, isLoading: setsLoading } = useSetsData({ language: 'en' });
-  
-  // Get actual counts for quick stats - count all languages
-  const { data: totalCardsCount = 0 } = useCardsCount({}); // Get total count of all cards
+
+  const { data: totalCardsCount = 0 } = useCardsCount({}); 
   const { data: totalSeriesCount = 0 } = useSeriesCount({});
   const { data: totalSetsCount = 0 } = useSetsCount({});
   const { data: totalCollectorsCount = 0 } = useUsersCount();
 
-  // Helper function to get consistent mock price based on rarity and card ID
   const getMockPrice = (rarity: string, cardId: string) => {
     const basePrice = {
       'common': 2.50,
@@ -51,16 +47,15 @@ const Home = () => {
       'secret rare': 100.00
     };
     const base = basePrice[rarity.toLowerCase() as keyof typeof basePrice] || 5.00;
-    // Use card ID to generate consistent price for each card
+    
     const hash = cardId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    const variation = (hash % 100) / 100; // 0-1 variation
-    return base * (0.8 + variation * 0.4); // ±20% variation
+    const variation = (hash % 100) / 100; 
+    return base * (0.8 + variation * 0.4); 
   };
 
-  // Helper function to get consistent mock stock based on card ID
   const getMockStock = (cardId: string) => {
     const hash = cardId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    return (hash % 20) + 1; // 1-20 stock
+    return (hash % 20) + 1; 
   };
 
   const handleCardClick = (card: any) => {
@@ -102,7 +97,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Animated Background Cubes - Hidden on Mobile */}
+      {}
       <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block">
         <div className="animate-float-1 absolute top-20 left-10 w-12 h-12 bg-primary/20 border-2 border-black transform rotate-12"></div>
         <div className="animate-float-2 absolute top-40 right-20 w-8 h-8 bg-accent/20 border-2 border-black transform -rotate-45"></div>
@@ -114,10 +109,10 @@ const Home = () => {
         <div className="animate-float-2 absolute top-32 left-1/3 w-11 h-11 bg-accent/25 border-2 border-black transform -rotate-12"></div>
       </div>
 
-      {/* Main Hero Section - Centered Design */}
+      {}
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background relative z-10">
         <div className="container mx-auto text-center px-4">
-          {/* Logo */}
+          {}
           <div className="mb-8">
             <img 
               src="/Catch-Collect-uploads/a2f24a7d-97d1-4e80-a75b-8cadfd0435ea.png" 
@@ -126,17 +121,17 @@ const Home = () => {
             />
           </div>
           
-          {/* Main Title with Yellow Animation */}
+          {}
           <h1 className="pixel-text-yellow-animated mb-4">
             {t('home.mainTitle')}
           </h1>
           
-          {/* Subtitle */}
+          {}
           <p className="text-lg md:text-xl text-muted-foreground mb-12 font-bold max-w-2xl mx-auto">
             {t('home.mainSubtitle')}
           </p>
           
-          {/* Action Buttons */}
+          {}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Link to="/shop">
               <Button className="pixel-button text-lg px-12 py-6 bg-white hover:bg-gray-100 hover:scale-105 transition-all duration-200 text-black font-bold border-2 border-black">
@@ -150,16 +145,14 @@ const Home = () => {
             </Link>
           </div>
 
-          {/* Search Bar */}
+          {}
           <div className="w-full px-4 mb-16">
             <SearchBar />
           </div>
         </div>
       </section>
 
-            
-
-      {/* Quick Stats Section */}
+      {}
       <section className="py-12 px-4 bg-muted/20 relative z-10">
         <div className="container mx-auto">
           <h2 className="text-3xl font-black text-center mb-8 uppercase tracking-wider">
@@ -193,71 +186,10 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Series Section - Commented out for now */}
-      {/* <section className="py-12 sm:py-16 px-4 bg-background relative z-10">
-        <div className="w-full max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider px-4">
-            <span className="bg-primary text-primary-foreground px-4 sm:px-6 py-2 sm:py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shadow-none">
-              {t('home.pokemonSeries')}
-            </span>
-          </h2>
-          
-          {seriesLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="pixel-card animate-pulse">
-                  <div className="h-32 sm:h-48 bg-muted"></div>
-                  <div className="p-4">
-                    <div className="h-6 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted rounded"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {seriesData?.slice(0, 6).map((series) => (
-                <Link key={series.series_id} to={`/series`}>
-                  <div className="pixel-card group hover:scale-105 transition-all duration-300">
-                    <div className="h-32 sm:h-48 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center p-4">
-                      {series.logo_url ? (
-                        <img 
-                          src={series.logo_url} 
-                          alt={series.series_name || t('series.title')} 
-                          className="max-h-full max-w-full object-contain pixelated"
-                        />
-                      ) : (
-                        <div className="text-white font-black text-lg sm:text-2xl text-center">
-                          {series.series_name}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4 bg-background border-t-4 border-black">
-                      <h3 className="font-black text-sm sm:text-lg uppercase tracking-wide mb-2">
-                        {series.series_name}
-                      </h3>
-                      <p className="text-muted-foreground font-bold text-xs sm:text-sm">
-                        ID: {series.series_id}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-          
-          <div className="text-center mt-8 sm:mt-12">
-            <Link to="/series">
-              <Button className="pixel-button text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 hover:scale-105 transition-all duration-200">
-                <Grid3X3 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-bounce" />
-                {t('home.showAllSeries')}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section> */}
+      {}
+      {}
 
-      {/* Shop Cards Section */}
+      {}
       <section className="py-12 sm:py-16 px-4 bg-muted/30 relative z-10">
         <div className="container mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider">
@@ -297,7 +229,7 @@ const Home = () => {
                           }}
                         />
                         
-                        {/* Stock indicator */}
+                        {}
                         <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
                           <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 sm:px-2 py-0">
                             {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
@@ -317,7 +249,7 @@ const Home = () => {
                           <Badge variant="secondary" className="text-xs px-1 sm:px-2 py-0">{product.rarity || 'N/A'}</Badge>
                         </div>
                         
-                        {/* Add to Cart Button */}
+                        {}
                         <Button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -348,7 +280,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* User Stats Section (if logged in) */}
+      {}
       {user && (
         <section className="py-12 sm:py-16 px-4 bg-background relative z-10">
           <div className="container mx-auto">
@@ -363,7 +295,7 @@ const Home = () => {
         </section>
       )}
 
-      {/* Social Feed Section */}
+      {}
       <section className="py-12 sm:py-16 px-4 bg-muted/20 relative z-10">
         <div className="w-full max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-12 uppercase tracking-wider px-4">
@@ -371,11 +303,11 @@ const Home = () => {
               {t('home.community')}
             </span>
           </h2>
-          {/* <SocialFeed /> */}
+          {}
         </div>
       </section>
 
-      {/* Call to Action Section */}
+      {}
       <section className="py-16 sm:py-24 px-4 bg-primary text-primary-foreground relative z-10">
         <div className="w-full max-w-6xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase mb-6 sm:mb-8 tracking-wider drop-shadow-lg px-4">
@@ -399,7 +331,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Card Detail Dialog */}
+      {}
       <Dialog open={isCardDialogOpen} onOpenChange={setIsCardDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -410,7 +342,7 @@ const Home = () => {
           
           {selectedCard && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Card Image */}
+              {}
               <div className="flex justify-center">
                 <img
                   src={selectedCard.image_url || "/placeholder.svg"}
@@ -422,7 +354,7 @@ const Home = () => {
                 />
               </div>
               
-              {/* Card Details */}
+              {}
               <div className="space-y-4">
                 <div>
                   <h3 className="text-2xl font-bold mb-2">{selectedCard.name}</h3>

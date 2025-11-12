@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Export the query key for cache invalidation
 export const COLLECTION_QUERY_KEY = (userId?: string) => ['collection', userId];
 
 export const useCollectionData = () => {
@@ -16,9 +15,6 @@ export const useCollectionData = () => {
         return [];
       }
 
-    
-      
-      // First, get the collection items from card_collections table
       const { data: collectionItems, error: collectionError } = await supabase
         .from('card_collections')
         .select('*')
@@ -34,11 +30,9 @@ export const useCollectionData = () => {
         return [];
       }
 
-      // Get unique card IDs and languages to optimize the query
       const uniqueCardIds = [...new Set(collectionItems.map(item => item.card_id))];
       const uniqueLanguages = [...new Set(collectionItems.map(item => item.language))];
-      
-      // Fetch all cards in a single query instead of multiple individual queries
+
       const { data: cards, error: cardsError } = await supabase
         .from('cards')
         .select('*')
@@ -50,7 +44,6 @@ export const useCollectionData = () => {
         throw cardsError;
       }
 
-      // Fetch series information for the cards
       const setIds = cards?.map(card => card.set_id).filter(Boolean) || [];
       let seriesData = {};
       
@@ -68,19 +61,16 @@ export const useCollectionData = () => {
         }
       }
 
-      // Create a lookup map for cards by card_id and language
       const cardLookup = new Map();
       cards?.forEach(card => {
         const key = `${card.card_id}-${card.language}`;
         cardLookup.set(key, card);
       });
 
-      // Combine collection items with card data
       const data = collectionItems.map((collectionItem) => {
         const key = `${collectionItem.card_id}-${collectionItem.language}`;
         const card = cardLookup.get(key);
-        
-        // Use the card data from the cards table if available, otherwise fall back to collection data
+
         const finalCardData = card ? {
           ...card,
           series_name: seriesData[card.set_id] || null
@@ -112,12 +102,11 @@ export const useCollectionData = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 5 * 60 * 1000, 
+    refetchOnWindowFocus: false, 
   });
 };
 
-// Hook to check if a specific card is in the user's collection
 export const useIsCardInCollection = (cardId: string) => {
   const { user } = useAuth();
 
@@ -145,7 +134,7 @@ export const useIsCardInCollection = (cardId: string) => {
       return result;
     },
     enabled: !!user && !!cardId,
-    staleTime: 0, // Always consider data stale to ensure fresh updates
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, 
+    refetchOnWindowFocus: false, 
   });
 };

@@ -47,8 +47,7 @@ const SocialFeed = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      
-      // Fetch posts with user information
+
       const { data: postsData, error } = await supabase
         .from('social_posts')
         .select(`
@@ -96,7 +95,7 @@ const SocialFeed = () => {
     if (!user) return;
 
     try {
-      // Toggle like
+      
       const { data: existingLike } = await supabase
         .from('post_likes')
         .select('id')
@@ -105,14 +104,14 @@ const SocialFeed = () => {
         .single();
 
       if (existingLike) {
-        // Unlike
+        
         await supabase
           .from('post_likes')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
       } else {
-        // Like
+        
         await supabase
           .from('post_likes')
           .insert({
@@ -121,7 +120,6 @@ const SocialFeed = () => {
           });
       }
 
-      // Update local state
       setPosts(prev => prev.map(post => 
         post.id === postId 
           ? { ...post, likes: existingLike ? post.likes - 1 : post.likes + 1 }
@@ -134,13 +132,12 @@ const SocialFeed = () => {
 
   const handleShare = async (postId: string) => {
     try {
-      // Update share count
+      
       await supabase
         .from('social_posts')
         .update({ shares: posts.find(p => p.id === postId)?.shares + 1 })
         .eq('id', postId);
 
-      // Update local state
       setPosts(prev => prev.map(post => 
         post.id === postId 
           ? { ...post, shares: post.shares + 1 }
@@ -170,7 +167,6 @@ const SocialFeed = () => {
 
       if (error) throw error;
 
-      // Add to local state
       const formattedPost: SocialPost = {
         id: newPost.id,
         user_id: user.id,
@@ -241,7 +237,7 @@ const SocialFeed = () => {
 
   return (
     <div className="space-y-6">
-      {/* Create New Post */}
+      {}
       {user && (
         <Card className="pixel-card">
           <CardContent className="pt-6">
@@ -295,7 +291,7 @@ const SocialFeed = () => {
         </Card>
       )}
 
-      {/* Posts Feed */}
+      {}
       <div className="space-y-4">
         {posts.map((post) => (
           <Card key={post.id} className="pixel-card">
@@ -343,7 +339,7 @@ const SocialFeed = () => {
                 </div>
               )}
 
-              {/* Post Actions */}
+              {}
               <div className="flex items-center justify-between pt-2 border-t-2 border-black">
                 <div className="flex items-center gap-4">
                   <Button

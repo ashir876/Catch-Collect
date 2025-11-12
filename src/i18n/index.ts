@@ -23,14 +23,13 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: savedLanguage || 'en', // Use saved language or default to English
+    lng: savedLanguage || 'en', 
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
     }
   });
 
-// Persist language changes
  i18n.on('languageChanged', (lng) => {
    localStorage.setItem('i18nextLng', lng);
  });

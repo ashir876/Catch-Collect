@@ -56,7 +56,6 @@ const App = () => (
               <Route path="/pro-catches" element={<ProCatches />} />
               <Route path="/accessories" element={<Accessories />} />
               <Route path="/orders" element={<Orders />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />

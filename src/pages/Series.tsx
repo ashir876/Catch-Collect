@@ -17,13 +17,11 @@ const Series = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("en");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(12); // Show 12 items per page
+  const [itemsPerPage] = useState(12); 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Prepare API parameters
   const apiParams = {
     language: languageFilter,
     limit: itemsPerPage,
@@ -31,23 +29,15 @@ const Series = () => {
     searchTerm: searchTerm || undefined
   };
 
-
-
-  // Fetch series data with pagination
   const { data: seriesData, isLoading, error } = useSeriesData(apiParams);
 
-  // Fetch total count for pagination
   const { data: totalCount = 0 } = useSeriesCount({
     language: languageFilter,
     searchTerm: searchTerm || undefined
   });
 
-
-
-  // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Reset to first page when filters change
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1);
@@ -56,9 +46,7 @@ const Series = () => {
   const handleLanguageFilterChange = (newLanguageFilter: string) => {
     setLanguageFilter(newLanguageFilter);
     setCurrentPage(1);
-    
-    // Invalidate cache to ensure fresh data for both series and series languages
-    // Use predicate to invalidate all series-related queries
+
     queryClient.invalidateQueries({ 
       predicate: (query) => query.queryKey[0] === 'series' 
     });
@@ -68,7 +56,6 @@ const Series = () => {
     queryClient.invalidateQueries({ queryKey: ['available-series-languages'] });
   };
 
-  // Initialize and update language filter from URL parameters
   useEffect(() => {
     const urlLanguage = searchParams.get("language");
     if (urlLanguage) {
@@ -76,7 +63,6 @@ const Series = () => {
     }
   }, [searchParams]);
 
-  // Reset page when language filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [languageFilter]);
@@ -94,7 +80,7 @@ const Series = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
             <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -106,7 +92,7 @@ const Series = () => {
           </p>
         </div>
 
-        {/* Search and Filters */}
+        {}
         <SeriesFilters
           searchTerm={searchTerm}
           onSearchChange={handleSearchChange}
@@ -114,7 +100,7 @@ const Series = () => {
           onLanguageChange={handleLanguageFilterChange}
         />
 
-        {/* View Toggle */}
+        {}
         <div className="flex justify-center mb-6">
           <div className="flex border-2 border-black rounded-lg overflow-hidden">
             <Button
@@ -138,7 +124,7 @@ const Series = () => {
           </div>
         </div>
 
-        {/* Pagination Info and Controls */}
+        {}
         {totalCount > 0 && (
           <div className="mb-4 space-y-4">
             <PaginationInfo
@@ -157,7 +143,7 @@ const Series = () => {
           </div>
         )}
 
-        {/* Series Grid/List */}
+        {}
         {isLoading ? (
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -191,7 +177,7 @@ const Series = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {seriesData.map((series, index) => {
                 const linkUrl = `/sets?series=${series.series_id}&language=${languageFilter}`;
-                // Create unique key combining series_id and language to handle duplicates
+                
                 const uniqueKey = `${series.series_id}-${series.language || 'unknown'}-${index}`;
                 return (
                   <Link key={uniqueKey} to={linkUrl}>
@@ -227,7 +213,7 @@ const Series = () => {
             <div className="space-y-4">
               {seriesData.map((series, index) => {
                 const linkUrl = `/sets?series=${series.series_id}&language=${languageFilter}`;
-                // Create unique key combining series_id and language to handle duplicates
+                
                 const uniqueKey = `${series.series_id}-${series.language || 'unknown'}-${index}`;
                 return (
                   <Link key={uniqueKey} to={linkUrl}>
@@ -269,7 +255,7 @@ const Series = () => {
           </div>
         )}
 
-        {/* Bottom Pagination Controls */}
+        {}
         {totalCount > 0 && totalPages > 1 && (
           <div className="mt-8">
             <Pagination
@@ -280,7 +266,7 @@ const Series = () => {
           </div>
         )}
 
-        {/* Stats */}
+        {}
         {seriesData && seriesData.length > 0 && (
           <div className="mt-16 text-center">
             <Card className="border-4 border-black bg-muted/50 inline-block hover:scale-105 transition-transform duration-200">

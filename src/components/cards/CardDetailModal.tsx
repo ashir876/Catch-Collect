@@ -42,8 +42,6 @@ const CardDetailModal = ({ card, children }: CardDetailModalProps) => {
     setOpen(true);
   };
 
-
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
              <DialogTrigger asChild>
@@ -58,7 +56,7 @@ const CardDetailModal = ({ card, children }: CardDetailModalProps) => {
          className="max-w-2xl max-h-[95vh] p-0 overflow-hidden bg-transparent"
        >
          <div className="relative">
-           {/* Close Button - Positioned absolutely */}
+           {}
            <Button
              variant="ghost"
              size="sm"
@@ -68,7 +66,7 @@ const CardDetailModal = ({ card, children }: CardDetailModalProps) => {
              <X className="h-4 w-4" />
            </Button>
            
-           {/* Big Card Image - Takes up most of the modal */}
+           {}
           <div className="w-full h-full flex items-center justify-center relative">
             {(() => {
               try {

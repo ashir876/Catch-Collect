@@ -129,7 +129,6 @@ const SetProgressDisplay: React.FC<SetProgressDisplayProps> = ({
     );
   }
 
-  // Default detailed variant
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">

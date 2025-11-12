@@ -6,24 +6,22 @@ import TradingCard from "./TradingCard";
 import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
 
 interface CardWithWishlistProps {
-  card: any; // Card data from the database
+  card: any; 
   hidePriceAndBuy?: boolean;
-  showEditButton?: boolean; // New prop to control edit button visibility
-  onAddToCollection?: (card: any) => void; // Custom handler for adding to collection
-  onViewDetails?: (id: string) => void; // Handler for viewing card details
-  onCollectionChange?: () => void; // Callback when collection status changes
-  onWishlistChange?: () => void; // Callback when wishlist status changes
-  priceData?: any; // Price data for the card
+  showEditButton?: boolean; 
+  onAddToCollection?: (card: any) => void; 
+  onViewDetails?: (id: string) => void; 
+  onCollectionChange?: () => void; 
+  onWishlistChange?: () => void; 
+  priceData?: any; 
 }
 
 const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false, onAddToCollection, onViewDetails, onCollectionChange, onWishlistChange, priceData }: CardWithWishlistProps) => {
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
-  
-  // Force re-render counter to ensure immediate updates
+
   const [renderKey, setRenderKey] = React.useState(0);
-  
-  // Update render key when collection status changes to force re-render
+
   React.useEffect(() => {
     console.log('CardWithWishlist - Collection status changed, forcing re-render:', {
       cardId: card.card_id,
@@ -41,8 +39,7 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
     });
     setRenderKey(prev => prev + 1);
   }, [isInWishlist, card.card_id]);
-  
-  // Log when priceData changes to debug price display updates
+
   React.useEffect(() => {
     if (priceData) {
       console.log('CardWithWishlist - PriceData prop updated:', {
@@ -53,11 +50,9 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
       });
     }
   }, [priceData, card.card_id]);
-  
-  // Debug logging
+
   console.log('CardWithWishlist - Card:', card.card_id, 'isInCollection:', isInCollection, 'renderKey:', renderKey, 'timestamp:', new Date().toISOString());
-  
-  // Debug the props being passed to TradingCard
+
   React.useEffect(() => {
     console.log('CardWithWishlist - Props being passed to TradingCard:', {
       cardId: card.card_id,
@@ -78,17 +73,16 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
       currentCollectionStatus: isInCollection,
       timestamp: new Date().toISOString()
     });
-    
-    // Force immediate re-render for instant UI feedback
+
     setRenderKey(prev => prev + 1);
     console.log('CardWithWishlist - Forcing re-render for card:', card.card_id);
     
     if (onAddToCollection) {
-      // Use custom handler if provided (for modal)
+      
       console.log('CardWithWishlist - Using custom handler (modal)');
       onAddToCollection(card);
     } else {
-      // Fallback to direct collection action
+      
       console.log('CardWithWishlist - Using direct collection action');
       addToCollection({ 
         cardId: card.card_id, 
@@ -96,14 +90,14 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
         cardLanguage: card.language 
       });
     }
-    // Call callback to refresh set progress
+    
     if (onCollectionChange) {
       onCollectionChange();
     }
   };
 
   const handleAddToWishlist = () => {
-    // Force immediate re-render for instant UI feedback
+    
     setRenderKey(prev => prev + 1);
     
     addToWishlist({ 
@@ -111,7 +105,7 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
       cardName: card.name, 
       cardLanguage: card.language 
     });
-    // Call callback to refresh set progress
+    
     if (onWishlistChange) {
       onWishlistChange();
     }

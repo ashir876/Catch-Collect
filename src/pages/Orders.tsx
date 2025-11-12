@@ -36,7 +36,6 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("orders");
 
-  // Handle URL action parameter
   useEffect(() => {
     const action = searchParams.get('action');
     if (action === 'invoices') {
@@ -122,7 +121,7 @@ const Orders = () => {
       title: t('orders.bulkDownload'),
       description: t('orders.preparingInvoices'),
     });
-    // In a real app, this would trigger a zip download of all invoices
+    
   };
 
   const handleViewDeliveryNote = (orderId: string) => {
@@ -174,7 +173,7 @@ const Orders = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
+        {}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
             <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -186,7 +185,7 @@ const Orders = () => {
           </p>
         </div>
 
-        {/* Tabs Navigation */}
+        {}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="orders" className="pixel-nav-item">
@@ -204,7 +203,7 @@ const Orders = () => {
           </TabsList>
 
           <TabsContent value="orders" className="space-y-4">
-            {/* Orders Filters */}
+            {}
             <Card>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row gap-4">
@@ -233,7 +232,7 @@ const Orders = () => {
               </CardContent>
             </Card>
 
-            {/* Orders List */}
+            {}
             <div className="space-y-4">
               {filteredOrders.map((order) => {
                 const statusInfo = getStatusInfo(order.status);
@@ -281,7 +280,7 @@ const Orders = () => {
                     </CardHeader>
 
                     <CardContent className="space-y-4">
-                      {/* Order Items */}
+                      {}
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">{t('orders.orderedItems')}:</h4>
                         <div className="space-y-1">
@@ -298,7 +297,7 @@ const Orders = () => {
                         </div>
                       </div>
 
-                      {/* Status Description */}
+                      {}
                       {statusInfo.description && (
                         <div className="bg-muted/50 p-3 rounded-lg">
                           <p className="text-sm text-muted-foreground">
@@ -308,7 +307,7 @@ const Orders = () => {
                         </div>
                       )}
 
-                      {/* Track Order Button */}
+                      {}
                       {(order.status === 'shipped' || order.status === 'delivered') && (
                         <div className="pt-2">
                           <Button 
@@ -327,7 +326,7 @@ const Orders = () => {
               })}
             </div>
 
-            {/* Empty State for Orders */}
+            {}
             {filteredOrders.length === 0 && !isLoading && (
               <div className="text-center py-12">
                 <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -352,7 +351,7 @@ const Orders = () => {
           </TabsContent>
 
           <TabsContent value="invoices" className="space-y-4">
-            {/* Invoices Section */}
+            {}
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -373,7 +372,7 @@ const Orders = () => {
               </CardContent>
             </Card>
 
-            {/* Individual Invoices */}
+            {}
             <div className="space-y-4">
               {orders.map((order) => (
                 <Card key={`invoice-${order.id}`}>
@@ -411,7 +410,7 @@ const Orders = () => {
               ))}
             </div>
 
-            {/* Empty State for Invoices */}
+            {}
             {orders.length === 0 && !isLoading && (
               <div className="text-center py-12">
                 <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -426,7 +425,7 @@ const Orders = () => {
           </TabsContent>
 
           <TabsContent value="delivery-notes" className="space-y-4">
-            {/* Delivery Notes Section */}
+            {}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -441,7 +440,7 @@ const Orders = () => {
               </CardContent>
             </Card>
 
-            {/* Shipped Orders with Delivery Notes */}
+            {}
             <div className="space-y-4">
               {orders.filter(order => order.status === 'shipped' || order.status === 'delivered').map((order) => (
                 <Card key={`delivery-${order.id}`}>
@@ -488,7 +487,7 @@ const Orders = () => {
               ))}
             </div>
 
-            {/* Empty State for Delivery Notes */}
+            {}
             {orders.filter(order => order.status === 'shipped' || order.status === 'delivered').length === 0 && !isLoading && (
               <div className="text-center py-12">
                 <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />

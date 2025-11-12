@@ -31,7 +31,7 @@ interface AdvancedFiltersProps {
   wishlistFilter: string;
   onWishlistChange: (value: string) => void;
   onReloadCollection: () => void;
-  // New filter props
+  
   categoryFilter?: string;
   onCategoryChange?: (value: string) => void;
   stageFilter?: string;
@@ -73,7 +73,7 @@ const AdvancedFilters = ({
   wishlistFilter,
   onWishlistChange,
   onReloadCollection,
-  // New filter props with defaults
+  
   categoryFilter = "all",
   onCategoryChange = () => {},
   stageFilter = "all",
@@ -103,7 +103,7 @@ const AdvancedFilters = ({
   const { data: wishlistData = [] } = useWishlistData();
   const { data: illustrators = [] } = useIllustratorsData();
   const { data: availableLanguages = [], isLoading: languagesLoading } = useLanguagesData();
-  const { data: setsData = [] } = useSetsData({ limit: 1000 }); // Get all sets for filter
+  const { data: setsData = [] } = useSetsData({ limit: 1000 }); 
 
   const rarities = [
     'Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret'
@@ -163,7 +163,6 @@ const AdvancedFilters = ({
     { value: 'Psychic', label: 'Psychic' }
   ];
 
-  // Create dynamic languages array from database data
   const languages = [
     { value: 'all', label: t('filters.allLanguages') },
     ...availableLanguages.map(lang => ({
@@ -172,7 +171,6 @@ const AdvancedFilters = ({
     }))
   ];
 
-  // Create dynamic sets array from database data - ensure uniqueness by set_id
   const uniqueSetsMap = new Map();
   setsData.forEach(set => {
     if (!uniqueSetsMap.has(set.set_id)) {
@@ -188,7 +186,6 @@ const AdvancedFilters = ({
     ...Array.from(uniqueSetsMap.values()).sort((a, b) => a.label.localeCompare(b.label))
   ];
 
-  // Helper function to get proper display names for languages
   function getLanguageDisplayName(langCode: string): string {
     const languageNames: { [key: string]: string } = {
       'en': 'English',
@@ -221,7 +218,7 @@ const AdvancedFilters = ({
 
   return (
     <div className="mb-8">
-      {/* Main Search Bar */}
+      {}
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
         <Input
@@ -232,7 +229,7 @@ const AdvancedFilters = ({
         />
       </div>
 
-      {/* Quick Filters Row */}
+      {}
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">{t('filters.language')}:</span>
@@ -316,7 +313,7 @@ const AdvancedFilters = ({
           </Select>
         </div>
 
-        {/* HP Range */}
+        {}
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">HP:</span>
           <div className="flex items-center gap-1">
@@ -339,7 +336,7 @@ const AdvancedFilters = ({
         </div>
       </div>
 
-      {/* Advanced Filters Toggle */}
+      {}
       <div className="flex items-center justify-between mb-4">
         <Button
           variant="ghost"
@@ -351,7 +348,7 @@ const AdvancedFilters = ({
           {isExpanded ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
         </Button>
 
-        {/* Collection Status */}
+        {}
         {user && (
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -392,7 +389,7 @@ const AdvancedFilters = ({
         )}
       </div>
 
-      {/* Advanced Filters (Collapsible) */}
+      {}
       {isExpanded && (
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

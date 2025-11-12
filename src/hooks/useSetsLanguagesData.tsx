@@ -8,19 +8,17 @@ export const useSetsLanguagesData = () => {
       const { data, error } = await supabase
         .from('sets')
         .select('language')
-        .not('language', 'is', null); // Exclude null languages
+        .not('language', 'is', null); 
 
       if (error) {
         console.error('Error fetching available sets languages:', error);
         throw error;
       }
 
-      // Get unique languages and sort them
       const uniqueLanguages = [...new Set(data.map(item => item.language))]
-        .filter(Boolean) // Remove any falsy values
+        .filter(Boolean) 
         .sort();
 
-      // Debug logging to see what we're getting
       console.log('🔍 Sets language data from database:', {
         totalRecords: data.length,
         allLanguages: data.map(item => item.language),
@@ -30,6 +28,6 @@ export const useSetsLanguagesData = () => {
 
       return uniqueLanguages;
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes since languages don't change often
+    staleTime: 5 * 60 * 1000, 
   });
 };

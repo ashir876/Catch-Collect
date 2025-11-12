@@ -37,7 +37,7 @@ const ShopProductListItem = ({
     >
       <CardContent className="p-3">
         <div className="flex gap-3">
-          {/* Product Image - Compact */}
+          {}
           <div className="relative w-16 h-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
             <img
               src={productImage}
@@ -45,7 +45,7 @@ const ShopProductListItem = ({
               className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
             
-            {/* Stock Badge */}
+            {}
             <div className="absolute top-1 left-1">
               <Badge 
                 variant={stock > 5 ? "default" : "destructive"} 
@@ -56,7 +56,7 @@ const ShopProductListItem = ({
             </div>
           </div>
 
-          {/* Product Info */}
+          {}
           <div className="flex-1 min-w-0">
             <div className="space-y-1">
               <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
@@ -72,7 +72,7 @@ const ShopProductListItem = ({
               )}
             </div>
 
-            {/* Price and Action Button */}
+            {}
             <div className="flex justify-between items-center mt-2">
               <div className="text-sm font-bold text-primary">
                 CHF {productPrice.toFixed(2)}

@@ -38,7 +38,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch collection data and current prices
   const { data: collectionItems = [] } = useCollectionData();
   const cardIds = collectionItems.map(item => item.card_id);
   const { data: currentPrices = [] } = useCurrentPrices(cardIds);
@@ -56,7 +55,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     if (user && collectionItems.length > 0) {
       loadCollectionValueHistory();
     }
-  }, [user, timeRange, collectionItems.length]); // Only depend on length, not the full array
+  }, [user, timeRange, collectionItems.length]); 
 
   const loadCollectionValueHistory = async () => {
     if (!user || collectionItems.length === 0) {
@@ -67,14 +66,13 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     setError(null);
     try {
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
-      
-      // Get real historical price data from database
+
       const historicalData = await fetchRealHistoricalData(days);
       
       if (historicalData.length > 0) {
         setValueHistory(historicalData);
       } else {
-        // Fallback to realistic data based on current values
+        
         const currentValues = calculateCurrentValues();
         const fallbackData = generateRealisticHistoricalData(currentValues, days);
         setValueHistory(fallbackData);
@@ -83,7 +81,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     } catch (error) {
       console.error('Failed to load collection value history:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      // Use realistic fallback data based on current collection
+      
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
       const currentValues = calculateCurrentValues();
       const fallbackData = generateRealisticHistoricalData(currentValues, days);
@@ -101,7 +99,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
 
-      // Fetch price history for all cards in collection
       const { data: priceHistory, error } = await (supabase as any)
         .from('price_history')
         .select('card_id, price, currency, recorded_at, source, price_type')
@@ -114,15 +111,12 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         return [];
       }
 
-
       if (!priceHistory || priceHistory.length === 0) {
         return [];
       }
 
-      // Group price data by date
       const priceByDate = new Map<string, { myValue: number; marketValue: number; count: number }>();
-      
-      // Initialize with your collection prices
+
       collectionItems.forEach((item: any) => {
         const myPrice = item.price || 0;
         const createdDate = new Date(item.created_at).toISOString().split('T')[0];
@@ -136,7 +130,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         dateData.count += 1;
       });
 
-      // Add market prices from price history
       priceHistory.forEach((record: any) => {
         const date = new Date(record.recorded_at).toISOString().split('T')[0];
         
@@ -148,12 +141,10 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         dateData.marketValue += record.price || 0;
       });
 
-      // Convert to chart data format
       const chartData: CollectionValueData[] = [];
       let cumulativeMyValue = 0;
       let cumulativeMarketValue = 0;
 
-      // Sort dates and calculate cumulative values
       const sortedDates = Array.from(priceByDate.keys()).sort();
       
       sortedDates.forEach(date => {
@@ -182,14 +173,12 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     let marketTotalValue = 0;
 
     collectionItems.forEach((item: any) => {
-      // Find current market price for this card
-      const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
       
-      // Your price (what you paid)
+      const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
+
       const myPrice = item.price || 0;
       myTotalValue += myPrice;
 
-      // Market price (current value)
       const currentMarketPrice = marketPrice?.price || 0;
       marketTotalValue += currentMarketPrice;
     });
@@ -197,39 +186,33 @@ export function CollectionValueChart({ className, showControls = true }: Collect
     return {
       myValue: myTotalValue,
       marketValue: marketTotalValue,
-      currency: 'CHF' // Assuming CHF as base currency
+      currency: 'CHF' 
     };
   };
 
   const generateRealisticHistoricalData = (currentValues: any, days: number): CollectionValueData[] => {
     const data: CollectionValueData[] = [];
     const baseDate = new Date();
-    
-    // Get the earliest date when any collection item was added
+
     const earliestCollectionDate = collectionItems.length > 0 
       ? new Date(Math.min(...collectionItems.map(item => new Date(item.created_at).getTime())))
       : new Date();
-    
-    // Calculate how many days ago the earliest item was added
+
     const daysSinceEarliest = Math.floor((baseDate.getTime() - earliestCollectionDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Use the actual range from when items were added, but cap at the requested days
+
     const actualDays = Math.min(daysSinceEarliest, days);
-    
-    // Start with the current values and work backwards
+
     let myValue = currentValues.myValue;
     let marketValue = currentValues.marketValue;
 
     for (let day = actualDays; day >= 0; day--) {
       const currentDate = new Date(baseDate);
       currentDate.setDate(currentDate.getDate() - day);
-      
-      // Create realistic trends based on actual collection growth
-      const baseTrend = Math.sin(day * 0.05) * 0.01; // Gentle trend
-      const myVariation = (Math.random() - 0.5) * 0.005; // ±0.25% variation for your prices
-      const marketVariation = (Math.random() - 0.5) * 0.008; // ±0.4% variation for market prices
-      
-      // Market prices tend to be more volatile
+
+      const baseTrend = Math.sin(day * 0.05) * 0.01; 
+      const myVariation = (Math.random() - 0.5) * 0.005; 
+      const marketVariation = (Math.random() - 0.5) * 0.008; 
+
       const myChange = baseTrend + myVariation;
       const marketChange = baseTrend + marketVariation + (Math.random() - 0.5) * 0.003;
       
@@ -246,8 +229,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
 
     return data;
   };
-
-
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('de-DE', {
@@ -311,7 +292,6 @@ export function CollectionValueChart({ className, showControls = true }: Collect
       );
     }
 
-    // Prepare data for the chart
     const chartData = valueHistory.map(record => ({
       date: formatDate(record.recorded_at),
       timestamp: new Date(record.recorded_at).getTime(),
@@ -325,7 +305,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
 
     return (
       <div className="space-y-4">
-        {/* Chart Header with High/Low/Change info */}
+        {}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 text-sm">
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-4">
             <span className="text-muted-foreground">
@@ -361,7 +341,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
           )}
         </div>
 
-        {/* Chart */}
+        {}
         <div className="w-full h-80 sm:h-96 md:h-[32rem]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 40 }}>
@@ -474,7 +454,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Chart */}
+        {}
         <div className="space-y-2">
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -485,7 +465,7 @@ export function CollectionValueChart({ className, showControls = true }: Collect
           )}
         </div>
 
-        {/* Footer Info */}
+        {}
         {valueHistory.length > 0 && (
           <div className="text-xs text-gray-500 text-center">
             {valueHistory.length} {t('pricing.data.points')} • {t('pricing.last.updated')}: {

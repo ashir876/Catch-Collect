@@ -131,9 +131,9 @@ export function CardPriceDisplay({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Current Prices */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* TCGPlayer Market Price */}
+          {}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-green-600" />
@@ -146,7 +146,7 @@ export function CardPriceDisplay({
             </div>
           </div>
 
-          {/* CardMarket Average Price */}
+          {}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Euro className="h-4 w-4 text-blue-600" />
@@ -160,7 +160,7 @@ export function CardPriceDisplay({
           </div>
         </div>
 
-        {/* All Available Prices */}
+        {}
         {allPrices.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-gray-700">{t('pricing.all.prices')}</h4>
@@ -189,7 +189,7 @@ export function CardPriceDisplay({
           </div>
         )}
 
-        {/* Price History Toggle */}
+        {}
         <div className="pt-2 border-t">
           <Button
             variant="ghost"
@@ -201,7 +201,7 @@ export function CardPriceDisplay({
           </Button>
         </div>
 
-        {/* Price History */}
+        {}
         {showPriceHistory && priceHistory.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-gray-700">{t('pricing.price.history')}</h4>
@@ -224,7 +224,7 @@ export function CardPriceDisplay({
           </div>
         )}
 
-        {/* No Price Data */}
+        {}
         {allPrices.length === 0 && !loading && (
           <div className="text-center text-gray-500 py-4">
             <p className="text-sm">{t('pricing.no.price.data')}</p>

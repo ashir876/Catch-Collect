@@ -25,15 +25,13 @@ export const CardPriceDisplay: React.FC<CardPriceDisplayProps> = ({
   compact = false,
   className = ''
 }) => {
-  // Get the avg_sell_price from card_prices table
-  // Ensure it's a number and handle string conversion
+
   let avgPrice: number | null = null;
   
   if (priceData?.cardmarket_avg_sell_price != null) {
     const rawPrice = priceData.cardmarket_avg_sell_price;
     avgPrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : Number(rawPrice);
-    
-    // Check if conversion was successful
+
     if (isNaN(avgPrice)) {
       console.warn('🔍 CardPriceDisplay - Invalid price value:', {
         rawPrice,
@@ -44,7 +42,6 @@ export const CardPriceDisplay: React.FC<CardPriceDisplayProps> = ({
     }
   }
 
-  // Debug logging for troubleshooting
   React.useEffect(() => {
     if (priceData) {
       console.log('💰 CardPriceDisplay render:');
@@ -54,8 +51,7 @@ export const CardPriceDisplay: React.FC<CardPriceDisplayProps> = ({
       console.log('  🔄 Converted price:', avgPrice, '(type:', typeof avgPrice + ')');
       console.log('  ✅ Will display:', avgPrice != null && avgPrice > 0 && !isNaN(avgPrice));
       console.log('  📄 Full priceData:', JSON.stringify(priceData, null, 2));
-      
-      // Check if the field exists
+
       if (!('cardmarket_avg_sell_price' in priceData)) {
         console.error('❌ CRITICAL: cardmarket_avg_sell_price field NOT FOUND in priceData!');
         console.error('❌ Available fields:', Object.keys(priceData));
@@ -65,8 +61,6 @@ export const CardPriceDisplay: React.FC<CardPriceDisplayProps> = ({
     }
   }, [priceData, avgPrice]);
 
-  // Show "No price data found" message if no price data or price is invalid
-  // Allow prices > 0 (even very small ones like 0.43)
   if (!priceData || avgPrice == null || avgPrice <= 0 || isNaN(avgPrice)) {
     if (compact) {
       return (

@@ -35,7 +35,7 @@ const SeriesFilters = ({
 
   return (
     <div className="mb-8">
-      {/* Main Search Bar */}
+      {}
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5 z-10" />
         <Input
@@ -46,7 +46,7 @@ const SeriesFilters = ({
         />
       </div>
 
-      {/* Quick Filters Row */}
+      {}
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">{t('filters.language')}:</span>

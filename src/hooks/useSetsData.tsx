@@ -21,7 +21,6 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
     sortBy = 'newest'
   } = options;
 
-  // Create a simpler query key
   const queryKey = [
     'sets', 
     language || 'all', 
@@ -34,16 +33,15 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
 
   return useQuery({
     queryKey,
-    staleTime: 0, // Always consider data stale to ensure fresh data
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, 
+    refetchOnMount: true, 
+    refetchOnWindowFocus: false, 
     queryFn: async () => {
       
       let query = supabase
         .from('sets')
         .select('*');
 
-      // Apply sorting at the data source so pagination respects order
       switch (sortBy) {
         case 'oldest':
           query = query.order('release_date', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
@@ -57,22 +55,18 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
           break;
       }
 
-      // Filter by language if provided
       if (language && language !== 'all') {
         query = query.eq('language', language);
       }
 
-      // Filter by series if provided
       if (seriesId) {
         query = query.eq('series_id', seriesId);
       }
 
-      // Filter by search term if provided
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }
 
-      // Apply pagination if limit is provided
       if (limit) {
         query = query.range(offset, offset + limit - 1);
       }
@@ -88,11 +82,9 @@ export const useSetsData = (options: SetsDataOptions = {}) => {
   });
 };
 
-// Hook to get total count of sets for pagination
 export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> = {}) => {
   const { language, seriesId, searchTerm } = options;
 
-  // Create a simpler query key
   const queryKey = [
     'sets-count', 
     language || 'all', 
@@ -102,26 +94,23 @@ export const useSetsCount = (options: Omit<SetsDataOptions, 'limit' | 'offset'> 
 
   return useQuery({
     queryKey,
-    staleTime: 0, // Always consider data stale to ensure fresh data
-    refetchOnMount: true, // Refetch when component mounts
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 0, 
+    refetchOnMount: true, 
+    refetchOnWindowFocus: false, 
     queryFn: async () => {
     
       let query = supabase
         .from('sets')
         .select('*', { count: 'exact', head: true });
 
-      // Filter by language if provided
       if (language && language !== 'all') {
         query = query.eq('language', language);
       }
 
-      // Filter by series if provided
       if (seriesId) {
         query = query.eq('series_id', seriesId);
       }
 
-      // Filter by search term if provided
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }

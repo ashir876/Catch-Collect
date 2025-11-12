@@ -39,7 +39,6 @@ const SetDetail = () => {
   const [setData, setSetData] = useState<SetData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filter states - same as Cards page
   const [searchTerm, setSearchTerm] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
   const [rarityFilter, setRarityFilter] = useState("all");
@@ -59,25 +58,19 @@ const SetDetail = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  
-  // Modal state
+
   const [isAddToCollectionModalOpen, setIsAddToCollectionModalOpen] = useState(false);
   const [selectedCardForCollection, setSelectedCardForCollection] = useState<any>(null);
 
-  // Collection and wishlist actions
   const { addToCollection, removeFromCollection, isAddingToCollection, isRemovingFromCollection } = useCollectionActions();
   const { addToWishlist, removeFromWishlist, isAddingToWishlist, isRemovingFromWishlist } = useWishlistActions();
 
-  // Fetch collection data to show owned status
   const { data: collectionItems = [] } = useCollectionData();
 
-  // Fetch set progress data
   const setProgress = useSingleSetProgress(setId || "");
 
-  // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Initialize and update language filter from URL parameters
   useEffect(() => {
     const urlLanguage = searchParams.get("language");
     console.log('URL language parameter:', urlLanguage);
@@ -88,7 +81,6 @@ const SetDetail = () => {
     }
   }, [searchParams]);
 
-  // Fetch cards for this set with filters
   const [cardsData, setCardsData] = useState<any[]>([]);
   const [cardsLoading, setCardsLoading] = useState(true);
   const [cardsError, setCardsError] = useState<Error | null>(null);
@@ -114,45 +106,42 @@ const SetDetail = () => {
           .eq('set_id', setId)
           .order('name');
 
-        // Apply filters
         if (searchTerm) {
           console.log('🔍 Searching for:', searchTerm);
-          
-          // Enhanced search logic to support specific card number patterns and cross-language search
+
           const trimmedSearchTerm = searchTerm.trim();
-          
-          // Check if it's a pure card number pattern (e.g., "123" or "123/456")
+
           const pureCardNumberPattern = /^(\d+)(?:\/(\d+))?$/;
           const pureCardNumberMatch = trimmedSearchTerm.match(pureCardNumberPattern);
           
           if (pureCardNumberMatch) {
-            // Pure card number search
+            
             const cardNumber = pureCardNumberMatch[1];
             const setTotal = pureCardNumberMatch[2];
             
             if (setTotal) {
-              // Full card number format (e.g., "123/456") - use exact match
+              
               console.log('🔍 Searching for exact card number:', `${cardNumber}/${setTotal}`);
               query = query.eq('card_number', `${cardNumber}/${setTotal}`);
             } else {
-              // Partial card number (e.g., "123") - use word boundary matching
+              
               console.log('🔍 Searching for partial card number:', cardNumber);
-              // Use regex to match word boundaries to avoid partial matches
+              
               query = query.or(`card_number.eq.${cardNumber},card_number.ilike.${cardNumber}/%`);
             }
           } else {
-            // Check if it's a name + number pattern (e.g., "Pikachu 123/456")
+            
             const nameNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
             const nameNumberMatch = trimmedSearchTerm.match(nameNumberPattern);
             
             if (nameNumberMatch) {
-              // Name + card number search
+              
               const cardName = nameNumberMatch[1].trim();
               const cardNumber = nameNumberMatch[2].trim();
               console.log('🔍 Searching for name + exact number:', cardName, cardNumber);
               query = query.ilike('name', `%${cardName}%`).eq('card_number', cardNumber);
             } else {
-              // General search across multiple fields
+              
               console.log('🔍 General search across name, card_number, and localid');
               query = query.or(`name.ilike.%${trimmedSearchTerm}%,card_number.ilike.%${trimmedSearchTerm}%,localid.ilike.%${trimmedSearchTerm}%`);
             }
@@ -166,8 +155,6 @@ const SetDetail = () => {
         if (rarityFilter !== "all") {
           query = query.eq('rarity', rarityFilter);
         }
-
-        // Skip filtering by type to avoid heavy type instantiation
 
         if (hpRange.min) {
           query = query.gte('hp', parseInt(hpRange.min));
@@ -189,8 +176,6 @@ const SetDetail = () => {
           query = query.eq('stage', stageFilter);
         }
 
-        // Skip evolve_from filter for performance
-
         if (retreatCostFilter !== "all") {
           query = query.eq('retreat_cost', retreatCostFilter);
         }
@@ -199,11 +184,6 @@ const SetDetail = () => {
           query = query.eq('regulation_mark', regulationMarkFilter);
         }
 
-        // Skip format_legality filter for performance
-
-        // Skip weakness_type filter for performance
-
-        // Apply pagination
         query = query.range(offset, offset + itemsPerPage - 1);
 
         const { data, error } = await query;
@@ -212,7 +192,7 @@ const SetDetail = () => {
 
         console.log('Language filter:', languageFilter);
         console.log('Cards found for set:', data?.length || 0);
-        // If no results for a specific language, fallback to all languages once
+        
         if ((!data || data.length === 0) && languageFilter !== "all" && !didLangFallback) {
           setDidLangFallback(true);
           setLanguageFilter("all");
@@ -222,51 +202,47 @@ const SetDetail = () => {
         setCardsData(data || []);
         setDidLangFallback(false);
 
-        // Get total count for pagination - apply same filters as the main query
         let countQuery: any = supabase
           .from('cards')
           .select('*', { count: 'exact', head: true })
           .eq('set_id', setId);
 
-        // Apply same filters as the main query
         if (searchTerm) {
           console.log('🔍 Count query - Searching for:', searchTerm);
-          
-          // Enhanced search logic to support specific card number patterns and cross-language search
+
           const trimmedSearchTerm = searchTerm.trim();
-          
-          // Check if it's a pure card number pattern (e.g., "123" or "123/456")
+
           const pureCardNumberPattern = /^(\d+)(?:\/(\d+))?$/;
           const pureCardNumberMatch = trimmedSearchTerm.match(pureCardNumberPattern);
           
           if (pureCardNumberMatch) {
-            // Pure card number search
+            
             const cardNumber = pureCardNumberMatch[1];
             const setTotal = pureCardNumberMatch[2];
             
             if (setTotal) {
-              // Full card number format (e.g., "123/456") - use exact match
+              
               console.log('🔍 Count query - Searching for exact card number:', `${cardNumber}/${setTotal}`);
               countQuery = countQuery.eq('card_number', `${cardNumber}/${setTotal}`);
             } else {
-              // Partial card number (e.g., "123") - use word boundary matching
+              
               console.log('🔍 Count query - Searching for partial card number:', cardNumber);
-              // Use regex to match word boundaries to avoid partial matches
+              
               countQuery = countQuery.or(`card_number.eq.${cardNumber},card_number.ilike.${cardNumber}/%`);
             }
           } else {
-            // Check if it's a name + number pattern (e.g., "Pikachu 123/456")
+            
             const nameNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
             const nameNumberMatch = trimmedSearchTerm.match(nameNumberPattern);
             
             if (nameNumberMatch) {
-              // Name + card number search
+              
               const cardName = nameNumberMatch[1].trim();
               const cardNumber = nameNumberMatch[2].trim();
               console.log('🔍 Count query - Searching for name + exact number:', cardName, cardNumber);
               countQuery = countQuery.ilike('name', `%${cardName}%`).eq('card_number', cardNumber);
             } else {
-              // General search across multiple fields
+              
               console.log('🔍 Count query - General search across name, card_number, and localid');
               countQuery = countQuery.or(`name.ilike.%${trimmedSearchTerm}%,card_number.ilike.%${trimmedSearchTerm}%,localid.ilike.%${trimmedSearchTerm}%`);
             }
@@ -345,7 +321,6 @@ const SetDetail = () => {
     fetchCards();
   }, [setId, searchTerm, languageFilter, rarityFilter, typeFilter, hpRange, illustratorFilter, categoryFilter, stageFilter, evolveFromFilter, retreatCostFilter, regulationMarkFilter, formatLegalityFilter, weaknessTypeFilter, currentPage, offset, itemsPerPage]);
 
-  // Fetch set information
   useEffect(() => {
     const fetchSetData = async () => {
       if (!setId) return;
@@ -370,13 +345,11 @@ const SetDetail = () => {
 
         if (error) throw error;
 
-        // Get the first (and should be only) set data
         const setData = data?.[0];
         if (!setData) {
           throw new Error('Set not found');
         }
 
-        // If we have a series_id, fetch the series name separately
         let seriesName = null;
         if (setData.series_id) {
           try {
@@ -416,10 +389,8 @@ const SetDetail = () => {
     fetchSetData();
   }, [setId, toast, t, totalCount]);
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Filter change handlers - same as Cards page
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1);
@@ -512,7 +483,6 @@ const SetDetail = () => {
     });
   };
 
-  // Handler for opening add to collection modal
   const handleAddToCollection = (card) => {
     if (!user) {
       toast({
@@ -526,7 +496,6 @@ const SetDetail = () => {
     setIsAddToCollectionModalOpen(true);
   };
 
-  // Handler for refreshing set progress data
   const handleRefreshSetProgress = () => {
     if (user?.id) {
       queryClient.invalidateQueries({ queryKey: ['set-progress', user.id, setId] });
@@ -534,7 +503,6 @@ const SetDetail = () => {
     }
   };
 
-  // Handler for adding to collection with modal data
   const handleAddToCollectionWithDetails = async (entries: Array<{
     id: string;
     condition: string;
@@ -547,7 +515,7 @@ const SetDetail = () => {
     if (!user || !selectedCardForCollection) return;
 
     try {
-      // Create insert data for all entries (each entry represents one card copy)
+      
       const insertData = entries.map(entry => ({
         user_id: user.id,
         card_id: selectedCardForCollection.card_id,
@@ -562,11 +530,10 @@ const SetDetail = () => {
         .insert(insertData);
       
       if (error) throw error;
-      
-      // Invalidate collection queries using the correct keys
+
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
-      // Invalidate set progress queries using the correct keys
+      
       queryClient.invalidateQueries({ queryKey: ['set-progress', user.id, setId] });
       queryClient.invalidateQueries({ queryKey: ['set-progress', user.id] });
       setIsAddToCollectionModalOpen(false);
@@ -636,7 +603,7 @@ const SetDetail = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Back Button */}
+      {}
       <Button
         variant="outline"
         onClick={() => navigate('/sets')}
@@ -646,7 +613,7 @@ const SetDetail = () => {
         {t('common.backToSets')}
       </Button>
 
-      {/* Header - same style as Cards page */}
+      {}
       <div className="text-center mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
           <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -659,7 +626,7 @@ const SetDetail = () => {
           {totalCount} {t('setDetail.cards')}
         </p>
         
-        {/* Set Progress Information - Horizontal Layout */}
+        {}
         {setProgress && (
           <div className="mt-6 max-w-4xl mx-auto">
             <div className="flex items-center justify-between gap-8">
@@ -694,7 +661,7 @@ const SetDetail = () => {
               </div>
             </div>
             
-            {/* Completion Progress Bar */}
+            {}
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm font-bold">
                 <span>{t('sets.completionProgress')}</span>
@@ -714,7 +681,7 @@ const SetDetail = () => {
         )}
       </div>
 
-      {/* Advanced Search and Filters - same as Cards page */}
+      {}
       <AdvancedFilters
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
@@ -751,7 +718,7 @@ const SetDetail = () => {
         onSetsChange={handleSetsFilterChange}
       />
 
-      {/* View Mode Toggle - same as Cards page */}
+      {}
       <div className="flex justify-end mb-6">
         <div className="flex gap-2">
           <Button
@@ -771,7 +738,7 @@ const SetDetail = () => {
         </div>
       </div>
 
-      {/* Pagination Info - same as Cards page */}
+      {}
       {totalCount > 0 && (
         <div className="mb-4">
           <PaginationInfo
@@ -783,7 +750,7 @@ const SetDetail = () => {
         </div>
       )}
 
-      {/* Cards Display - same as Cards page */}
+      {}
       {cardsLoading ? (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -832,7 +799,7 @@ const SetDetail = () => {
             const isInCollection = collectionItems.some(item => item.card_id === card.card_id);
             return (
               <div key={`${card.card_id}-${card.language}`} className="flex gap-3 p-3 border rounded-lg relative">
-                             {/* Collection Status Icon - Top Right */}
+                             {}
              {isInCollection && (
                <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
                  <CheckCircle className="h-4 w-4" />
@@ -862,7 +829,7 @@ const SetDetail = () => {
         </div>
       )}
 
-      {/* Pagination - same as Cards page */}
+      {}
       {totalPages > 1 && (
         <div className="mt-8">
           <Pagination
@@ -873,7 +840,7 @@ const SetDetail = () => {
         </div>
       )}
 
-      {/* Empty State - same as Cards page */}
+      {}
       {!cardsLoading && cardsData.length === 0 && (
         <div className="text-center py-12">
           <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -884,7 +851,7 @@ const SetDetail = () => {
         </div>
       )}
 
-      {/* Add to Collection Modal */}
+      {}
       <AddToCollectionModal
         isOpen={isAddToCollectionModalOpen}
         onClose={() => {

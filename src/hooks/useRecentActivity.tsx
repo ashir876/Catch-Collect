@@ -24,7 +24,6 @@ export const useRecentActivity = (limit: number = 10) => {
       try {
         const activities: ActivityItem[] = [];
 
-        // Get recent orders
         const { data: orders, error: ordersError } = await supabase
           .from('orders')
           .select('*')
@@ -35,7 +34,7 @@ export const useRecentActivity = (limit: number = 10) => {
         if (ordersError) {
           console.error('Error fetching orders:', ordersError);
         } else if (orders) {
-          // For each order, get the product details
+          
           for (const order of orders) {
             const { data: product } = await supabase
               .from('products')
@@ -55,7 +54,6 @@ export const useRecentActivity = (limit: number = 10) => {
           }
         }
 
-        // Get recent collection additions
         const { data: collectionItems, error: collectionError } = await supabase
           .from('card_collections')
           .select('*, cards(name, set_name)')
@@ -79,7 +77,6 @@ export const useRecentActivity = (limit: number = 10) => {
           }
         }
 
-        // Get recent wishlist additions
         const { data: wishlistItems, error: wishlistError } = await supabase
           .from('card_wishlist')
           .select('*, cards(name, set_name)')
@@ -103,7 +100,6 @@ export const useRecentActivity = (limit: number = 10) => {
           }
         }
 
-        // Sort all activities by date and take the most recent ones
         return activities
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, limit);

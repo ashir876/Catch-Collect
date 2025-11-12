@@ -31,8 +31,8 @@ interface CardData {
   image_url: string;
   description: string;
   illustrator: string;
-  attacks: any; // Changed from any[] to any to match Json type
-  weaknesses: any; // Changed from any[] to any to match Json type
+  attacks: any; 
+  weaknesses: any; 
   retreat: number;
   set_symbol_url: string;
   language: string;
@@ -54,12 +54,11 @@ const CardDetail = () => {
   useEffect(() => {
     const fetchCard = async () => {
       if (!id) return;
-      
-      // Get language from URL params or default to 'en'
+
       const cardLanguage = searchParams.get('language') || 'en';
       
       try {
-        // First, try to fetch with the specified language
+        
         let { data, error } = await supabase
           .from('cards')
           .select('*')
@@ -67,7 +66,6 @@ const CardDetail = () => {
           .eq('language', cardLanguage)
           .single();
 
-        // If not found with specified language, try to get any language version
         if (error && error.code === 'PGRST116') {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('cards')
@@ -104,9 +102,8 @@ const CardDetail = () => {
     fetchCard();
   }, [id, searchParams, toast, t]);
 
-  // Check if this card is already in the user's collection
   useEffect(() => {
-    // Prefer cached collection-check if present for instant state
+    
     if (user && id) {
       const cached = queryClient.getQueryData<boolean>(['collection-check', user.id, id]);
       if (cached) {
@@ -128,13 +125,12 @@ const CardDetail = () => {
 
       if (error) {
         console.error('Error checking collection status:', error);
-        // Do not override a true state with a failed check
+        
         return;
       }
 
-      // Prevent stale checks from flipping true back to false
       const isInCollection = (count || 0) > 0;
-      // Update shared cache for other components
+      
       queryClient.setQueryData(['collection-check', user.id, id], isInCollection);
       setIsCollected((prev) => prev || isInCollection);
     };
@@ -158,7 +154,7 @@ const CardDetail = () => {
     setIsAddingToCollection(true);
     try {
       previousCollected = isCollected;
-      // Optimistically mark as collected for immediate UI feedback
+      
       if (!isCollected) {
         setIsCollected(true);
       }
@@ -189,12 +185,10 @@ const CardDetail = () => {
 
       if (error) throw error;
 
-      // Invalidate collection queries to update navigation badge
       queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user.id, card.card_id] });
 
-      // Update shared cache immediately
       queryClient.setQueryData(['collection-check', user.id, card.card_id], true);
 
       toast({
@@ -203,7 +197,7 @@ const CardDetail = () => {
       });
     } catch (error: any) {
       console.error('Error adding to collection:', error);
-      // Handle duplicate insert gracefully by marking as collected
+      
       if (error && (error.code === '23505' || error.message?.toLowerCase().includes('duplicate'))) {
         setIsCollected(true);
         toast({
@@ -212,7 +206,7 @@ const CardDetail = () => {
         });
         return;
       }
-      // Revert optimistic update on real error
+      
       setIsCollected(previousCollected);
       toast({
         title: t('messages.error'),
@@ -247,7 +241,6 @@ const CardDetail = () => {
 
       if (error) throw error;
 
-      // Invalidate wishlist queries to update navigation badge
       queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user.id] });
 
@@ -288,7 +281,6 @@ const CardDetail = () => {
 
       if (error) throw error;
 
-      // Invalidate cart queries to update navigation badge
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['cart-count'] });
 
@@ -343,7 +335,7 @@ const CardDetail = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Navigation */}
+      {}
       <Link 
         to="/cards" 
         className="inline-flex items-center text-muted-foreground hover:text-foreground mb-8 transition-colors"
@@ -353,7 +345,7 @@ const CardDetail = () => {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Card Image */}
+        {}
         <div className="flex justify-center">
           <div className="pixel-card max-w-sm w-full relative">
             {isCollected && (
@@ -370,9 +362,9 @@ const CardDetail = () => {
           </div>
         </div>
 
-        {/* Card Details */}
+        {}
         <div className="space-y-6">
-          {/* Header */}
+          {}
           <div>
             <h1 className="pixel-text-header mb-2">{card.name}</h1>
             <div className="flex items-center gap-2 mb-4">
@@ -392,7 +384,7 @@ const CardDetail = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex flex-wrap gap-3">
             <Button 
               onClick={!isCollected && !isAddingToCollection ? handleAddToCollection : undefined}
@@ -430,7 +422,7 @@ const CardDetail = () => {
             </Button>
           </div>
 
-          {/* Card Information */}
+          {}
           <Card className="pixel-card">
             <CardHeader>
               <CardTitle>{t('cardDetail.cardInfo')}</CardTitle>
@@ -469,7 +461,7 @@ const CardDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Attacks */}
+          {}
           {card.attacks && Array.isArray(card.attacks) && card.attacks.length > 0 && (
             <Card>
               <CardHeader>
@@ -506,7 +498,7 @@ const CardDetail = () => {
             </Card>
           )}
 
-          {/* Weaknesses */}
+          {}
           {card.weaknesses && Array.isArray(card.weaknesses) && card.weaknesses.length > 0 && (
             <Card>
               <CardHeader>

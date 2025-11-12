@@ -17,7 +17,6 @@ export const useIllustratorsData = () => {
         throw error;
       }
 
-      // Get unique illustrators
       const uniqueIllustrators = [...new Set(data?.map(card => card.illustrator).filter(Boolean))];
       return uniqueIllustrators;
     },

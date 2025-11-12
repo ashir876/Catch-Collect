@@ -1,53 +1,53 @@
 
-/* Import a pixelated font */
+
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* CatchCollect Pixel Art Design */
+
 
 @layer base {
   :root {
-    /* Pixel Art Color Palette from the reference */
-    --primary: 45 100% 50%;        /* Bright yellow */
+    
+    --primary: 45 100% 50%;        
     --primary-foreground: 0 0% 0%;
-    --secondary: 220 100% 30%;     /* Deep blue */
+    --secondary: 220 100% 30%;     
     --secondary-foreground: 0 0% 100%;
-    --accent: 0 100% 50%;          /* Red accent */
+    --accent: 0 100% 50%;          
     --accent-foreground: 0 0% 100%;
     
-    /* Base colors */
-    --background: 0 0% 95%;        /* Light gray background */
-    --foreground: 0 0% 10%;        /* Dark text */
     
-    --card: 0 0% 100%;             /* White cards */
+    --background: 0 0% 95%;        
+    --foreground: 0 0% 10%;        
+    
+    --card: 0 0% 100%;             
     --card-foreground: 0 0% 10%;
     
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
     
-    --muted: 0 0% 85%;             /* Muted gray */
+    --muted: 0 0% 85%;             
     --muted-foreground: 0 0% 30%;
     
-    --border: 0 0% 20%;            /* Dark borders */
+    --border: 0 0% 20%;            
     --input: 0 0% 96%;
     --ring: 45 100% 50%;
     
     --destructive: 0 100% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --radius: 0;                   /* No rounded corners for pixel art */
+    --radius: 0;                   
     
-    /* Colorful card rarities */
-    --common: 120 40% 85%;         /* Light green */
+    
+    --common: 120 40% 85%;         
     --common-foreground: 120 40% 20%;
-    --rare: 240 60% 85%;           /* Light blue */
+    --rare: 240 60% 85%;           
     --rare-foreground: 240 60% 20%;
-    --epic: 280 60% 85%;           /* Light purple */
+    --epic: 280 60% 85%;           
     --epic-foreground: 280 60% 20%;
-    --legendary: 30 80% 85%;       /* Light orange/gold */
+    --legendary: 30 80% 85%;       
     --legendary-foreground: 30 80% 20%;
   }
 }
@@ -66,7 +66,7 @@
     image-rendering: crisp-edges;
   }
 
-  /* Ensure proper viewport handling */
+  
   html {
     overflow-x: hidden;
   }
@@ -117,7 +117,7 @@
     border-image: none;
   }
 
-  /* Yellow animated text for main title */
+  
   .pixel-text-yellow-animated {
     @apply text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-wider;
     color: #FFD700;
@@ -125,7 +125,7 @@
     animation: yellowPulse 3s ease-in-out infinite;
   }
   
-  /* Colorful card variants */
+  
   .card-common {
     @apply border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
     background: linear-gradient(135deg, hsl(var(--common)) 0%, hsl(var(--common)) 100%);
@@ -170,7 +170,7 @@
     color: hsl(var(--legendary-foreground));
   }
 
-  /* Animation improvements */
+  
   .animate-pixel-bounce {
     animation: pixelBounce 2s infinite;
   }
@@ -179,7 +179,7 @@
     animation: pixelGlow 3s ease-in-out infinite alternate;
   }
   
-  /* Floating cube animations */
+  
   .animate-float-1 {
     animation: float1 6s ease-in-out infinite;
   }
@@ -192,7 +192,7 @@
     animation: float3 7s ease-in-out infinite;
   }
 
-  /* Responsive improvements */
+  
   .pixel-input {
     @apply border-4 border-black bg-white text-black font-bold;
     box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
@@ -205,7 +205,7 @@
   }
 }
 
-/* Navigation Items */
+
 .pixel-nav-item {
   @apply border-2 border-black px-2 sm:px-4 py-2 sm:py-3 font-black uppercase text-xs sm:text-sm transition-colors bg-muted hover:bg-primary hover:text-primary-foreground;
   white-space: nowrap;
@@ -245,14 +245,14 @@
   justify-content: center;
 }
 
-/* Pixel art specific styles */
+
 .pixelated {
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
 
-/* Trading card specific styles */
+
 .trading-card-pixel {
   @apply overflow-hidden;
   width: 200px;
@@ -265,7 +265,7 @@
   image-rendering: crisp-edges;
 }
 
-/* Custom animations */
+
 @keyframes pixelBounce {
   0%, 20%, 50%, 80%, 100% {
     transform: translateY(0);
@@ -287,7 +287,7 @@
   }
 }
 
-/* Yellow pulse animation for main title */
+
 @keyframes yellowPulse {
   0% {
     opacity: 0.7;
@@ -303,7 +303,7 @@
   }
 }
 
-/* Floating cube animations */
+
 @keyframes float1 {
   0%, 100% {
     transform: translateY(0) rotate(0deg);
@@ -349,7 +349,7 @@
   }
 }
 
-/* Responsive media queries for better mobile experience */
+
 @media (max-width: 640px) {
   .pixel-text-yellow-animated {
     font-size: 1.25rem;
@@ -374,20 +374,20 @@
     padding: 0.5rem 1rem;
   }
   
-  /* Mobile-friendly heading styles */
+  
   h2 span {
     display: inline-block;
     transform: none !important;
     box-shadow: none !important;
   }
   
-  /* Ensure proper text wrapping on mobile */
+  
   .uppercase {
     word-break: break-word;
     hyphens: auto;
   }
   
-  /* Mobile navigation badge improvements */
+  
   .pixel-badge {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
@@ -399,40 +399,40 @@
     font-size: 0.625rem;
   }
   
-  /* Mobile navigation text improvements */
+  
   .pixel-nav-item,
   .pixel-nav-item-active {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
   }
   
-  /* Mobile menu text improvements */
+  
   .mobile-menu-item {
     font-size: 0.875rem;
     line-height: 1.2;
   }
   
-  /* Ensure text doesn't overflow on mobile */
+  
   .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   
-  /* Disable floating animations on mobile */
+  
   .animate-float-1,
   .animate-float-2,
   .animate-float-3 {
     animation: none !important;
   }
   
-  /* Disable pixel glow animations on mobile */
+  
   .animate-pixel-glow {
     animation: none !important;
     box-shadow: none !important;
   }
   
-  /* Disable pixel bounce animations on mobile */
+  
   .animate-pixel-bounce {
     animation: none !important;
   }
@@ -447,7 +447,7 @@
     font-size: 1.25rem;
   }
   
-  /* Simple text for main title on tablets */
+  
   .pixel-text-yellow-animated {
     font-size: 1.5rem;
     line-height: 1.2;
@@ -462,7 +462,7 @@
     box-shadow: none !important;
   }
   
-  /* Disable background animations on mobile and tablet */
+  
   .pixel-text-yellow-animated {
     animation: none !important;
     text-shadow: none !important;
@@ -491,7 +491,7 @@
   }
 }
 
-/* Ensure search results always appear on top */
+
 .search-results-overlay {
   z-index: 10000 !important;
   position: relative;
@@ -499,30 +499,30 @@
   min-width: 100% !important;
 }
 
-/* Force search container to have proper stacking context */
+
 .search-container {
   position: relative;
   z-index: 9999;
   width: 100%;
 }
 
-/* Prevent layout shift when dropdowns open */
+
 body {
   overflow-y: auto;
   overflow-x: auto;
 }
 
-/* Ensure dropdown menus don't cause layout shifts */
+
 [data-radix-popper-content-wrapper] {
   z-index: 1000;
 }
 
-/* Prevent body padding changes when scrollbars appear */
+
 html {
   overflow-x: auto;
 }
 
-/* Ensure navigation container doesn't shift when dropdowns open */
+
 nav {
   position: sticky;
   top: 0;
@@ -531,13 +531,13 @@ nav {
   overflow: visible;
 }
 
-/* Prevent dropdown from affecting layout */
+
 [data-radix-portal] {
   position: fixed;
   z-index: 1001;
 }
 
-/* Pixel art dropdown menu styling */
+
 .pixel-dropdown-content {
   @apply border-4 border-black bg-background shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-0;
   border-radius: 0 !important;

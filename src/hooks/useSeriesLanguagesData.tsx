@@ -8,20 +8,19 @@ export const useSeriesLanguagesData = () => {
       const { data, error } = await supabase
         .from('series')
         .select('language')
-        .not('language', 'is', null); // Exclude null languages
+        .not('language', 'is', null); 
 
       if (error) {
         console.error('Error fetching available series languages:', error);
         throw error;
       }
 
-      // Get unique languages and sort them
       const uniqueLanguages = [...new Set(data.map(item => item.language))]
-        .filter(Boolean) // Remove any falsy values
+        .filter(Boolean) 
         .sort();
 
       return uniqueLanguages;
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes since languages don't change often
+    staleTime: 5 * 60 * 1000, 
   });
 };

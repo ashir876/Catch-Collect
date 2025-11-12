@@ -44,7 +44,7 @@ interface NavItem {
   label: string;
   icon: any;
   badge?: number;
-  shortLabel?: string; // For mobile display
+  shortLabel?: string; 
 }
 
 const Navigation = () => {
@@ -52,13 +52,11 @@ const Navigation = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
-  
-  // Get dynamic counts
+
   const { data: wishlistCount = 0 } = useWishlistCount();
   const { data: cartCount = 0 } = useCartCount();
   const { data: collectionCount = 0 } = useCollectionCount();
 
-  // Debug: Log count updates
   React.useEffect(() => {
     console.log('Navigation - Count Updates:', {
       wishlistCount,
@@ -85,7 +83,6 @@ const Navigation = () => {
     { path: "/settings", label: t('navigation.settings'), shortLabel: t('navigation.settings'), icon: Settings }
   ];
 
-  // Desktop-only icon items (without labels)
   const desktopIconItems: NavItem[] = [
     { path: "/wishlist", label: "", icon: Heart, badge: wishlistCount > 0 ? wishlistCount : undefined },
     { path: "/collection", label: "", icon: Star },
@@ -94,7 +91,6 @@ const Navigation = () => {
     { path: "/settings", label: "", icon: Settings }
   ];
 
-  // Add admin link if user has admin role (you can implement role checking here)
   const adminNavItems: NavItem[] = [
     { path: "/admin", label: t('navigation.admin'), shortLabel: t('navigation.admin'), icon: Shield }
   ];
@@ -110,7 +106,7 @@ const Navigation = () => {
     <nav className="sticky top-0 z-50 w-full border-b-4 border-black bg-background">
       <div className="container mx-auto px-2 sm:px-4">
         <div className="flex h-16 sm:h-20 items-center justify-between">
-          {/* Logo */}
+          {}
           <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
             <img 
               src="/Catch-Collect-uploads/a2f24a7d-97d1-4e80-a75b-8cadfd0435ea.png" 
@@ -119,7 +115,7 @@ const Navigation = () => {
             />
           </Link>
 
-            {/* Desktop Navigation */}
+            {}
             <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {mainNavItems.map((item) => (
                 <Link key={item.path} to={item.path}>
@@ -136,11 +132,11 @@ const Navigation = () => {
               ))}
             </div>
 
-            {/* User Menu Desktop */}
+            {}
             <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {user ? (
                 <>
-                  {/* Quick access collection and wishlist with badges */}
+                  {}
                   <Link to="/collection">
                     <div className="pixel-nav-item-small">
                       <Star className="w-3 h-3 lg:w-4 lg:h-4" />
@@ -172,7 +168,7 @@ const Navigation = () => {
                     </div>
                   </Link>
                   
-                  {/* User Dropdown Menu */}
+                  {}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
@@ -216,7 +212,7 @@ const Navigation = () => {
                       
                       <DropdownMenuSeparator className="pixel-dropdown-separator" />
                       
-                      {/* Orders section */}
+                      {}
                       <DropdownMenuItem asChild className="pixel-dropdown-item">
                         <Link to="/orders" className="w-full">
                           <Package className="w-4 h-4 mr-2" />
@@ -227,7 +223,7 @@ const Navigation = () => {
                       <DropdownMenuItem 
                         className="pixel-dropdown-item cursor-pointer"
                         onClick={() => {
-                          // Handle invoice download - could open a modal or redirect
+                          
                           window.location.href = '/orders?action=invoices';
                         }}
                       >
@@ -238,7 +234,7 @@ const Navigation = () => {
                       <DropdownMenuItem 
                         className="pixel-dropdown-item cursor-pointer"
                         onClick={() => {
-                          // Handle delivery notes
+                          
                           window.location.href = '/orders?action=delivery-notes';
                         }}
                       >
@@ -246,7 +242,7 @@ const Navigation = () => {
                         <span>{t('orders.seeDeliveryNotes', 'See delivery notes')}</span>
                       </DropdownMenuItem>
                       
-                      {/* Admin section if applicable */}
+                      {}
                       {adminNavItems.length > 0 && (
                         <>
                           <DropdownMenuSeparator className="pixel-dropdown-separator" />
@@ -286,7 +282,7 @@ const Navigation = () => {
               </div>
             </div>
 
-          {/* Mobile Menu Button */}
+          {}
           <div className="md:hidden">
             <Button
               variant="ghost"
@@ -299,7 +295,7 @@ const Navigation = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t-4 border-black bg-background">
             <div className="py-3 sm:py-4 space-y-1 sm:space-y-2">
@@ -358,7 +354,7 @@ const Navigation = () => {
                       </div>
                     </Link>
                   ))}
-                  {/* Admin navigation items for mobile */}
+                  {}
                   {adminNavItems.map((item) => (
                     <Link 
                       key={item.path} 

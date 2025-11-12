@@ -13,7 +13,7 @@ const Accessories = () => {
   const [sortBy, setSortBy] = useState("name");
 
   const accessories = [
-    // Schutzhüllen & Sleeves
+    
     {
       id: 1,
       name: "Ultra Pro Deck Protector Sleeves (100 Stück)",
@@ -48,7 +48,6 @@ const Accessories = () => {
       brand: "KMC"
     },
 
-    // Sammelmappen & Binder
     {
       id: 4,
       name: "Ultra Pro 9-Pocket Binder",
@@ -83,7 +82,6 @@ const Accessories = () => {
       brand: "Vault X"
     },
 
-    // Aufbewahrungsboxen
     {
       id: 7,
       name: "BCW Storage Box 800ct",
@@ -118,7 +116,6 @@ const Accessories = () => {
       brand: "Ultra Pro"
     },
 
-    // Spielmatten & Zubehör
     {
       id: 10,
       name: "Playmat Pokémon Design",
@@ -203,7 +200,7 @@ const Accessories = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-2">
             <Package className="h-8 w-8 text-primary" />
@@ -215,7 +212,7 @@ const Accessories = () => {
           </p>
         </div>
 
-        {/* Filters */}
+        {}
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -242,7 +239,7 @@ const Accessories = () => {
           </CardContent>
         </Card>
 
-        {/* Category Tabs */}
+        {}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
           <TabsList className="grid w-full grid-cols-6">
             {Object.entries(categories).map(([key, label]) => (

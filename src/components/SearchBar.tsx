@@ -59,16 +59,15 @@ const SearchBar = () => {
       try {
         const searchResults: SearchResult[] = [];
 
-        // Search cards with enhanced logic
         if (activeFilters.includes('card') || activeFilters.length === 0) {
-          // Check if query looks like a specific card number pattern (e.g., "Pichu 22/165")
+          
           const cardNumberPattern = /^(.+?)\s+(\d+\/\d+)$/;
           const cardNumberMatch = query.match(cardNumberPattern);
           
           let cardQuery;
           
           if (cardNumberMatch) {
-            // Specific card number search - search by name and card number combination
+            
             const cardName = cardNumberMatch[1].trim();
             const cardNumber = cardNumberMatch[2].trim();
             
@@ -77,42 +76,40 @@ const SearchBar = () => {
               .select('card_id, name, image_url, rarity, set_name, card_number, localid, card_count_official')
               .ilike('name', `%${cardName}%`)
               .ilike('card_number', `%${cardNumber}%`)
-              .limit(3); // More specific search, fewer results needed
+              .limit(3); 
           } else {
-            // Enhanced multi-language and multi-field search
+            
             cardQuery = supabase
               .from('cards')
               .select('card_id, name, image_url, rarity, set_name, card_number, localid, card_count_official')
               .or(`name.ilike.%${query}%,card_number.ilike.%${query}%,localid.ilike.%${query}%`)
-              .limit(8); // More results for general search to show cross-language matches
+              .limit(8); 
           }
 
           const { data: cards } = await cardQuery;
 
           if (cards) {
-            // Deduplicate cards based on unique card identifier to prevent showing multiple entries for the same card
+            
             const uniqueCards = new Map();
             
             cards.forEach(card => {
-              // Use localid as primary key for deduplication, fallback to card_id
+              
               const uniqueKey = card.localid || card.card_id;
               
               if (!uniqueCards.has(uniqueKey)) {
                 uniqueCards.set(uniqueKey, card);
               } else {
-                // If we already have this card, prefer the one that matches the search term in the name
+                
                 const existingCard = uniqueCards.get(uniqueKey);
                 const currentNameMatch = card.name.toLowerCase().includes(query.toLowerCase());
                 const existingNameMatch = existingCard.name.toLowerCase().includes(query.toLowerCase());
-                
-                // Prefer the card whose name matches the search term
+
                 if (currentNameMatch && !existingNameMatch) {
                   uniqueCards.set(uniqueKey, card);
                 }
               }
             });
-            
-            // Add deduplicated cards to search results
+
             searchResults.push(...Array.from(uniqueCards.values()).map(card => ({
               type: 'card' as const,
               id: card.card_id,
@@ -125,7 +122,6 @@ const SearchBar = () => {
           }
         }
 
-        // Search series
         if (activeFilters.includes('series') || activeFilters.length === 0) {
           const { data: series } = await supabase
             .from('series')
@@ -143,7 +139,6 @@ const SearchBar = () => {
           }
         }
 
-        // Search sets
         if (activeFilters.includes('set') || activeFilters.length === 0) {
           const { data: sets } = await supabase
             .from('sets')
@@ -206,7 +201,7 @@ const SearchBar = () => {
 
   return (
     <div className="relative w-full search-container" ref={searchRef}>
-      {/* Search Input */}
+      {}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -229,7 +224,7 @@ const SearchBar = () => {
         )}
       </div>
 
-      {/* Filter Buttons */}
+      {}
       <div className="flex flex-wrap gap-2 mt-2 justify-center">
         {filters.map((filter) => {
           const Icon = filter.icon;
@@ -251,7 +246,7 @@ const SearchBar = () => {
         })}
       </div>
 
-      {/* Search Results */}
+      {}
       {showResults && (query.length >= 2 || results.length > 0) && (
         <Card className="absolute top-full left-0 right-0 mt-2 pixel-card max-h-96 overflow-y-auto search-results-overlay w-full">
           <CardContent className="p-2 sm:p-4">

@@ -10,8 +10,6 @@ export const useCartCount = () => {
     queryFn: async () => {
       if (!user) return 0;
 
-    
-      
       const { count, error } = await supabase
         .from('carts')
         .select('*', { count: 'exact', head: true })
@@ -22,7 +20,6 @@ export const useCartCount = () => {
         throw error;
       }
 
-      
       return count || 0;
     },
     enabled: !!user,

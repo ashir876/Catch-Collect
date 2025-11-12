@@ -38,7 +38,6 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch wishlist data and current prices
   const { data: wishlistItems = [] } = useWishlistData({
     limit: 1000,
     offset: 0
@@ -85,8 +84,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
     try {
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
       console.log('Calculating for days:', days);
-      
-      // Get real historical price data from database
+
       const historicalData = await fetchRealHistoricalData(days);
       console.log('Fetched real historical data:', historicalData.length, 'points');
       
@@ -94,7 +92,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
         setValueHistory(historicalData);
         console.log('✅ Using real historical price data from database');
       } else {
-        // Fallback to realistic data based on current values
+        
         const currentValues = calculateCurrentValues();
         console.log('Current values:', currentValues);
         const fallbackData = generateRealisticHistoricalData(currentValues, days);
@@ -106,7 +104,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
     } catch (error) {
       console.error('Failed to load wishlist value history:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      // Use realistic fallback data based on current wishlist
+      
       const days = timeRangeOptions.find(opt => opt.value === timeRange)?.days || 365;
       const currentValues = calculateCurrentValues();
       const fallbackData = generateRealisticHistoricalData(currentValues, days);
@@ -128,7 +126,6 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
       console.log('Fetching real historical data for wishlist cards:', cardIds);
       console.log('Cutoff date:', cutoffDate.toISOString());
 
-      // Fetch price history for all cards in wishlist
       const { data: priceHistory, error } = await (supabase as any)
         .from('price_history')
         .select('card_id, price, currency, recorded_at, source, price_type')
@@ -147,10 +144,8 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
         return [];
       }
 
-      // Group price data by date
       const priceByDate = new Map<string, { myValue: number; marketValue: number; count: number }>();
-      
-      // Initialize with your wishlist prices
+
       wishlistItems.forEach((item: any) => {
         const myPrice = item.price || 0;
         const createdDate = new Date(item.created_at).toISOString().split('T')[0];
@@ -164,7 +159,6 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
         dateData.count += 1;
       });
 
-      // Add market prices from price history
       priceHistory.forEach((record: any) => {
         const date = new Date(record.recorded_at).toISOString().split('T')[0];
         
@@ -176,12 +170,10 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
         dateData.marketValue += record.price || 0;
       });
 
-      // Convert to chart data format
       const chartData: WishlistValueData[] = [];
       let cumulativeMyValue = 0;
       let cumulativeMarketValue = 0;
 
-      // Sort dates and calculate cumulative values
       const sortedDates = Array.from(priceByDate.keys()).sort();
       
       sortedDates.forEach(date => {
@@ -215,15 +207,13 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
     console.log('WishlistValueChart - currentPrices:', currentPrices);
 
     wishlistItems.forEach((item: any) => {
-      // Find current market price for this card
-      const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
       
-      // Your desired price (what you want to pay)
+      const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
+
       const myPrice = item.price || 0;
       console.log(`Wishlist Card ${item.card_id}: myPrice = ${myPrice}, item.price = ${item.price}`);
       myTotalValue += myPrice;
 
-      // Market price (current value)
       const currentMarketPrice = marketPrice?.price || 0;
       marketTotalValue += currentMarketPrice;
     });
@@ -231,23 +221,20 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
     return {
       myValue: myTotalValue,
       marketValue: marketTotalValue,
-      currency: 'CHF' // Assuming CHF as base currency
+      currency: 'CHF' 
     };
   };
 
   const generateRealisticHistoricalData = (currentValues: any, days: number): WishlistValueData[] => {
     const data: WishlistValueData[] = [];
     const baseDate = new Date();
-    
-    // Get the earliest date when any wishlist item was added
+
     const earliestWishlistDate = wishlistItems.length > 0 
       ? new Date(Math.min(...wishlistItems.map(item => new Date(item.created_at).getTime())))
       : new Date();
-    
-    // Calculate how many days ago the earliest item was added
+
     const daysSinceEarliest = Math.floor((baseDate.getTime() - earliestWishlistDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Use the actual range from when items were added, but cap at the requested days
+
     const actualDays = Math.min(daysSinceEarliest, days);
     
     console.log('WishlistValueChart - Historical data generation:', {
@@ -257,27 +244,22 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
       actualDays,
       wishlistItemsCount: wishlistItems.length
     });
-    
-    // Start with the current values and work backwards
+
     let myValue = currentValues.myValue;
     let marketValue = currentValues.marketValue;
 
-    // Only generate data from when the earliest wishlist item was added
     for (let day = actualDays; day >= 0; day--) {
       const currentDate = new Date(baseDate);
       currentDate.setDate(currentDate.getDate() - day);
-      
-      // If this date is before the earliest wishlist item, skip it
+
       if (currentDate < earliestWishlistDate) {
         continue;
       }
-      
-      // Create realistic trends based on actual wishlist growth
-      const baseTrend = Math.sin(day * 0.05) * 0.01; // Gentle trend
-      const myVariation = (Math.random() - 0.5) * 0.005; // ±0.25% variation for your prices
-      const marketVariation = (Math.random() - 0.5) * 0.008; // ±0.4% variation for market prices
-      
-      // Market prices tend to be more volatile
+
+      const baseTrend = Math.sin(day * 0.05) * 0.01; 
+      const myVariation = (Math.random() - 0.5) * 0.005; 
+      const marketVariation = (Math.random() - 0.5) * 0.008; 
+
       const myChange = baseTrend + myVariation;
       const marketChange = baseTrend + marketVariation + (Math.random() - 0.5) * 0.003;
       
@@ -294,8 +276,6 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
 
     return data;
   };
-
-
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('de-DE', {
@@ -359,7 +339,6 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
       );
     }
 
-         // Prepare data for the chart
      const chartData = valueHistory.map(record => ({
        date: formatDate(record.recorded_at),
        timestamp: new Date(record.recorded_at).getTime(),
@@ -373,7 +352,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
 
     return (
       <div className="space-y-4">
-        {/* Chart Header with High/Low/Change info */}
+        {}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 text-sm">
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-4">
             <span className="text-muted-foreground">
@@ -409,7 +388,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
           )}
         </div>
 
-        {/* Chart */}
+        {}
         <div className="w-full h-80 sm:h-96 md:h-[32rem]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 40 }}>
@@ -522,7 +501,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Chart */}
+        {}
         <div className="space-y-2">
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -533,7 +512,7 @@ export function WishlistValueChart({ className, showControls = true }: WishlistV
           )}
         </div>
 
-        {/* Footer Info */}
+        {}
         {valueHistory.length > 0 && (
           <div className="text-xs text-gray-500 text-center">
             {valueHistory.length} {t('pricing.data.points')} • {t('pricing.last.updated')}: {

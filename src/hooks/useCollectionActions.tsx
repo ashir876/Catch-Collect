@@ -12,10 +12,8 @@ export const useCollectionActions = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  // Callback functions for modal closing
   const [onCollectionSuccess, setOnCollectionSuccess] = useState<(() => void) | null>(null);
 
-  // Add to Collection
   const addToCollection = useMutation({
     mutationFn: async ({ 
       cardId, 
@@ -40,14 +38,12 @@ export const useCollectionActions = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Get card data - filter by both card_id and language
       let query = supabase.from('cards').select('*').eq('card_id', cardId);
-      const finalLanguage = cardLanguage || 'en'; // Default to 'en' if not provided
+      const finalLanguage = cardLanguage || 'en'; 
       query = query.eq('language', finalLanguage);
       
       let { data: cardData, error: cardError } = await query.single();
-      
-      // If not found with specified/default language, try to get any language version as fallback
+
       if (cardError && cardError.code === 'PGRST116') {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('cards')
@@ -58,7 +54,7 @@ export const useCollectionActions = () => {
           .single();
         
         if (fallbackError) {
-          throw cardError; // Throw original error if fallback also fails
+          throw cardError; 
         }
         cardData = fallbackData;
         cardError = null;
@@ -70,7 +66,6 @@ export const useCollectionActions = () => {
         throw cardError;
       }
 
-             // Add to collection
        const { error } = await supabase
          .from('card_collections')
          .insert({
@@ -100,14 +95,13 @@ export const useCollectionActions = () => {
       return { cardId, cardData };
     },
     onMutate: async ({ cardId, cardName }) => {
-      // Optimistic update for collection data
+      
       await queryClient.cancelQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
       await queryClient.cancelQueries({ queryKey: ['collection-check', user?.id, cardId] });
       
       const previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user?.id));
       const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
-      
-      // Optimistic update for collection list
+
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), (oldData: any) => {
         if (!oldData) return oldData;
         
@@ -122,13 +116,12 @@ export const useCollectionActions = () => {
         return [newCollectionItem, ...oldData];
       });
 
-      // Optimistic update for collection check
       queryClient.setQueryData(['collection-check', user?.id, cardId], true);
 
       return { previousData, previousCheckData };
     },
     onError: (error, variables, context) => {
-      // Revert optimistic updates
+      
       if (context?.previousData) {
         queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), context.previousData);
       }
@@ -143,16 +136,14 @@ export const useCollectionActions = () => {
       });
     },
     onSuccess: (data) => {
-      // Refetch to ensure data consistency
+      
       queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
-      
-      // Invalidate set progress queries to update statistics immediately
+
       queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
-      
-      // Close modal if callback is set
+
       if (onCollectionSuccess) {
         onCollectionSuccess();
         setOnCollectionSuccess(null);
@@ -165,7 +156,6 @@ export const useCollectionActions = () => {
     },
   });
 
-  // Remove from Collection
   const removeFromCollection = useMutation({
     mutationFn: async ({ cardId }: { cardId: string }) => {
       if (!user) throw new Error("User not authenticated");
@@ -185,14 +175,12 @@ export const useCollectionActions = () => {
       
       const previousData = queryClient.getQueryData(COLLECTION_QUERY_KEY(user?.id));
       const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
-      
-      // Optimistic update for collection list
+
       queryClient.setQueryData(COLLECTION_QUERY_KEY(user?.id), (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.filter((item: any) => item.card_id !== cardId);
       });
 
-      // Optimistic update for collection check
       queryClient.setQueryData(['collection-check', user?.id, cardId], false);
 
       return { previousData, previousCheckData };
@@ -215,8 +203,7 @@ export const useCollectionActions = () => {
       queryClient.invalidateQueries({ queryKey: COLLECTION_QUERY_KEY(user?.id) });
       queryClient.invalidateQueries({ queryKey: ['collection-check', user?.id, data.cardId] });
       queryClient.invalidateQueries({ queryKey: ['collection-count', user?.id] });
-      
-      // Invalidate set progress queries to update statistics immediately
+
       queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       
@@ -242,12 +229,8 @@ export const useWishlistActions = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  // Callback functions for modal closing
   const [onWishlistSuccess, setOnWishlistSuccess] = useState<(() => void) | null>(null);
 
-
-
-  // Add to Wishlist
   const addToWishlist = useMutation({
     mutationFn: async ({ 
       cardId, 
@@ -266,7 +249,6 @@ export const useWishlistActions = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Check if already in wishlist
       const { data: existingItems, error: checkError } = await supabase
         .from('card_wishlist')
         .select('id')
@@ -279,14 +261,12 @@ export const useWishlistActions = () => {
         throw new Error("Card already in wishlist");
       }
 
-      // Get card data - filter by both card_id and language
       let query = supabase.from('cards').select('*').eq('card_id', cardId);
-      const finalLanguage = cardLanguage || 'en'; // Default to 'en' if not provided
+      const finalLanguage = cardLanguage || 'en'; 
       query = query.eq('language', finalLanguage);
       
       let { data: cardData, error: cardError } = await query.single();
-      
-      // If not found with specified/default language, try to get any language version as fallback
+
       if (cardError && cardError.code === 'PGRST116') {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('cards')
@@ -297,7 +277,7 @@ export const useWishlistActions = () => {
           .single();
         
         if (fallbackError) {
-          throw cardError; // Throw original error if fallback also fails
+          throw cardError; 
         }
         cardData = fallbackData;
         cardError = null;
@@ -307,8 +287,7 @@ export const useWishlistActions = () => {
 
       if (cardError) throw cardError;
 
-      // Convert priority string to number
-      let priorityNumber = 1; // default medium
+      let priorityNumber = 1; 
       if (typeof priority === 'string') {
         switch (priority) {
           case 'low':
@@ -318,13 +297,12 @@ export const useWishlistActions = () => {
             priorityNumber = 2;
             break;
           default:
-            priorityNumber = 1; // medium
+            priorityNumber = 1; 
         }
       } else {
         priorityNumber = priority;
       }
 
-      // Add to wishlist - try with price and notes first, fallback to basic insert if columns don't exist
       let insertData: any = {
         user_id: user.id,
         card_id: cardId,
@@ -332,10 +310,8 @@ export const useWishlistActions = () => {
         priority: priorityNumber
       };
 
-      // Add set_id for statistics to work properly
       if (cardData.set_id) insertData.set_id = cardData.set_id;
 
-      // Try to add price and notes if they exist
       if (price !== undefined) {
         insertData.price = price;
       }
@@ -349,7 +325,7 @@ export const useWishlistActions = () => {
 
       if (error) {
         console.error('Supabase insert error:', error);
-        // If it's a column error, provide a more helpful message
+        
         if (error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist')) {
           throw new Error('Database schema needs to be updated. Please run the SQL script to add price and notes columns.');
         }
@@ -358,14 +334,13 @@ export const useWishlistActions = () => {
       return { cardId, cardName };
     },
     onMutate: async ({ cardId, cardName }) => {
-      // Optimistic update for wishlist data
+      
       await queryClient.cancelQueries({ queryKey: ['wishlist', user?.id] });
       await queryClient.cancelQueries({ queryKey: ['wishlist-check', user?.id, cardId] });
       
       const previousData = queryClient.getQueryData(['wishlist', user?.id]);
       const previousCheckData = queryClient.getQueryData(['wishlist-check', user?.id, cardId]);
-      
-      // Optimistic update for wishlist list
+
       queryClient.setQueryData(['wishlist', user?.id], (oldData: any) => {
         if (!oldData) return oldData;
         
@@ -381,13 +356,12 @@ export const useWishlistActions = () => {
         return [newWishlistItem, ...oldData];
       });
 
-      // Optimistic update for wishlist check
       queryClient.setQueryData(['wishlist-check', user?.id, cardId], true);
 
       return { previousData, previousCheckData };
     },
     onError: (error, variables, context) => {
-      // Revert optimistic updates
+      
       if (context?.previousData) {
         queryClient.setQueryData(['wishlist', user?.id], context.previousData);
       }
@@ -409,16 +383,14 @@ export const useWishlistActions = () => {
       });
     },
     onSuccess: (data) => {
-      // Refetch to ensure data consistency
+      
       queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
-      
-      // Invalidate set progress queries to update statistics immediately
+
       queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
-      
-      // Close modal if callback is set
+
       if (onWishlistSuccess) {
         onWishlistSuccess();
         setOnWishlistSuccess(null);
@@ -431,7 +403,6 @@ export const useWishlistActions = () => {
     },
   });
 
-  // Remove from Wishlist
   const removeFromWishlist = useMutation({
     mutationFn: async ({ cardId }: { cardId: string }) => {
       if (!user) throw new Error("User not authenticated");
@@ -451,14 +422,12 @@ export const useWishlistActions = () => {
       
       const previousData = queryClient.getQueryData(['wishlist', user?.id]);
       const previousCheckData = queryClient.getQueryData(['wishlist-check', user?.id, cardId]);
-      
-      // Optimistic update for wishlist list
+
       queryClient.setQueryData(['wishlist', user?.id], (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.filter((item: any) => item.card_id !== cardId);
       });
 
-      // Optimistic update for wishlist check
       queryClient.setQueryData(['wishlist-check', user?.id, cardId], false);
 
       return { previousData, previousCheckData };
@@ -481,8 +450,7 @@ export const useWishlistActions = () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['wishlist-check', user?.id, data.cardId] });
-      
-      // Invalidate set progress queries to update statistics immediately
+
       queryClient.invalidateQueries({ queryKey: ['set-progress', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['set-progress'] });
       

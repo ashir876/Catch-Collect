@@ -17,7 +17,6 @@ const Cart = () => {
   const { data: cartItems = [], isLoading, error } = useNewCartData();
   const { updateQuantity, removeItem, clearCart, isLoading: isUpdating } = useCartActions();
 
-  // Debug logging
   console.log('Cart component render:', { user, cartItems, isLoading, error });
 
   const updateCartQuantity = async (id: string, newQuantity: number) => {
@@ -57,7 +56,6 @@ const Cart = () => {
       return;
     }
 
-    // Simple confirmation - in a real app you might want a proper confirmation dialog
     if (window.confirm(t('cart.confirmClearCart'))) {
       try {
         await clearCart();
@@ -91,7 +89,6 @@ const Cart = () => {
     );
   }
 
-  // Safely calculate totals with error handling
   let subtotal = 0;
   let totalItems = 0;
   
@@ -117,15 +114,11 @@ const Cart = () => {
       return;
     }
 
-    // For now, show a placeholder message
-    // In a real implementation, this would redirect to a checkout page or payment processor
     toast({
       title: t('cart.checkoutRedirect'),
       description: t('cart.checkoutDescription'),
     });
-    
-    // TODO: Implement actual checkout flow
-    // This could redirect to a checkout page or integrate with a payment processor
+
     console.log('Checkout initiated with items:', cartItems);
   };
 
@@ -162,7 +155,7 @@ const Cart = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {}
       <div className="text-center mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
           <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -174,7 +167,7 @@ const Cart = () => {
         </p>
       </div>
       
-      {/* Back to Shop Button */}
+      {}
       <div className="mb-8">
         <Link to="/shop">
           <Button variant="outline" size="sm">
@@ -185,7 +178,7 @@ const Cart = () => {
       </div>
 
       {!cartItems || cartItems.length === 0 ? (
-        /* Empty Cart State */
+        
         <div className="text-center py-12">
           <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-6" />
           <h2 className="text-2xl font-semibold mb-4">{t('cart.emptyCart')}</h2>
@@ -201,7 +194,7 @@ const Cart = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
+          {}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">{t('cart.items')}</h2>
@@ -221,7 +214,7 @@ const Cart = () => {
               <Card key={item.id}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
-                    {/* Card Image */}
+                    {}
                     <div className="w-20 h-28 flex-shrink-0">
                       <img
                         src={item.product_image || "/placeholder.svg"}
@@ -233,7 +226,7 @@ const Cart = () => {
                       />
                     </div>
                     
-                    {/* Card Details */}
+                    {}
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -250,7 +243,7 @@ const Cart = () => {
                         </Button>
                       </div>
                       
-                      {/* Badges Section */}
+                      {}
                       <div className="flex items-center gap-2 mb-4">
                         {item.product_rarity && (
                           <Badge 
@@ -267,7 +260,7 @@ const Cart = () => {
 
                       </div>
 
-                      {/* Quantity Controls and Price */}
+                      {}
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
                           <Button
@@ -300,7 +293,7 @@ const Cart = () => {
             ))}
           </div>
 
-          {/* Order Summary */}
+          {}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -352,7 +345,7 @@ const Cart = () => {
               </CardContent>
             </Card>
 
-            {/* Payment Methods */}
+            {}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">{t('cart.paymentMethods')}</CardTitle>

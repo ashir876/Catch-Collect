@@ -130,14 +130,12 @@ const CardGrid = ({
   const applyFiltersAndSort = () => {
     let filtered = [...cards];
 
-    // Add collection and wishlist status to each card
     filtered = filtered.map(card => ({
       ...card,
       inCollection: collectionItems.some(item => item.card_id === card.card_id),
-      inWishlist: false // TODO: Add wishlist data if needed
+      inWishlist: false 
     }));
 
-    // Apply filters
     if (filters.rarity.length > 0) {
       filtered = filtered.filter(card => filters.rarity.includes(card.rarity));
     }
@@ -172,7 +170,6 @@ const CardGrid = ({
       );
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
 
@@ -261,7 +258,7 @@ const CardGrid = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Controls */}
+      {}
       {(showFilters || showSort || showViewToggle) && (
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border-2 border-black">
           <div className="flex items-center gap-4">
@@ -318,17 +315,17 @@ const CardGrid = ({
         </div>
       )}
 
-      {/* Filters */}
+      {}
       {showFilters && (
         <AdvancedFilters onFiltersChange={setFilters} />
       )}
 
-      {/* Cards Grid/List */}
+      {}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredCards.map((card) => (
             <Card key={card.card_id} className="pixel-card group transition-all duration-300 flex flex-col relative">
-              {/* Collection Status Icon - Top Right */}
+              {}
               {card.inCollection && (
                 <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
                   <CheckCircle className="h-4 w-4" />
@@ -365,7 +362,7 @@ const CardGrid = ({
                   </div>
                 </div>
                 
-                {/* Bottom Action Buttons */}
+                {}
                 <div className="mt-4 space-y-2">
                   <div className="flex gap-1">
                     <Button
@@ -406,7 +403,7 @@ const CardGrid = ({
             <Card key={card.card_id} className="pixel-card flex flex-col relative">
               <CardContent className="p-4 flex flex-col flex-1">
                 <div className="flex items-center gap-4 flex-1">
-                  {/* Collection Status Icon - Top Right */}
+                  {}
                   {card.inCollection && (
                     <div className="absolute top-2 right-2 z-10 bg-emerald-600 text-white rounded-lg px-2 py-1 shadow-lg border-2 border-white flex items-center gap-1">
                       <CheckCircle className="h-4 w-4" />
@@ -448,7 +445,7 @@ const CardGrid = ({
                   </div>
                 </div>
                 
-                {/* Bottom Action Buttons */}
+                {}
                 <div className="mt-4 flex gap-2">
                   <Button
                     size="sm"

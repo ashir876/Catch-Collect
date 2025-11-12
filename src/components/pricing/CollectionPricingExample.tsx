@@ -18,7 +18,7 @@ export function CollectionPricingExample({ className }: CollectionPricingExample
 
   const handleUpdateAllPrices = async () => {
     try {
-      // Example: Update prices for a specific set
+      
       await updateSetPrices('base1');
       console.log('Prices updated successfully!');
     } catch (error) {
@@ -28,11 +28,11 @@ export function CollectionPricingExample({ className }: CollectionPricingExample
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Collection Value Overview */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CollectionValueDisplay />
         
-        {/* Quick Actions */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -72,9 +72,9 @@ export function CollectionPricingExample({ className }: CollectionPricingExample
         </Card>
       </div>
 
-      {/* Example Card with Pricing */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Card Image and Info */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Charizard</CardTitle>
@@ -95,7 +95,7 @@ export function CollectionPricingExample({ className }: CollectionPricingExample
           </CardContent>
         </Card>
 
-        {/* Card Pricing */}
+        {}
         <CardPriceDisplay
           cardId="base1-4"
           setCode="base1"
@@ -104,14 +104,14 @@ export function CollectionPricingExample({ className }: CollectionPricingExample
           showHistory={true}
         />
 
-        {/* Price Trends */}
+        {}
         <PriceTrendChart
           cardId="base1-4"
           showControls={true}
         />
       </div>
 
-      {/* Pricing Information */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>{t('pricing.information')}</CardTitle>
@@ -143,25 +143,24 @@ export function CollectionPricingExample({ className }: CollectionPricingExample
   );
 }
 
-// Example of how to integrate into the Collection page:
 export function CollectionWithPricing() {
   const { t } = useTranslation();
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {}
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold mb-4">{t('collection.title')}</h1>
         <p className="text-muted-foreground">{t('collection.subtitle')}</p>
       </div>
 
-      {/* Pricing Integration */}
+      {}
       <CollectionPricingExample className="mb-8" />
 
-      {/* Existing Collection Content */}
+      {}
       <div className="border-t pt-8">
         <h2 className="text-2xl font-bold mb-6">{t('collection.your.cards')}</h2>
-        {/* Your existing card grid would go here */}
+        {}
       </div>
     </div>
   );

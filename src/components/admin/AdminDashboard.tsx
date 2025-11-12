@@ -49,22 +49,18 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch user statistics
       const { count: totalUsers } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch card statistics
       const { count: totalCards } = await supabase
         .from('cards')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch order statistics
       const { count: totalOrders } = await supabase
         .from('orders')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch revenue data
       const { data: orders } = await supabase
         .from('orders')
         .select('total_amount')
@@ -72,7 +68,6 @@ const AdminDashboard = () => {
 
       const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
 
-      // Fetch recent orders
       const { data: recentOrders } = await supabase
         .from('orders')
         .select(`
@@ -86,7 +81,6 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      // Mock data for demonstration
       const mockStats: AdminStats = {
         totalUsers: totalUsers || 0,
         totalCards: totalCards || 0,
@@ -158,7 +152,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-black uppercase tracking-wider mb-2">
@@ -180,7 +174,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {}
       <div className="flex gap-2 mb-8 border-b-4 border-black">
         {[
           { key: 'overview', label: t('admin.overview'), icon: BarChart3 },
@@ -204,10 +198,10 @@ const AdminDashboard = () => {
         })}
       </div>
 
-      {/* Overview Tab */}
+      {}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          {/* Stats Cards */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="pixel-card">
               <CardHeader className="pb-2">
@@ -270,7 +264,7 @@ const AdminDashboard = () => {
             </Card>
           </div>
 
-          {/* System Health */}
+          {}
           <Card className="pixel-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -293,7 +287,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Top Selling Cards */}
+          {}
           <Card className="pixel-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -319,7 +313,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Recent Orders */}
+          {}
           <Card className="pixel-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -352,7 +346,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Users Tab */}
+      {}
       {activeTab === 'users' && (
         <Card className="pixel-card">
           <CardHeader>
@@ -364,7 +358,7 @@ const AdminDashboard = () => {
         </Card>
       )}
 
-      {/* Orders Tab */}
+      {}
       {activeTab === 'orders' && (
         <Card className="pixel-card">
           <CardHeader>
@@ -376,7 +370,7 @@ const AdminDashboard = () => {
         </Card>
       )}
 
-      {/* Analytics Tab */}
+      {}
       {activeTab === 'analytics' && (
         <Card className="pixel-card">
           <CardHeader>
@@ -388,7 +382,7 @@ const AdminDashboard = () => {
         </Card>
       )}
 
-      {/* Settings Tab */}
+      {}
       {activeTab === 'settings' && (
         <Card className="pixel-card">
           <CardHeader>

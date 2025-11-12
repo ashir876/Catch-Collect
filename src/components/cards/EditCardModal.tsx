@@ -37,7 +37,6 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
   });
   const [loading, setLoading] = useState(false);
 
-  // Initialize form data when card changes
   useEffect(() => {
     if (card) {
       console.log('EditCardModal - Card data received:', {
@@ -58,7 +57,6 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
     }
   }, [card, type]);
 
-  // Helper function to get language display names
   function getLanguageDisplayName(langCode: string): string {
     const languageMap: { [key: string]: string } = {
       'en': 'English',
@@ -77,7 +75,6 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
     return languageMap[langCode] || langCode.toUpperCase();
   }
 
-  // Create dynamic languages array from database data
   const languages = [
     { code: 'all', name: t('filters.allLanguages') },
     ...availableLanguages.map(lang => ({
@@ -96,13 +93,13 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
       const updateData: any = {};
 
       if (type === 'collection') {
-        // Update collection card
+        
         if (formData.condition) updateData.condition = formData.condition;
         if (formData.price) updateData.price = parseFloat(formData.price);
         if (formData.notes !== undefined) updateData.notes = formData.notes;
         if (formData.language && formData.language !== 'all') updateData.language = formData.language;
         if (formData.acquiredDate) {
-          // Convert the date string to a proper date format for PostgreSQL
+          
           const dateObj = new Date(formData.acquiredDate);
           updateData.acquired_date = dateObj.toISOString().split('T')[0];
         }
@@ -115,7 +112,6 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
           formData 
         });
 
-        // Prefer updating by collection item id when available to avoid updating multiple copies
         const isNumericCollectionId = !isNaN(parseInt(card.id)) && card.id !== card.card_id;
         let updateQuery = supabase
           .from('card_collections')
@@ -125,7 +121,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         if (isNumericCollectionId) {
           updateQuery = updateQuery.eq('id', parseInt(card.id));
         } else {
-          // Fallback: update by card_id (may affect multiple rows if duplicates exist)
+          
           updateQuery = updateQuery.eq('card_id', card.card_id);
         }
 
@@ -143,14 +139,12 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         
         console.log('EditCardModal - Database update successful');
 
-        // Invalidate collection queries
         if (user?.id) {
           console.log('EditCardModal - Invalidating queries for user:', user.id);
-          // Force refetch by invalidating and refetching
+          
           await queryClient.invalidateQueries({ queryKey: ['collection', user.id] });
           await queryClient.invalidateQueries({ queryKey: ['collection-count', user.id] });
-          
-          // Force a refetch to ensure the data is updated
+
           await queryClient.refetchQueries({ queryKey: ['collection', user.id] });
           
           console.log('EditCardModal - Query invalidation and refetch completed');
@@ -164,7 +158,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         });
 
       } else if (type === 'wishlist') {
-        // Update wishlist card
+        
         if (formData.price) updateData.price = parseFloat(formData.price);
         if (formData.notes !== undefined) updateData.notes = formData.notes;
         if (formData.priority) {
@@ -174,7 +168,6 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
 
         console.log('EditCardModal - Updating wishlist card with data:', { cardId: card.id, updateData });
 
-        // Check if card.id is a numeric wishlist item ID or a card_id
         const isNumericId = !isNaN(parseInt(card.id)) && card.id !== card.card_id;
         
         let updateQuery = supabase
@@ -195,7 +188,6 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
           throw error;
         }
 
-        // Invalidate wishlist queries
         if (user?.id) {
           console.log('EditCardModal - Invalidating wishlist queries for user:', user.id);
           await queryClient.invalidateQueries({ queryKey: ['wishlist', user.id] });
@@ -244,7 +236,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Card Info Display */}
+          {}
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
             <div className="w-12 h-16 bg-white rounded border overflow-hidden flex-shrink-0">
               <img
@@ -262,7 +254,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
             </div>
           </div>
 
-          {/* Collection-specific fields */}
+          {}
           {type === 'collection' && (
             <>
               <div className="space-y-2">
@@ -311,7 +303,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
             </>
           )}
 
-          {/* Wishlist-specific fields */}
+          {}
           {type === 'wishlist' && (
             <div className="space-y-2">
               <Label htmlFor="priority">{t('wishlist.priority')}</Label>
@@ -328,7 +320,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
             </div>
           )}
 
-          {/* Common fields */}
+          {}
           <div className="space-y-2">
             <Label htmlFor="price">
               {type === 'collection' ? t('collection.price') : t('wishlist.desiredPrice')}
@@ -355,7 +347,7 @@ export function EditCardModal({ isOpen, onClose, card, type, onSuccess }: EditCa
             />
           </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               {t('common.cancel')}

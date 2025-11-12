@@ -24,7 +24,6 @@ const Profile = () => {
     email: userProfile?.email || ''
   });
 
-  // Update form data when profile loads
   useEffect(() => {
     if (userProfile) {
       setFormData({
@@ -36,7 +35,7 @@ const Profile = () => {
 
   const handleSave = () => {
     setIsEditing(false);
-    // Here you would typically save to backend
+    
   };
 
   const getCategoryColor = (category: string) => {
@@ -67,7 +66,6 @@ const Profile = () => {
     }
   };
 
-  // Show loading state
   if (profileLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -81,7 +79,6 @@ const Profile = () => {
     );
   }
 
-  // Show error state
   if (profileError) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -95,7 +92,6 @@ const Profile = () => {
     );
   }
 
-  // If no user profile data, show message
   if (!userProfile) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -108,7 +104,7 @@ const Profile = () => {
 
   return (
           <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {}
         <div className="text-center mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
             <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -128,7 +124,7 @@ const Profile = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-8">
-          {/* Profile Overview */}
+          {}
           <Card>
             <CardHeader>
               <div className="flex items-center space-x-4">
@@ -155,7 +151,7 @@ const Profile = () => {
             </CardHeader>
           </Card>
 
-          {/* Stats Grid */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -213,7 +209,7 @@ const Profile = () => {
             </Card>
           </div>
 
-          {/* Loyalty Program */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>{t('profile.loyaltyProgram')}</CardTitle>

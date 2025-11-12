@@ -10,7 +10,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   created_at: string;
-  // Product information from join
+  
   product_name?: string;
   product_image?: string;
   product_rarity?: string;
@@ -42,7 +42,6 @@ export const useNewCartData = () => {
         throw error;
       }
 
-      // Transform the data to flatten the joined product information
       const transformedData = data?.map((item: any) => ({
         id: item.id,
         user_id: item.user_id,

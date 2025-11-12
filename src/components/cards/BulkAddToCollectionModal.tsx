@@ -34,7 +34,6 @@ const BulkAddToCollectionModal = ({
   const { t } = useTranslation();
   const [cardDetails, setCardDetails] = useState<{ [cardId: string]: CardDetails }>({});
 
-  // Initialize card details when modal opens
   React.useEffect(() => {
     if (isOpen) {
       const initialDetails: { [cardId: string]: CardDetails } = {};
@@ -98,7 +97,7 @@ const BulkAddToCollectionModal = ({
                 <Card key={cardId} className="p-4">
                   <CardContent className="p-0">
                     <div className="flex gap-4">
-                      {/* Card Image */}
+                      {}
                       <div className="w-20 h-28 flex-shrink-0">
                         <img
                           src={card.image_url || "/placeholder.svg"}
@@ -110,7 +109,7 @@ const BulkAddToCollectionModal = ({
                         />
                       </div>
 
-                      {/* Card Info */}
+                      {}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm truncate">{card.name}</h3>
                         <p className="text-muted-foreground text-xs">
@@ -121,9 +120,9 @@ const BulkAddToCollectionModal = ({
                         </Badge>
                       </div>
 
-                      {/* Details Form */}
+                      {}
                       <div className="flex-1 grid grid-cols-2 gap-3">
-                        {/* Condition */}
+                        {}
                         <div className="space-y-1">
                           <Label htmlFor={`condition-${cardId}`} className="text-xs">Condition</Label>
                           <Select
@@ -142,7 +141,7 @@ const BulkAddToCollectionModal = ({
                           </Select>
                         </div>
 
-                        {/* Price */}
+                        {}
                         <div className="space-y-1">
                           <Label htmlFor={`price-${cardId}`} className="text-xs">Price</Label>
                           <Input
@@ -157,9 +156,7 @@ const BulkAddToCollectionModal = ({
                           />
                         </div>
 
-
-
-                        {/* Date */}
+                        {}
                         <div className="space-y-1">
                           <Label htmlFor={`date-${cardId}`} className="text-xs">Date Acquired</Label>
                           <Input
@@ -171,7 +168,7 @@ const BulkAddToCollectionModal = ({
                           />
                         </div>
 
-                        {/* Notes */}
+                        {}
                         <div className="space-y-1 col-span-2">
                           <Label htmlFor={`notes-${cardId}`} className="text-xs">Notes</Label>
                           <Textarea
@@ -190,7 +187,7 @@ const BulkAddToCollectionModal = ({
             })}
           </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel

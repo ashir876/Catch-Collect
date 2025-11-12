@@ -23,7 +23,7 @@ const Shop = () => {
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-      {/* Header */}
+      {}
       <div className="text-center mb-8 sm:mb-12">
         <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black mb-4 sm:mb-8 uppercase tracking-wider">
           <span className="bg-yellow-400 text-black px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 border-2 sm:border-3 md:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
@@ -45,7 +45,7 @@ const Shop = () => {
         )}
       </div>
 
-      {/* Shop Cards Section */}
+      {}
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-2 mb-4">
           <Grid3X3 className="h-5 w-5" />
@@ -57,7 +57,6 @@ const Shop = () => {
   );
 };
 
-// Component for shopping individual cards
 const ShopFromCards = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
@@ -81,12 +80,11 @@ const ShopFromCards = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(50); // Show 50 items per page
+  const [itemsPerPage] = useState(50); 
   const { toast } = useToast();
   const { user } = useAuth();
   const { addToCart, isLoading } = useCartActions();
 
-  // Reset page when filters change
   const handleSearchChange = (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1);
@@ -168,47 +166,42 @@ const ShopFromCards = () => {
   };
 
   const handleReloadCollection = () => {
-    // This function can be used to reload collection data if needed
+    
     console.log('Reloading collection data...');
   };
 
-  // Helper function to get consistent mock price based on rarity and card ID
   const getMockPrice = (rarity: string, cardId: string) => {
-    // Use card ID to generate consistent price for each card
+    
     const hash = cardId.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
     }, 0);
-    const random = Math.abs(hash) / 2147483647; // Normalize to 0-1
+    const random = Math.abs(hash) / 2147483647; 
     
     switch (rarity) {
       case 'common':
-        return random * 5 + 1; // 1-6 CHF
+        return random * 5 + 1; 
       case 'rare':
-        return random * 20 + 5; // 5-25 CHF
+        return random * 20 + 5; 
       case 'epic':
-        return random * 50 + 25; // 25-75 CHF
+        return random * 50 + 25; 
       case 'legendary':
-        return random * 200 + 100; // 100-300 CHF
+        return random * 200 + 100; 
       default:
-        return random * 10 + 2; // 2-12 CHF
+        return random * 10 + 2; 
     }
   };
 
-  // Helper function to get consistent stock based on card ID
   const getMockStock = (cardId: string) => {
-    // Use card ID to generate consistent stock for each card
+    
     const hash = cardId.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
     }, 0);
-    const random = Math.abs(hash) / 2147483647; // Normalize to 0-1
-    return Math.floor(random * 20) + 1; // 1-20 stock
+    const random = Math.abs(hash) / 2147483647; 
+    return Math.floor(random * 20) + 1; 
   };
 
-
-
-  // Initialize and update language filter from URL parameters
   useEffect(() => {
     const urlLanguage = searchParams.get("language");
     if (urlLanguage) {
@@ -216,13 +209,10 @@ const ShopFromCards = () => {
     }
   }, [searchParams]);
 
-  // Get filter options data
   const { data: filterOptions } = useProductsFilterOptions(languageFilter);
 
-  // Calculate offset for pagination
   const offset = (currentPage - 1) * itemsPerPage;
 
-  // Use products data from Supabase with all filters applied
   const { data: productsData = [], isLoading: productsLoading } = useProductsData({
     language: languageFilter,
     limit: itemsPerPage,
@@ -238,7 +228,6 @@ const ShopFromCards = () => {
     sortBy
   });
 
-  // Get total count for pagination
   const { data: totalCount = 0 } = useProductsCount({
     language: languageFilter,
     searchTerm: searchTerm || undefined,
@@ -251,10 +240,8 @@ const ShopFromCards = () => {
     setsFilter: setsFilter !== 'all' ? setsFilter : undefined
   });
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Display products
   const displayProducts = productsData;
 
   const handleAddToCart = async (product: any) => {
@@ -267,7 +254,6 @@ const ShopFromCards = () => {
       return;
     }
 
-    // Validate product data
     if (!product || !product.article_number || !product.name) {
       console.error('Invalid product data:', product);
       toast({
@@ -288,8 +274,7 @@ const ShopFromCards = () => {
       };
       
       console.log('Adding product to cart:', { product, cartItem, productPrice });
-      
-      // Test the addToCart function
+
       try {
         await addToCart(cartItem);
         console.log('Successfully added to cart');
@@ -318,7 +303,7 @@ const ShopFromCards = () => {
 
   return (
     <div>
-      {/* Advanced Search and Filters */}
+      {}
       <AdvancedFilters
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
@@ -360,7 +345,7 @@ const ShopFromCards = () => {
         totalCount={totalCount}
       />
 
-      {/* View Mode Toggle */}
+      {}
       <div className="flex justify-end items-center mb-6">
         <div className="flex gap-2">
           <Button
@@ -380,7 +365,7 @@ const ShopFromCards = () => {
         </div>
       </div>
 
-      {/* Pagination Info and Controls */}
+      {}
       {totalCount > 0 && (
         <div className="mb-4 space-y-4">
           <PaginationInfo
@@ -399,7 +384,7 @@ const ShopFromCards = () => {
         </div>
       )}
 
-      {/* Products Display */}
+      {}
       {productsLoading ? (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
@@ -431,12 +416,12 @@ const ShopFromCards = () => {
           </div>
         )
       ) : (
-        /* Products Display */
+        
         viewMode === "grid" ? (
           <div key="grid-view" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
             {displayProducts.map((product, index) => {
               const productPrice = product.price || 0;
-              const stock = product.stock || 0; // Use actual stock from database
+              const stock = product.stock || 0; 
               return (
                 <div key={`${product.article_number || product.id}-${index}`} className="relative group">
                   <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group-hover:scale-105 w-full flex flex-col h-full">
@@ -450,7 +435,7 @@ const ShopFromCards = () => {
                         }}
                       />
                       
-                      {/* Overlay with Add to Cart button */}
+                      {}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2">
                         <Button 
                           onClick={() => handleAddToCart(product)}
@@ -462,7 +447,7 @@ const ShopFromCards = () => {
                         </Button>
                       </div>
 
-                      {/* Stock indicator */}
+                      {}
                       <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
                         <Badge variant={stock > 5 ? "default" : "destructive"} className="text-xs px-1 sm:px-2 py-0">
                           {stock > 5 ? t('shop.inStock') : `${stock} ${t('shop.left')}`}
@@ -501,7 +486,7 @@ const ShopFromCards = () => {
         )
       )}
 
-      {/* Bottom Pagination Controls */}
+      {}
       {totalCount > 0 && totalPages > 1 && (
         <div className="mt-8">
           <Pagination
@@ -512,7 +497,7 @@ const ShopFromCards = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {}
       {!productsLoading && displayProducts.length === 0 && (
         <div className="text-center py-12">
           <Filter className="mx-auto h-12 w-12 text-muted-foreground mb-4" />

@@ -12,7 +12,6 @@ const SetsLanguageFilter = ({ selectedLanguage, onLanguageChange, className = ''
   const { t } = useTranslation();
   const { data: availableLanguages = [], isLoading: languagesLoading } = useSetsLanguagesData();
 
-  // Helper function to get language display names
   function getLanguageDisplayName(langCode: string): { label: string, name: string } {
     const languageMap: { [key: string]: { label: string, name: string } } = {
       'en': { label: 'EN', name: 'English' },
@@ -31,7 +30,6 @@ const SetsLanguageFilter = ({ selectedLanguage, onLanguageChange, className = ''
     return languageMap[langCode] || { label: langCode.toUpperCase(), name: langCode.toUpperCase() };
   }
 
-  // Create dynamic languages array from database data
   const languages = [
     { code: 'all', label: 'ALL', name: 'All Languages' },
     ...availableLanguages.map(lang => ({

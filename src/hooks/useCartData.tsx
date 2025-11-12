@@ -11,8 +11,6 @@ export const useCartData = () => {
     queryFn: async () => {
       if (!user) return [];
 
-    
-      
       const { data, error } = await supabase
         .from('carts')
         .select('*')
@@ -24,7 +22,6 @@ export const useCartData = () => {
         throw error;
       }
 
-      
       return data;
     },
     enabled: !!user,
