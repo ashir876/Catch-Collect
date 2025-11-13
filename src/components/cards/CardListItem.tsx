@@ -9,15 +9,12 @@ import { useIsCardInCollection } from "@/hooks/useCollectionData";
 import { useIsCardInWishlist } from "@/hooks/useWishlistData";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
 import { mapDatabaseRarityToComponent } from "@/lib/rarityUtils";
-import CardPriceDisplay from "./CardPriceDisplay";
-
 interface CardListItemProps {
   card: any;
   onAddToCollection?: (card: any) => void;
   onViewDetails?: (id: string) => void;
   onCollectionChange?: () => void;
   onWishlistChange?: () => void;
-  priceData?: any;
 }
 
 const CardListItem = ({ 
@@ -25,8 +22,7 @@ const CardListItem = ({
   onAddToCollection, 
   onViewDetails, 
   onCollectionChange, 
-  onWishlistChange,
-  priceData
+  onWishlistChange
 }: CardListItemProps) => {
   const { t } = useTranslation();
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
@@ -144,13 +140,16 @@ const CardListItem = ({
               )}
               
               {}
-              <div className="mt-1">
-                <CardPriceDisplay 
-                  priceData={priceData} 
-                  compact={true}
-                  showSource={false}
-                />
-              </div>
+              {card.price && card.price > 0 ? (
+                <div className="mt-1 text-right">
+                  <div className="text-sm font-bold text-primary">
+                    €{card.price.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    📈 Cardmarket Avg
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {}

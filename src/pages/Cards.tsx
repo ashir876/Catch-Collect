@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Pagination, PaginationInfo } from "@/components/ui/pagination";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import CardWithWishlist from "@/components/cards/CardWithWishlist";
-import CompactCardListItem from "@/components/cards/CardListItem";
+import CardListItem from "@/components/cards/CardListItem";
 import LanguageFilter from "@/components/LanguageFilter";
 import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import CardDetailModal from "@/components/cards/CardDetailModal";
@@ -223,10 +223,10 @@ const Cards = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedCards.size === filteredCards.length) {
+    if (selectedCards.size === cardsWithPrices.length) {
       setSelectedCards(new Set());
     } else {
-      setSelectedCards(new Set(filteredCards.map(card => `${card.card_id}-${card.language}`)));
+      setSelectedCards(new Set(cardsWithPrices.map(card => `${card.card_id}-${card.language}`)));
     }
   };
 
@@ -250,7 +250,7 @@ const Cards = () => {
   }}) => {
     if (!user || selectedCards.size === 0) return;
 
-    const selectedCardData = filteredCards.filter(card => 
+    const selectedCardData = cardsWithPrices.filter(card => 
       selectedCards.has(`${card.card_id}-${card.language}`)
     );
     const previousCheckData: { [cardId: string]: any } = {};
@@ -345,284 +345,61 @@ const Cards = () => {
 
   const filteredCards = cardsData || [];
 
+  // Fetch prices using the same logic as SetCards.tsx in card-craft-ai-market-main
   const cardIds = filteredCards.length > 0 ? Array.from(new Set(filteredCards.map(card => card.card_id))) : [];
-
-  const cardsByKey = new Map<string, any>();
-  filteredCards.forEach((card) => {
-    const key = `${card.card_id}-${card.language || 'en'}`;
-    cardsByKey.set(key, card);
-  });
-
-  const priceQueryKey = cardIds.length > 0 
-    ? ['card-prices-direct', cardIds.sort().join(','), languageFilter, filteredCards.length]
-    : ['card-prices-direct', 'empty'];
   
-  const { data: cardPricesData, isLoading: pricesLoading } = useQuery({
-    queryKey: priceQueryKey,
+  // Fetch latest prices from card_prices table (same as SetCards.tsx)
+  const { data: cardPricesData } = useQuery({
+    queryKey: ['card-prices', cardIds.sort().join(','), languageFilter],
     queryFn: async () => {
       if (cardIds.length === 0 || filteredCards.length === 0) {
-        console.log('📊 No cards to fetch prices for');
         return [];
       }
       
-      console.log('📊 Fetching prices for', cardIds.length, 'unique card IDs,', filteredCards.length, 'total cards');
-      console.log('📊 Cards sample:', filteredCards.slice(0, 3).map(c => ({ 
-        id: c.card_id, 
-        lang: c.language || 'en',
-        hasLang: !!c.language 
-      })));
-
-      console.log('🔍 VERIFICATION: Querying card_prices table');
-      console.log('  📊 Table: card_prices (confirmed correct)');
-      console.log('  💰 Field: avg_sell_price (confirmed correct)');
-      console.log('  📋 Selected fields: card_id, language, avg_sell_price, download_id, date_recorded, updated_at');
-      console.log('  🎯 Card IDs to fetch:', cardIds.length, 'unique IDs');
-      
-      const { data, error } = await supabase
-        .from('card_prices')  
-        .select('card_id, language, avg_sell_price, download_id, date_recorded, updated_at')  
-        .in('card_id', cardIds);
+      // Query card_prices - get only the latest entry per card_id and language
+      const { data: pricesData, error } = await (supabase as any)
+        .from('card_prices')
+        .select('card_id, language, avg_sell_price, date_recorded')
+        .in('card_id', cardIds)
+        .order('date_recorded', { ascending: false });
       
       if (error) {
-        console.error('❌ Error fetching prices from card_prices:', error);
-        console.error('❌ Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Error fetching card_prices:', error);
         return [];
       }
       
-      if (!data || data.length === 0) {
-        console.log('⚠️ No price data found in card_prices table for card_ids:', cardIds.slice(0, 5));
-        return [];
-      }
-
-      console.log('✅ SUCCESS: Retrieved', data.length, 'price records from card_prices table');
-      console.log('  📊 Source Table: card_prices ✅');
-      console.log('  💰 Price Field: avg_sell_price ✅');
-
-      if (data.length > 0) {
-        const firstRecord = data[0];
-        const allKeys = Object.keys(firstRecord);
-        console.log('');
-        console.log('🔍 FIRST PRICE RECORD STRUCTURE VERIFICATION:');
-        console.log('  📋 All field names in record:', allKeys);
-        console.log('  🔑 card_id:', firstRecord.card_id);
-        console.log('  🌐 language:', firstRecord.language);
-        console.log('  💰 avg_sell_price:', firstRecord.avg_sell_price, '(type:', typeof firstRecord.avg_sell_price + ')');
-        console.log('  📥 download_id:', firstRecord.download_id);
-        console.log('  📅 date_recorded:', firstRecord.date_recorded);
-        console.log('  ⏰ updated_at:', firstRecord.updated_at);
-
-        if (!('avg_sell_price' in firstRecord)) {
-          console.error('');
-          console.error('❌ CRITICAL ERROR: avg_sell_price field NOT FOUND in database response!');
-          console.error('❌ This means we are NOT querying the correct table/field!');
-          console.error('❌ Available fields:', allKeys);
-          
-          const possiblePriceFields = allKeys.filter(k => 
-            k.toLowerCase().includes('price') || 
-            k.toLowerCase().includes('avg') ||
-            k.toLowerCase().includes('sell')
-          );
-          if (possiblePriceFields.length > 0) {
-            console.error('⚠️ Possible price fields found:', possiblePriceFields);
-          }
-          console.error('');
-        } else {
-          console.log('');
-          console.log('✅ VERIFICATION PASSED: avg_sell_price field EXISTS');
-          console.log('  💰 Price value:', firstRecord.avg_sell_price);
-          console.log('  📊 Data type:', typeof firstRecord.avg_sell_price);
-          console.log('  ✅ Table: card_prices (confirmed)');
-          console.log('  ✅ Field: avg_sell_price (confirmed)');
-          console.log('');
-        }
-
-        console.log('  📄 Full record (JSON):', JSON.stringify(firstRecord, null, 2));
-        console.log('');
-      }
-      
-      console.log('📊 Price data sample:', data.slice(0, 3).map((p: any) => ({ 
-        id: p.card_id, 
-        lang: p.language || 'en', 
-        price: p.avg_sell_price,
-        priceType: typeof p.avg_sell_price,
-        hasPrice: !!p.avg_sell_price,
-        allFields: Object.keys(p)
-      })));
-
-      const parseDownloadId = (downloadId: string): number => {
-        if (!downloadId) return 0;
-        const parts = downloadId.split('/').map(Number);
-        if (parts.length >= 3) {
-          return parts[0] * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0) + (parts[3] || 0) * 0.01;
-        }
-        return 0;
-      };
-
-      const pricesByKey = new Map<string, any[]>();
-      data.forEach((price: any) => {
-        const priceCardId = price.card_id;
-        const priceLanguage = (price.language || 'en').toLowerCase().trim();
-        const key = `${priceCardId}-${priceLanguage}`;
-        
-        if (!pricesByKey.has(key)) {
-          pricesByKey.set(key, []);
-        }
-        pricesByKey.get(key)!.push(price);
-      });
-      
-      console.log('📊 Prices grouped by key:', pricesByKey.size, 'unique combinations');
-      console.log('📊 Sample price keys:', Array.from(pricesByKey.keys()).slice(0, 5));
-
-      const priceResults: Array<{ key: string; priceData: any }> = [];
-      
-      filteredCards.forEach((card) => {
-        const cardId = card.card_id;
-        
-        const cardLanguage = (card.language || 'en').toLowerCase().trim();
-        const key = `${cardId}-${cardLanguage}`;
-
-        let matchingPrices = pricesByKey.get(key) || [];
-
-        if (matchingPrices.length === 0) {
-          const fallbackKey = Array.from(pricesByKey.keys()).find(k => {
-            const [priceCardId] = k.split('-');
-            return priceCardId === cardId;
-          });
-          
-          if (fallbackKey) {
-            const fallbackPrices = pricesByKey.get(fallbackKey) || [];
-            if (fallbackPrices.length > 0) {
-              const fallbackLang = fallbackKey.split('-').slice(1).join('-');
-              console.log(`⚠️ Using fallback price for ${cardId} (wanted "${cardLanguage}", found "${fallbackLang}")`);
-              matchingPrices = fallbackPrices;
-            }
-          }
-        }
-        
-        if (matchingPrices.length === 0) {
-          console.log(`❌ No price found for card_id: ${cardId}, language: ${cardLanguage}`);
-          return;
-        }
-
-        let latestPrice = matchingPrices[0];
-        let latestDownloadIdValue = parseDownloadId(latestPrice.download_id || '');
-        
-        matchingPrices.forEach((price: any) => {
-          const currentDownloadIdValue = parseDownloadId(price.download_id || '');
-          
-          if (currentDownloadIdValue > latestDownloadIdValue) {
-            latestPrice = price;
-            latestDownloadIdValue = currentDownloadIdValue;
-          } else if (currentDownloadIdValue === 0 && latestDownloadIdValue === 0) {
-            
-            if (price.date_recorded && latestPrice.date_recorded) {
-              const currentDate = new Date(price.date_recorded).getTime();
-              const existingDate = new Date(latestPrice.date_recorded).getTime();
-              if (currentDate > existingDate) {
-                latestPrice = price;
-              }
-            } else if (price.date_recorded && !latestPrice.date_recorded) {
-              latestPrice = price;
-            }
-          }
-        });
-
-        const priceValue = latestPrice.avg_sell_price != null 
-          ? Number(latestPrice.avg_sell_price) 
-          : null;
-
-        if (priceValue != null && !isNaN(priceValue) && priceValue > 0) {
-          
-          priceResults.push({
-            key,
-            priceData: {
-              card_id: cardId,
-              language: cardLanguage,
-              cardmarket_avg_sell_price: priceValue,
-              download_id: latestPrice.download_id,
-              last_updated: latestPrice.updated_at || latestPrice.date_recorded
-            }
-          });
-          
-          console.log(`✅ Matched price for ${key}:`);
-          console.log('  💰 Price value:', priceValue, '(type:', typeof priceValue + ')');
-          console.log('  📥 Download ID:', latestPrice.download_id);
-          console.log('  🌐 Language:', latestPrice.language || 'en');
-          console.log('  📦 Price data object:', JSON.stringify({
-            card_id: cardId,
-            language: cardLanguage,
-            cardmarket_avg_sell_price: priceValue,
-            download_id: latestPrice.download_id,
-            last_updated: latestPrice.updated_at || latestPrice.date_recorded
-          }, null, 2));
-        } else {
-          console.log(`⚠️ Invalid price for ${key}:`, {
-            avg_sell_price: latestPrice.avg_sell_price,
-            converted: priceValue,
-            isNaN: isNaN(priceValue),
-            isNull: priceValue == null
-          });
-        }
-      });
-
-      console.log('');
-      console.log('📊 FINAL PRICE PROCESSING SUMMARY:');
-      console.log('  ✅ Source Table: card_prices');
-      console.log('  ✅ Price Field: avg_sell_price');
-      console.log('  📊 Total records retrieved:', data.length);
-      console.log('  🎯 Cards with prices:', priceResults.length, 'out of', filteredCards.length, 'cards');
-      console.log('  💰 All prices extracted from: card_prices.avg_sell_price');
-      console.log('');
-      
-      return priceResults;
+      return pricesData || [];
     },
     enabled: cardIds.length > 0 && filteredCards.length > 0 && !isLoading,
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
   });
 
+  // Create price map from card_prices (same logic as SetCards.tsx)
   const priceMap = React.useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, number>();
     if (cardPricesData && Array.isArray(cardPricesData)) {
-      cardPricesData.forEach(({ key, priceData }) => {
-        map.set(key, priceData);
+      cardPricesData.forEach((price: any) => {
+        const key = `${price.card_id}-${price.language || 'en'}`;
+        // Only set if not already set (first one is latest due to ordering)
+        if (price.avg_sell_price && !map.has(key)) {
+          map.set(key, Number(price.avg_sell_price));
+        }
       });
-      console.log('📊 Price map created with', map.size, 'entries');
-      if (map.size > 0) {
-        console.log('📊 Sample price map keys:', Array.from(map.keys()).slice(0, 5));
-        console.log('📊 Sample price map values:', Array.from(map.values()).slice(0, 2).map(v => ({
-          card_id: v.card_id,
-          language: v.language,
-          price: v.cardmarket_avg_sell_price
-        })));
-      }
-    } else {
-      console.log('📊 No price data available yet');
     }
     return map;
   }, [cardPricesData]);
 
-  React.useEffect(() => {
-    if (filteredCards.length > 0 && priceMap.size > 0) {
-      console.log('🔍 Price lookup debug for first 5 cards:');
-      filteredCards.slice(0, 5).forEach(card => {
-        const lookupKey = `${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`;
-        const price = priceMap.get(lookupKey);
-        console.log(`  Card: ${card.card_id}, Lang: ${card.language || 'en'}, Key: ${lookupKey}, Found: ${!!price}`, {
-          priceData: price,
-          priceValue: price?.cardmarket_avg_sell_price,
-          priceType: typeof price?.cardmarket_avg_sell_price,
-          isNumber: typeof price?.cardmarket_avg_sell_price === 'number',
-          isGreaterThanZero: price?.cardmarket_avg_sell_price > 0
-        });
-      });
-    } else if (filteredCards.length > 0) {
-      console.log('⚠️ Price map is empty but cards exist. Cards:', filteredCards.length, 'Price map size:', priceMap.size);
-    }
+  // Merge cards with their prices (same logic as SetCards.tsx)
+  const cardsWithPrices = React.useMemo(() => {
+    return filteredCards.map((card: any) => {
+      const priceKey = `${card.card_id}-${card.language || 'en'}`;
+      const price = priceMap.get(priceKey);
+      
+      return {
+        ...card,
+        price: price || undefined
+      };
+    });
   }, [filteredCards, priceMap]);
 
   const handleAddToCollection = (card) => {
@@ -846,10 +623,10 @@ const Cards = () => {
               size="sm"
               onClick={handleSelectAll}
             >
-              {selectedCards.size === filteredCards.length ? 'Deselect All' : 'Select All'}
+              {selectedCards.size === cardsWithPrices.length ? 'Deselect All' : 'Select All'}
             </Button>
             <span className="text-sm text-muted-foreground">
-              {selectedCards.size} of {filteredCards.length} selected
+              {selectedCards.size} of {cardsWithPrices.length} selected
             </span>
             <Button
               variant="default"
@@ -946,7 +723,7 @@ const Cards = () => {
         )
       ) : viewMode === "grid" ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-           {filteredCards.map((card) => (
+           {cardsWithPrices.map((card) => (
              <div key={`${card.card_id}-${card.language}`} className="relative">
                {}
                {isBulkSelectionMode && (
@@ -964,18 +741,17 @@ const Cards = () => {
                  </div>
                )}
                <CardWithWishlist
-                 key={`${card.card_id}-${card.language || 'en'}-${priceMap.has(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) ? 'with-price' : 'no-price'}`}
+                 key={`${card.card_id}-${card.language || 'en'}`}
                  card={card}
                  hidePriceAndBuy={true}
                  onAddToCollection={handleAddToCollection}
-                 priceData={priceMap.get(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) || undefined}
                />
              </div>
            ))}
          </div>
       ) : (
         <div className="space-y-2">
-          {filteredCards.map((card) => (
+          {cardsWithPrices.map((card) => (
             <div key={`${card.card_id}-${card.language}`} className="relative">
               {}
               {isBulkSelectionMode && (
@@ -992,11 +768,10 @@ const Cards = () => {
                   />
                 </div>
               )}
-              <CompactCardListItem
-                key={`${card.card_id}-${card.language || 'en'}-${priceMap.has(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) ? 'with-price' : 'no-price'}`}
+              <CardListItem
+                key={`${card.card_id}-${card.language || 'en'}`}
                 card={card}
                 onAddToCollection={handleAddToCollection}
-                priceData={priceMap.get(`${card.card_id}-${(card.language || 'en').toLowerCase().trim()}`) || undefined}
               />
             </div>
           ))}
@@ -1004,7 +779,7 @@ const Cards = () => {
       )}
 
       {}
-      {!isLoading && filteredCards.length === 0 && (
+      {!isLoading && cardsWithPrices.length === 0 && (
         <div className="text-center py-12">
           <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{t('cards.noCardsFound')}</h3>
@@ -1046,7 +821,7 @@ const Cards = () => {
           setIsBulkAddToCollectionModalOpen(false);
         }}
         onAdd={handleBulkAddToCollectionWithDetails}
-        selectedCards={filteredCards.filter(card => 
+        selectedCards={cardsWithPrices.filter(card => 
           selectedCards.has(`${card.card_id}-${card.language}`)
         )}
         isLoading={isAddingToCollection}

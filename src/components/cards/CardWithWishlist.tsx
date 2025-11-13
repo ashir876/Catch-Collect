@@ -13,10 +13,9 @@ interface CardWithWishlistProps {
   onViewDetails?: (id: string) => void; 
   onCollectionChange?: () => void; 
   onWishlistChange?: () => void; 
-  priceData?: any; 
 }
 
-const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false, onAddToCollection, onViewDetails, onCollectionChange, onWishlistChange, priceData }: CardWithWishlistProps) => {
+const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false, onAddToCollection, onViewDetails, onCollectionChange, onWishlistChange }: CardWithWishlistProps) => {
   const { data: isInCollection = false } = useIsCardInCollection(card.card_id);
   const { data: isInWishlist = false } = useIsCardInWishlist(card.card_id);
 
@@ -40,16 +39,6 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
     setRenderKey(prev => prev + 1);
   }, [isInWishlist, card.card_id]);
 
-  React.useEffect(() => {
-    if (priceData) {
-      console.log('CardWithWishlist - PriceData prop updated:', {
-        cardId: card.card_id,
-        hasPrice: !!priceData,
-        price: priceData?.cardmarket_avg_sell_price,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, [priceData, card.card_id]);
 
   console.log('CardWithWishlist - Card:', card.card_id, 'isInCollection:', isInCollection, 'renderKey:', renderKey, 'timestamp:', new Date().toISOString());
 
@@ -128,7 +117,6 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
       hidePriceAndBuy={hidePriceAndBuy}
       showEditButton={showEditButton}
       cardData={card}
-      priceData={priceData}
       onAddToCollection={handleAddToCollection}
       onAddToWishlist={handleAddToWishlist}
       onViewDetails={onViewDetails}

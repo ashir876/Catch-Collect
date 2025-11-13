@@ -621,12 +621,16 @@ const TradingCard = ({
           </div>
 
           {}
-          <CardPriceDisplay 
-            priceData={cardPriceData} 
-            compact={true}
-            showSource={false}
-            className="mt-2"
-          />
+          {cardData?.price && cardData.price > 0 ? (
+            <div className="mt-2 text-right">
+              <div className="text-lg font-bold text-primary">
+                €{cardData.price.toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                📈 Cardmarket Avg
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {}

@@ -17,7 +17,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import AdvancedFilters from "@/components/filters/AdvancedFilters";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCollectionActions, useWishlistActions } from "@/hooks/useCollectionActions";
 import { useCollectionData } from "@/hooks/useCollectionData";
@@ -313,11 +312,6 @@ const CardGrid = ({
             {filteredCards.length} {t('cards.cards')} {t('cards.found')}
           </div>
         </div>
-      )}
-
-      {}
-      {showFilters && (
-        <AdvancedFilters onFiltersChange={setFilters} />
       )}
 
       {}
