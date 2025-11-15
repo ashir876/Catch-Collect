@@ -34,6 +34,7 @@ interface CardData {
   retreat?: number;
   set_symbol_url?: string;
   language?: string;
+  price?: number;
 }
 
 interface TradingCardProps {
