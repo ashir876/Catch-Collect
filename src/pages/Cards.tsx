@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Heart, ShoppingCart, Star, Filter, Grid3X3, List, CheckCircle } from "lucide-react";
@@ -343,64 +342,31 @@ const Cards = () => {
     }
   };
 
-  const filteredCards = cardsData || [];
-
-  // Fetch prices using the same logic as SetCards.tsx in card-craft-ai-market-main
-  const cardIds = filteredCards.length > 0 ? Array.from(new Set(filteredCards.map(card => card.card_id))) : [];
-  
-  // Fetch latest prices from card_prices table (same as SetCards.tsx)
-  const { data: cardPricesData } = useQuery({
-    queryKey: ['card-prices', cardIds.sort().join(','), languageFilter],
-    queryFn: async () => {
-      if (cardIds.length === 0 || filteredCards.length === 0) {
-        return [];
-      }
-      
-      // Query card_prices - get only the latest entry per card_id and language
-      const { data: pricesData, error } = await (supabase as any)
-        .from('card_prices')
-        .select('card_id, language, avg_sell_price, date_recorded')
-        .in('card_id', cardIds)
-        .order('date_recorded', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching card_prices:', error);
-        return [];
-      }
-      
-      return pricesData || [];
-    },
-    enabled: cardIds.length > 0 && filteredCards.length > 0 && !isLoading,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Create price map from card_prices (same logic as SetCards.tsx)
-  const priceMap = React.useMemo(() => {
-    const map = new Map<string, number>();
-    if (cardPricesData && Array.isArray(cardPricesData)) {
-      cardPricesData.forEach((price: any) => {
-        const key = `${price.card_id}-${price.language || 'en'}`;
-        // Only set if not already set (first one is latest due to ordering)
-        if (price.avg_sell_price && !map.has(key)) {
-          map.set(key, Number(price.avg_sell_price));
-        }
-      });
-    }
-    return map;
-  }, [cardPricesData]);
-
-  // Merge cards with their prices (same logic as SetCards.tsx)
+  // AGGRESSIVE DIRECT SORTING - Force card_number sorting here to override any other sorting
   const cardsWithPrices = React.useMemo(() => {
-    return filteredCards.map((card: any) => {
-      const priceKey = `${card.card_id}-${card.language || 'en'}`;
-      const price = priceMap.get(priceKey);
-      
-      return {
-        ...card,
-        price: price || undefined
+    if (!cardsData) return [];
+    
+    console.log('🚀 CARDS PAGE: AGGRESSIVE DIRECT SORTING - Before sort:', cardsData.slice(0, 5).map(c => ({card_number: c.card_number, name: c.name?.substring(0, 20)})));
+    
+    const sorted = [...cardsData].sort((a, b) => {
+      const getCardNumber = (cardNumber: string | null) => {
+        if (!cardNumber) return 999999;
+        const match = cardNumber.match(/^(\d+)\//);
+        return match ? parseInt(match[1]) : 999999;
       };
+
+      const aNum = getCardNumber(a.card_number);
+      const bNum = getCardNumber(b.card_number);
+      
+      console.log(`🔢 AGGRESSIVE: "${a.card_number}" (${aNum}) vs "${b.card_number}" (${bNum}) = ${aNum - bNum}`);
+
+      return aNum - bNum;
     });
-  }, [filteredCards, priceMap]);
+
+    console.log('✅ CARDS PAGE: AGGRESSIVE DIRECT SORTING - After sort:', sorted.slice(0, 5).map(c => ({card_number: c.card_number, name: c.name?.substring(0, 20)})));
+    
+    return sorted;
+  }, [cardsData]);
 
   const handleAddToCollection = (card) => {
     if (!user) {
@@ -428,7 +394,6 @@ const Cards = () => {
 
     const cardId = selectedCardForCollection.card_id;
     const previousCheckData = queryClient.getQueryData(['collection-check', user?.id, cardId]);
-    console.log('Cards - Setting optimistic update for card:', cardId, 'previousData:', previousCheckData, 'timestamp:', new Date().toISOString());
     queryClient.setQueryData(['collection-check', user?.id, cardId], true);
 
     try {
@@ -523,24 +488,11 @@ const Cards = () => {
   };
 
   const testDatabaseConnection = async () => {
-
     try {
-      
       const { data: cardsTest, error: cardsError } = await supabase
         .from('cards')
         .select('card_id, name, language')
         .limit(1);
-
-      const { data: wishlistTest, error: wishlistError } = await supabase
-        .from('card_wishlist')
-        .select('*')
-        .limit(1);
-
-      const { data: collectionsTest, error: collectionsError } = await supabase
-        .from('card_collections')
-        .select('*')
-        .limit(1);
-
     } catch (error) {
       console.error('Database connection test error:', error);
     }
@@ -562,60 +514,56 @@ const Cards = () => {
   }
 
   return (
-          <div className="container mx-auto px-4 py-8">
-        {}
-        <div className="text-center mb-12">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
-            <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
-              {t('cards.title')}
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
-            {t('cards.subtitle')}
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-12">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-8 uppercase tracking-wider">
+          <span className="bg-yellow-400 text-black px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-2 sm:border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block">
+            {t('cards.title')}
+          </span>
+        </h1>
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-bold">
+          {t('cards.subtitle')}
+        </p>
+      </div>
 
-      {}
-             <AdvancedFilters
-         searchTerm={searchTerm}
-         onSearchChange={handleSearchChange}
-         languageFilter={languageFilter}
-         onLanguageChange={handleLanguageFilterChange}
-         rarityFilter={rarityFilter}
-         onRarityChange={handleRarityFilterChange}
-         typeFilter={typeFilter}
-         onTypeChange={handleTypeFilterChange}
-         hpRange={hpRange}
-         onHpRangeChange={handleHpRangeChange}
-         illustratorFilter={illustratorFilter}
-         onIllustratorChange={handleIllustratorFilterChange}
-         collectionFilter={collectionFilter}
-         onCollectionChange={handleCollectionFilterChange}
-         wishlistFilter={wishlistFilter}
-         onWishlistChange={handleWishlistFilterChange}
-         onReloadCollection={handleReloadCollection}
-         
-         categoryFilter={categoryFilter}
-         onCategoryChange={handleCategoryFilterChange}
-         stageFilter={stageFilter}
-         onStageChange={handleStageFilterChange}
-         evolveFromFilter={evolveFromFilter}
-         onEvolveFromChange={handleEvolveFromFilterChange}
-         retreatCostFilter={retreatCostFilter}
-         onRetreatCostChange={handleRetreatCostFilterChange}
-         regulationMarkFilter={regulationMarkFilter}
-         onRegulationMarkChange={handleRegulationMarkFilterChange}
-         formatLegalityFilter={formatLegalityFilter}
-         onFormatLegalityChange={handleFormatLegalityFilterChange}
-         weaknessTypeFilter={weaknessTypeFilter}
-         onWeaknessTypeChange={handleWeaknessTypeFilterChange}
-         setsFilter={setsFilter}
-         onSetsChange={handleSetsFilterChange}
-       />
+      <AdvancedFilters
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        languageFilter={languageFilter}
+        onLanguageChange={handleLanguageFilterChange}
+        rarityFilter={rarityFilter}
+        onRarityChange={handleRarityFilterChange}
+        typeFilter={typeFilter}
+        onTypeChange={handleTypeFilterChange}
+        hpRange={hpRange}
+        onHpRangeChange={handleHpRangeChange}
+        illustratorFilter={illustratorFilter}
+        onIllustratorChange={handleIllustratorFilterChange}
+        collectionFilter={collectionFilter}
+        onCollectionChange={handleCollectionFilterChange}
+        wishlistFilter={wishlistFilter}
+        onWishlistChange={handleWishlistFilterChange}
+        onReloadCollection={handleReloadCollection}
+        
+        categoryFilter={categoryFilter}
+        onCategoryChange={handleCategoryFilterChange}
+        stageFilter={stageFilter}
+        onStageChange={handleStageFilterChange}
+        evolveFromFilter={evolveFromFilter}
+        onEvolveFromChange={handleEvolveFromFilterChange}
+        retreatCostFilter={retreatCostFilter}
+        onRetreatCostChange={handleRetreatCostFilterChange}
+        regulationMarkFilter={regulationMarkFilter}
+        onRegulationMarkChange={handleRegulationMarkFilterChange}
+        formatLegalityFilter={formatLegalityFilter}
+        onFormatLegalityChange={handleFormatLegalityFilterChange}
+        weaknessTypeFilter={weaknessTypeFilter}
+        onWeaknessTypeChange={handleWeaknessTypeFilterChange}
+        setsFilter={setsFilter}
+        onSetsChange={handleSetsFilterChange}
+      />
 
-      {}
       <div className="flex justify-between items-center mb-6">
-        {}
         {isBulkSelectionMode && (
           <div className="flex items-center gap-2">
             <Button
@@ -646,7 +594,6 @@ const Cards = () => {
           </div>
         )}
         
-        {}
         <div className="flex gap-2 ml-auto">
           <Button
             variant={isBulkSelectionMode ? "outline" : "default"}
@@ -672,7 +619,6 @@ const Cards = () => {
         </div>
       </div>
 
-      {}
       {totalCount > 0 && (
         <div className="mb-4 space-y-4">
           <PaginationInfo
@@ -691,7 +637,6 @@ const Cards = () => {
         </div>
       )}
 
-      {}
       {isLoading ? (
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -722,38 +667,36 @@ const Cards = () => {
           </div>
         )
       ) : viewMode === "grid" ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-           {cardsWithPrices.map((card) => (
-             <div key={`${card.card_id}-${card.language}`} className="relative">
-               {}
-               {isBulkSelectionMode && (
-                 <div className="absolute top-2 left-2 z-50">
-                   <input
-                     type="checkbox"
-                     checked={selectedCards.has(`${card.card_id}-${card.language}`)}
-                     onChange={(e) => {
-                       e.stopPropagation();
-                       handleCardSelection(`${card.card_id}-${card.language}`, e.target.checked);
-                     }}
-                     onClick={(e) => e.stopPropagation()}
-                     className="w-4 h-4 text-primary bg-background border-2 border-primary rounded focus:ring-primary focus:ring-2 cursor-pointer"
-                   />
-                 </div>
-               )}
-               <CardWithWishlist
-                 key={`${card.card_id}-${card.language || 'en'}`}
-                 card={card}
-                 hidePriceAndBuy={true}
-                 onAddToCollection={handleAddToCollection}
-               />
-             </div>
-           ))}
-         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {cardsWithPrices.map((card) => (
+            <div key={`${card.card_id}-${card.language}`} className="relative h-full">
+              {isBulkSelectionMode && (
+                <div className="absolute top-2 left-2 z-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedCards.has(`${card.card_id}-${card.language}`)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleCardSelection(`${card.card_id}-${card.language}`, e.target.checked);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 text-primary bg-background border-2 border-primary rounded focus:ring-primary focus:ring-2 cursor-pointer"
+                  />
+                </div>
+              )}
+              <CardWithWishlist
+                key={`${card.card_id}-${card.language || 'en'}`}
+                card={card}
+                hidePriceAndBuy={true}
+                onAddToCollection={handleAddToCollection}
+              />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-2">
           {cardsWithPrices.map((card) => (
             <div key={`${card.card_id}-${card.language}`} className="relative">
-              {}
               {isBulkSelectionMode && (
                 <div className="absolute top-2 left-2 z-50">
                   <input
@@ -778,7 +721,6 @@ const Cards = () => {
         </div>
       )}
 
-      {}
       {!isLoading && cardsWithPrices.length === 0 && (
         <div className="text-center py-12">
           <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -789,7 +731,6 @@ const Cards = () => {
         </div>
       )}
 
-      {}
       {totalCount > 0 && totalPages > 1 && (
         <div className="mt-8">
           <Pagination
@@ -800,7 +741,6 @@ const Cards = () => {
         </div>
       )}
 
-      {}
       <AddToCollectionModal
         isOpen={isAddToCollectionModalOpen}
         onClose={() => {
@@ -814,7 +754,6 @@ const Cards = () => {
         defaultLanguage={selectedCardForCollection?.language}
       />
 
-      {}
       <BulkAddToCollectionModal
         isOpen={isBulkAddToCollectionModalOpen}
         onClose={() => {

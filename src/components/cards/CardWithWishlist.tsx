@@ -117,6 +117,7 @@ const CardWithWishlist = ({ card, hidePriceAndBuy = true, showEditButton = false
       hidePriceAndBuy={hidePriceAndBuy}
       showEditButton={showEditButton}
       cardData={card}
+      priceData={card.priceData}
       onAddToCollection={handleAddToCollection}
       onAddToWishlist={handleAddToWishlist}
       onViewDetails={onViewDetails}

@@ -145,11 +145,14 @@ const CardListItem = ({
                   <div className="text-sm font-bold text-primary">
                     €{card.price.toFixed(2)}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    📈 Cardmarket Avg
+                </div>
+              ) : (
+                <div className="mt-1 text-right">
+                  <div className="text-xs text-muted-foreground">
+                    no price data
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
 
             {}

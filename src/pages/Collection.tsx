@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisplay";
+import { CollectionTotalValueDisplay } from "@/components/pricing/CollectionTotalValueDisplay";
 import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 import { CollectionValueChart } from "@/components/pricing/CollectionValueChart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -33,7 +33,7 @@ const Collection = () => {
   const [setFilter, setSetFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date" | "price">("name");
+  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "date" | "price" | "card_number">("card_number");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const [isPriceTrendModalOpen, setIsPriceTrendModalOpen] = useState(false);
@@ -73,29 +73,20 @@ const Collection = () => {
   console.log('Collection - Processing collection items:', collectionItems.length);
   const ownedCards = collectionItems.map((item: any) => {
     
-    const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
+    const priceData = currentPrices.find((price: any) => price.card_id === item.card_id);
 
     console.log('Collection card processing:', {
       cardId: item.card_id,
       cardName: item.cards?.name,
       itemPrice: item.price,
       itemPriceType: typeof item.price,
-      marketPrice: marketPrice?.price,
-      hasMarketPrice: !!marketPrice,
+      priceData: priceData,
+      hasPriceData: !!priceData,
       currentPricesLength: currentPrices.length,
       itemId: item.id, 
       itemIdType: typeof item.id, 
       fullItem: item
     });
-
-    const mockMarketPrice = !marketPrice && item.cards?.rarity ? {
-      price: item.cards.rarity === 'legendary' ? 150.00 : 
-             item.cards.rarity === 'epic' ? 75.00 :
-             item.cards.rarity === 'rare' ? 25.00 : 5.00,
-      source: 'tcgplayer',
-      currency: 'USD',
-      recorded_at: new Date().toISOString()
-    } : null;
     
     return {
       id: item.card_id, 
@@ -113,10 +104,7 @@ const Collection = () => {
       acquiredDate: item.created_at,
       condition: item.condition || 'Near Mint',
       myPrice: item.price || 0, 
-      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, 
-      marketSource: marketPrice?.source || mockMarketPrice?.source || 'tcgplayer',
-      marketCurrency: marketPrice?.currency || mockMarketPrice?.currency || 'USD',
-      marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at || new Date().toISOString(),
+      priceData: priceData, // ✅ KORREKT: priceData für CardPriceDisplay
       notes: item.notes || '',
       quantity: item.quantity || 1,
       language: item.language || 'en',
@@ -170,41 +158,46 @@ const Collection = () => {
        const matchesRarity = rarityFilter === "all" || card.rarity === rarityFilter;
        const matchesSet = setFilter === "all" || card.set === setFilter;
 
-       let matchesPrice = true;
-       if (priceFilter !== "all") {
-         const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice;
-         const minPrice = parseFloat(priceRange.min) || 0;
-         const maxPrice = parseFloat(priceRange.max) || Infinity;
-         
-         matchesPrice = typeof cardPrice === 'number' && cardPrice >= minPrice && cardPrice <= maxPrice;
-       }
+      let matchesPrice = true;
+      if (priceFilter !== "all") {
+        const cardPrice = priceFilter === "myPrice" ? card.myPrice : (card.priceData?.price || 0);
+        const minPrice = parseFloat(priceRange.min) || 0;
+        const maxPrice = parseFloat(priceRange.max) || Infinity;
+        
+        matchesPrice = typeof cardPrice === 'number' && cardPrice >= minPrice && cardPrice <= maxPrice;
+      }
        
        return matchesSearch && matchesRarity && matchesSet && matchesPrice;
      })
      .sort((a, b) => {
        let comparison = 0;
        
-       switch (sortBy) {
-         case "name":
-           comparison = a.name.localeCompare(b.name);
-           break;
-         case "rarity":
-           const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
-           comparison = (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0) - 
-                       (rarityOrder[b.rarity as keyof typeof rarityOrder] || 0);
-           break;
-         case "set":
-           comparison = a.set.localeCompare(b.set);
-           break;
-         case "date":
-           comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
-           break;
-         case "price":
-           const aPrice = a.myPrice || a.marketPrice || 0;
-           const bPrice = b.myPrice || b.marketPrice || 0;
-           comparison = aPrice - bPrice;
-           break;
-       }
+      switch (sortBy) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "card_number":
+          const aNum = parseInt(a.number) || 0;
+          const bNum = parseInt(b.number) || 0;
+          comparison = aNum - bNum;
+          break;
+        case "rarity":
+          const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+          comparison = (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0) - 
+                      (rarityOrder[b.rarity as keyof typeof rarityOrder] || 0);
+          break;
+        case "set":
+          comparison = a.set.localeCompare(b.set);
+          break;
+        case "date":
+          comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+          break;
+        case "price":
+          const aPrice = a.myPrice || a.priceData?.price || 0;
+          const bPrice = b.myPrice || b.priceData?.price || 0;
+          comparison = aPrice - bPrice;
+          break;
+      }
        
        return sortOrder === "asc" ? comparison : -comparison;
      });
@@ -238,16 +231,16 @@ const Collection = () => {
   };
 
   const mostExpensiveCard = ownedCards.reduce((mostExpensive, card) => {
-    const cardValue = card.marketPrice || card.myPrice || 0;
-    const mostExpensiveValue = mostExpensive.marketPrice || mostExpensive.myPrice || 0;
+    const cardValue = card.myPrice || card.priceData?.price || 0;
+    const mostExpensiveValue = mostExpensive.myPrice || mostExpensive.priceData?.price || 0;
     return cardValue > mostExpensiveValue ? card : mostExpensive;
   }, ownedCards[0]);
 
   const legendaryCards = ownedCards.filter(card => card.rarity === 'legendary');
   const topLegendaryCard = legendaryCards.length > 0
     ? legendaryCards.reduce((best, card) => {
-        const value = card.marketPrice || card.myPrice || 0;
-        const bestValue = best.marketPrice || best.myPrice || 0;
+        const value = card.myPrice || card.priceData?.price || 0;
+        const bestValue = best.myPrice || best.priceData?.price || 0;
         return value > bestValue ? card : best;
       }, legendaryCards[0])
     : null;
@@ -436,7 +429,7 @@ const Collection = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-base sm:text-lg font-semibold truncate">{mostExpensiveCard.name}</p>
                         <p className="text-base sm:text-lg text-muted-foreground">
-                          {(mostExpensiveCard.marketPrice || mostExpensiveCard.myPrice || 0).toFixed(2)} CHF
+                          {(mostExpensiveCard.myPrice || mostExpensiveCard.priceData?.price || 0).toFixed(2)} CHF
                         </p>
                         <p className="text-sm text-green-600 font-medium">
                           Highest Value Card
@@ -448,7 +441,7 @@ const Collection = () => {
               </CardContent>
             </Card>
 
-            <CollectionValueDisplay />
+            <CollectionTotalValueDisplay />
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -530,7 +523,7 @@ const Collection = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-base sm:text-lg font-semibold truncate">{topLegendaryCard.name}</p>
                         <p className="text-base sm:text-lg text-muted-foreground">
-                          {(topLegendaryCard.marketPrice || topLegendaryCard.myPrice || 0).toFixed(2)} CHF
+                          {(topLegendaryCard.myPrice || topLegendaryCard.priceData?.price || 0).toFixed(2)} CHF
                         </p>
                         <p className="text-sm text-purple-700 font-medium">Top Legendary</p>
                       </div>
@@ -613,10 +606,11 @@ const Collection = () => {
                  <label className="text-sm font-medium">{t('collection.sortBy')}:</label>
                  <select
                    value={sortBy}
-                   onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "date" | "price")}
+                   onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "date" | "price" | "card_number")}
                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                  >
                    <option value="name">{t('collection.sortByName')}</option>
+                   <option value="card_number">Card Number</option>
                    <option value="rarity">{t('collection.sortByRarity')}</option>
                    <option value="set">{t('collection.sortBySet')}</option>
                    <option value="date">{t('collection.sortByDate')}</option>
@@ -642,7 +636,7 @@ const Collection = () => {
                   >
                     <option value="all">{t('collection.allPrices')}</option>
                     <option value="myPrice">{t('collection.myPrice')}</option>
-                    <option value="marketPrice">{t('collection.marketPrice')}</option>
+                    <option value="avgPrice">{t('collection.avgPrice')}</option>
                   </select>
                 </div>
 
@@ -683,7 +677,7 @@ const Collection = () => {
                       setSetFilter("all");
                       setPriceFilter("all");
                       setPriceRange({ min: "", max: "" });
-                      setSortBy("name");
+                      setSortBy("card_number");
                       setSortOrder("asc");
                     }}
                   >
@@ -790,12 +784,6 @@ const Collection = () => {
                              <div className="text-xs">
                                <span className="text-muted-foreground">Your Price:</span>
                                <span className="ml-1 font-medium">CHF {card.myPrice.toFixed(2)}</span>
-                             </div>
-                           )}
-                           {typeof card.marketPrice === 'number' && (
-                             <div className="text-xs">
-                               <span className="text-muted-foreground">Market Price:</span>
-                               <span className="ml-1 font-medium">{card.marketCurrency || 'USD'} {card.marketPrice.toFixed(2)}</span>
                              </div>
                            )}
                          </div>

@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { PriceTrendChart } from "@/components/pricing/PriceTrendChart";
 import { WishlistValueChart } from "@/components/pricing/WishlistValueChart";
-import { CollectionValueDisplay } from "@/components/pricing/CollectionValueDisplay";
+import { WishlistTotalValueDisplay } from "@/components/pricing/WishlistTotalValueDisplay";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCurrentPrices } from "@/hooks/useCurrentPrices";
 
@@ -59,7 +59,7 @@ const Wishlist = () => {
   const [setFilter, setSetFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "priority" | "date" | "price">("name");
+  const [sortBy, setSortBy] = useState<"name" | "rarity" | "set" | "priority" | "date" | "price" | "card_number">("card_number");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const [isPriceTrendModalOpen, setIsPriceTrendModalOpen] = useState(false);
@@ -79,16 +79,7 @@ const Wishlist = () => {
   const createCardObject = (item: WishlistItem) => {
     if (!item.card) return null;
 
-    const marketPrice = currentPrices.find((price: any) => price.card_id === item.card_id);
-
-    const mockMarketPrice = !marketPrice && item.card?.rarity ? {
-      price: item.card.rarity === 'legendary' ? 150.00 : 
-             item.card.rarity === 'epic' ? 75.00 :
-             item.card.rarity === 'rare' ? 25.00 : 5.00,
-      source: 'tcgplayer',
-      currency: 'USD',
-      recorded_at: new Date().toISOString()
-    } : null;
+    const priceData = currentPrices.find((price: any) => price.card_id === item.card_id);
     
     return {
       id: item.id?.toString() || item.card_id, 
@@ -106,10 +97,7 @@ const Wishlist = () => {
       availability: "in-stock",
       
       myPrice: item.price || 0, 
-      marketPrice: marketPrice?.price || mockMarketPrice?.price || 0, 
-      marketSource: marketPrice?.source || mockMarketPrice?.source || 'tcgplayer',
-      marketCurrency: marketPrice?.currency || mockMarketPrice?.currency || 'USD',
-      marketRecordedAt: marketPrice?.recorded_at || mockMarketPrice?.recorded_at || new Date().toISOString(),
+      priceData: priceData, // ✅ KORREKT: priceData für CardPriceDisplay
       acquiredDate: item.created_at
     };
   };
@@ -121,8 +109,8 @@ const Wishlist = () => {
   const legendaryCards = wishlistCards.filter(card => card.rarity === 'legendary');
   const topLegendaryCard = legendaryCards.length > 0
     ? legendaryCards.reduce((best, card) => {
-        const value = card.marketPrice || card.myPrice || 0;
-        const bestValue = best.marketPrice || best.myPrice || 0;
+        const value = card.myPrice || card.priceData?.price || 0;
+        const bestValue = best.myPrice || best.priceData?.price || 0;
         return value > bestValue ? card : best;
       }, legendaryCards[0])
     : null;
@@ -138,7 +126,7 @@ const Wishlist = () => {
       legendaryCards: legendaryCards,
       topLegendaryCard: topLegendaryCard ? {
         name: topLegendaryCard.name,
-        value: topLegendaryCard.marketPrice || topLegendaryCard.myPrice || 0
+        value: topLegendaryCard.myPrice || topLegendaryCard.priceData?.price || 0
       } : null,
       sampleCard: wishlistCards[0] ? {
         name: wishlistCards[0].name,
@@ -167,7 +155,7 @@ const Wishlist = () => {
 
       let matchesPrice = true;
       if (priceFilter !== "all") {
-        const cardPrice = priceFilter === "myPrice" ? card.myPrice : card.marketPrice || 0;
+        const cardPrice = priceFilter === "myPrice" ? card.myPrice : (card.priceData?.price || 0);
         const minPrice = parseFloat(priceRange.min) || 0;
         const maxPrice = parseFloat(priceRange.max) || Infinity;
         
@@ -182,6 +170,11 @@ const Wishlist = () => {
       switch (sortBy) {
         case "name":
           comparison = a.name.localeCompare(b.name);
+          break;
+        case "card_number":
+          const aNum = parseInt(a.number) || 0;
+          const bNum = parseInt(b.number) || 0;
+          comparison = aNum - bNum;
           break;
         case "rarity":
           const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
@@ -200,8 +193,8 @@ const Wishlist = () => {
           comparison = new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
           break;
         case "price":
-          const aPrice = a.marketPrice || 0;
-          const bPrice = b.marketPrice || 0;
+          const aPrice = a.myPrice || a.priceData?.price || 0;
+          const bPrice = b.myPrice || b.priceData?.price || 0;
           comparison = aPrice - bPrice;
           break;
       }
@@ -211,7 +204,7 @@ const Wishlist = () => {
 
   const wishlistStats = {
     totalCards: wishlistCards.length,
-    totalValue: wishlistCards.reduce((sum, card) => sum + (card.marketPrice || 0), 0),
+    totalValue: wishlistCards.reduce((sum, card) => sum + (card.priceData?.price || 0), 0),
     totalSets: new Set(wishlistCards.map(card => card.set)).size,
     priorityBreakdown: {
       high: wishlistCards.filter(card => card.priority === 'high').length,
@@ -227,8 +220,8 @@ const Wishlist = () => {
   };
 
   const mostExpensiveCard = wishlistCards.reduce((mostExpensive, card) => {
-    const cardValue = card.marketPrice || 0;
-    const mostExpensiveValue = mostExpensive.marketPrice || 0;
+    const cardValue = card.myPrice || card.priceData?.price || 0;
+    const mostExpensiveValue = mostExpensive.myPrice || mostExpensive.priceData?.price || 0;
     return cardValue > mostExpensiveValue ? card : mostExpensive;
   }, wishlistCards[0]);
 
@@ -374,7 +367,7 @@ const Wishlist = () => {
       {viewMode === "stats" ? (
         <div className="space-y-8">
           {}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.15fr_1fr_1fr] gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t('wishlist.totalCards')}</CardTitle>
@@ -407,7 +400,7 @@ const Wishlist = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-base sm:text-lg font-semibold truncate">{mostExpensiveCard.name}</p>
                         <p className="text-base sm:text-lg text-muted-foreground">
-                          {(mostExpensiveCard.marketPrice || 0).toFixed(2)} CHF
+                          {(mostExpensiveCard.myPrice || mostExpensiveCard.priceData?.price || 0).toFixed(2)} CHF
                         </p>
                         <p className="text-sm text-green-600 font-medium">
                           Highest Value Card
@@ -419,7 +412,7 @@ const Wishlist = () => {
               </CardContent>
             </Card>
 
-            <CollectionValueDisplay />
+            <WishlistTotalValueDisplay />
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -501,7 +494,7 @@ const Wishlist = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-base sm:text-lg font-semibold truncate">{topLegendaryCard.name}</p>
                         <p className="text-base sm:text-lg text-muted-foreground">
-                          {(topLegendaryCard.marketPrice || topLegendaryCard.myPrice || 0).toFixed(2)} CHF
+                          {(topLegendaryCard.myPrice || topLegendaryCard.priceData?.price || 0).toFixed(2)} CHF
                         </p>
                         <p className="text-sm text-purple-700 font-medium">Top Legendary</p>
                       </div>
@@ -593,10 +586,11 @@ const Wishlist = () => {
                 <label className="text-sm font-medium">{t('wishlist.sortBy')}:</label>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "priority" | "date" | "price")}
+                  onChange={(e) => setSortBy(e.target.value as "name" | "rarity" | "set" | "priority" | "date" | "price" | "card_number")}
                   className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="name">{t('wishlist.sortByName')}</option>
+                  <option value="card_number">Card Number</option>
                   <option value="rarity">{t('wishlist.sortByRarity')}</option>
                   <option value="set">{t('wishlist.sortBySet')}</option>
                   <option value="priority">{t('wishlist.sortByPriority')}</option>
@@ -623,7 +617,7 @@ const Wishlist = () => {
                 >
                   <option value="all">{t('wishlist.allPrices')}</option>
                   <option value="myPrice">{t('wishlist.myPrice')}</option>
-                  <option value="marketPrice">{t('wishlist.marketPrice')}</option>
+                  <option value="avgPrice">{t('wishlist.avgPrice')}</option>
                 </select>
               </div>
 
@@ -665,7 +659,7 @@ const Wishlist = () => {
                     setSetFilter("all");
                     setPriceFilter("all");
                     setPriceRange({ min: "", max: "" });
-                    setSortBy("name");
+                    setSortBy("card_number");
                     setSortOrder("asc");
                   }}
                 >
@@ -762,10 +756,10 @@ const Wishlist = () => {
                         </p>
                         {}
                         <div className="flex items-center gap-4 mt-2">
-                          {typeof card.marketPrice === 'number' && card.marketPrice > 0 && (
+                          {typeof card.myPrice === 'number' && card.myPrice > 0 && (
                             <div className="text-xs">
-                              <span className="text-muted-foreground">Market Price:</span>
-                              <span className="ml-1 font-medium">{card.marketCurrency || 'USD'} {card.marketPrice.toFixed(2)}</span>
+                              <span className="text-muted-foreground">Your Price:</span>
+                              <span className="ml-1 font-medium">CHF {card.myPrice.toFixed(2)}</span>
                             </div>
                           )}
                         </div>

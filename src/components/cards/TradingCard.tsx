@@ -527,7 +527,7 @@ const TradingCard = ({
   const cardContent = (
     <Card 
       className={cn(
-        "group relative overflow-hidden transition-all duration-300 flex flex-col cursor-pointer",
+        "group relative overflow-hidden transition-all duration-300 flex flex-col cursor-pointer h-full",
         owned && "ring-2 ring-accent ring-opacity-50"
       )}
     >
@@ -540,9 +540,9 @@ const TradingCard = ({
         </div>
       )}
 
-      <CardContent className="p-4 relative z-10 flex flex-col flex-1">
+      <CardContent className="p-4 relative z-10 flex flex-col flex-1 min-h-0">
         {}
-        <div className="relative mb-3 aspect-[3/4] overflow-visible rounded-lg bg-muted" style={{ position: 'relative' }}>
+        <div className="relative mb-3 aspect-[3/4] w-full overflow-visible rounded-lg bg-muted flex-shrink-0" style={{ position: 'relative' }}>
           <img
             src={cardImage}
             alt={name}
@@ -627,11 +627,14 @@ const TradingCard = ({
               <div className="text-lg font-bold text-primary">
                 €{cardData.price.toFixed(2)}
               </div>
-              <div className="text-xs text-muted-foreground">
-                📈 Cardmarket Avg
+            </div>
+          ) : (
+            <div className="mt-2 text-right">
+              <div className="text-sm text-muted-foreground">
+                no price data
               </div>
             </div>
-          ) : null}
+          )}
         </div>
 
         {}
